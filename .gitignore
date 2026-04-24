@@ -1,1 +1,9 @@
+# Large sponsor decks
 resources/taskInfo/Challenge Talk Mecalux 2026.pptx
+
+# Smadex dataset (large, re-download from sponsor if needed)
+resources/smadex/Smadex_Creative_Intelligence_Dataset_FULL/
+resources/smadex/Smadex_Creative_Intelligence_Dataset_FULL.zip
+
+# macOS
+.DS_Store
