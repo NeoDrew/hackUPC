@@ -19,10 +19,8 @@ The repo currently contains research material under `resources/`. Application co
 - **`strategy.md`** — the live plan. Why Smadex, per-capability technical approach (Bayesian ranking / temporal fatigue / CLIP + attribute clustering / SHAP explainability / Thompson bandit recommendations), tech stack, 36-hour phased timeline, roles, demo script. **Single most important file in the repo.**
 - `challenges.md` — all 10 HackUPC sponsor challenges + MLH side-prizes + general prizes (reference only; we're committed to Smadex).
 - `hackUPCInfo.txt` — hacker guide (schedule, logistics, rules).
-- `HackUPC_2026_Opening_Ceremony_eng.txt` — ceremony transcript (long, noisy — grep rather than read).
-- Other sponsor briefs (JetBrains PDF, Qualcomm PDF, Skyscanner PPTX, Mecalux test cases) — out of scope now.
 
-`Challenge Talk Mecalux 2026.pptx` and `resources/.DS_Store` are on disk but gitignored.
+Non-Smadex sponsor material (ceremony transcript, JetBrains / Qualcomm / Skyscanner / Mecalux briefs) has been removed from the repo — it's recoverable from git history if needed.
 
 ### `resources/teamInfo/`
 One file per teammate with LinkedIn URL + background summary. Keep in sync if responsibilities shift.
@@ -80,8 +78,7 @@ FastAPI + Next.js web app with three tabs mapped to the brief's five capabilitie
 - **`resources/taskInfo/strategy.md` is the living plan.** Update it when decisions change — don't just reply in chat.
 - **`resources/smadex/dataset_notes.md` is the data reference.** Update it the moment you discover a new gotcha.
 - **Keep teammate files in sync with reality.** If skills or responsibilities shift, update `resources/teamInfo/*.txt`.
-- **Don't re-scrape LinkedIn, the live page, or the ceremony transcript** without reason. Distilled summaries exist.
-- **Ceremony transcript is ~5,900 lines, mostly noise** — grep for company names rather than reading sequentially.
+- **Don't re-scrape LinkedIn or the live page** without reason. Distilled summaries exist.
 
 ## Key links
 

@@ -1,6 +1,6 @@
 # HackUPC 2026 — Sponsor Challenges
 
-Source: https://live.hackupc.com/talks (authoritative) + PDF briefs + opening-ceremony transcript.
+Source: https://live.hackupc.com/talks (authoritative) at the time of the event. Original sponsor PDFs and the opening-ceremony transcript have since been removed from the repo; recover from git history if needed.
 
 ## Sponsor challenges (all opt-in via Devpost)
 
