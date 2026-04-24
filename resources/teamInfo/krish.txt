@@ -1,0 +1,37 @@
+Krish Mathur
+
+https://www.linkedin.com/in/krish-mathur/
+GitHub: https://github.com/KRAA5H
+
+Based: Greater Reading, UK.
+
+Self-description: "Currently exploring world models, algorithmic trading and defense software. Open to any and all opportunities anywhere around the world."
+
+Education:
+- BSc Computer Science, University of Southampton (Aug 2025 – Jun 2028, first year). Modules: Algorithmics, Data Management, Mathematics I & II, Programming I & II. Societies: Athletics, Quant, SEMSU (EDM), Asian Soc, ECSS.
+- Reading School (Sep 2023 – Jul 2025). A-levels: Maths, Economics, Computer Science. Grade AAA. 5/5 UCAS offers.
+
+Upcoming:
+- Barclays Spring Insight (incoming).
+
+Current roles:
+- Founder, Stealth (Feb 2026 – present, self-employed). "Building the future of spatial intelligence." Aligns with the world-models/defense interests he lists.
+- Consultant, 180 Degrees Consulting (Mar 2026 – present).
+
+School leadership:
+- Computer Science Lead Organiser, Reading School (May 2025). Led 30 students to build a school-themed game hub for the 900th anniversary. Coordinated via Power BI + Microsoft Forms.
+- Future Stories Prefect, Reading School (Mar 2024 – Mar 2025). Ran a maths-mentoring initiative for disadvantaged primary pupils; trained 30 student tutors; delivered speech to 200 Year 12s that drove +10% participation.
+
+Past experience:
+- Work Experience Intern, Vodafone (Jul–Aug 2023, Newbury, on-site). Built IoT-based phone simulation (PyGame) that sends SMS when invasive animals are detected (human–wildlife conflict). Used in multiple demos and 2 talks in one week.
+
+Hackathon / competition track record:
+- 1st Place, MedTech Southampton Hackathon (Nov 2025). Built mobile + web solution for motor-disorder rehabilitation. Mobile "tap the dots" game (Parkinson's-style fine motor). Web app using computer vision to track arm/shoulder angles and count reps with feedback; encrypted logging for GP/physio. Pivoted from a failed cognitive-disorder idea on day 1 – won after day-2 rebuild.
+- 1st & 2nd prizes (Best ElevenLabs + runner-up JetBrains), ICHack26 Imperial (Jan 2026). Team with Andrew. Guardian emergency-hotline voice agent (see Andrew's file).
+- Top 15, AI Tinkerers Context Hackathon (Oct 2025). Chrome extension for PCPartPicker supporting non-technical PC builders with explanations and guidance.
+
+Notable projects:
+- NEA Incident Response System for large events (Oct 2024 – Feb 2025). Scored 97%. Flask web app; A* pathfinding for emergency responders; SQLite (8 tables); Folium interactive maps; JS geolocation; priority queues. 100-page technical report. Reduced wasted search time by 30%, incident reach by 15%.
+- "NaviMate" – Microsoft Junior Imagine Cup (Jan 2024 – Jan 2025). Accessible public-transport mobile app. Azure AI Language (custom NER), Azure Speech (hands-free), Azure Vision for weather/traffic.
+
+Strengths: strong hackathon operator, pivots fast, good at demo/story (MedTech pivot + personal opening). Comfortable end-to-end: Python, Flask, mobile, computer vision, Azure AI services, voice agents, multi-agent backends (Koog), algorithms (A*, priority queues). Likely the most technically aggressive of the three and the team's likely AI-engineering lead.

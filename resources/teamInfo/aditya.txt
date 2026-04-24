@@ -1,0 +1,26 @@
+Aditya Shah (He/Him)
+
+https://www.linkedin.com/in/adityashah100/
+
+Based: Manchester, UK.
+
+Education:
+- BSc Computer Science, University of Manchester (Sep 2022 – Jun 2026, final year). Same cohort as Andrew.
+
+Current roles:
+- CEO, Basanite (Apr 2026 – present, remote). Co-founded with Andrew. Building an AI interviewer for technical roles that adapts to each candidate's background; produces structured reports for hiring teams + candidates. Owns strategy, fundraising, business development. CTO and CPO on the team. MVP stage.
+- Freelance STEM Tutor (Sep 2023 – present, 2+ years, 500+ hours). Coding, maths, science – primary through A-level.
+
+Past experience (the big one):
+- Technology Modeller / Data Analyst, Virgin Media O2 (Jul 2024 – Aug 2025, 13-month placement, Reading, on-site). Fixed Insights & Analytics team.
+  - Built/maintained advanced BigQuery scripts for BAU + ad-hoc analysis across Fixed Networks and regulatory submissions.
+  - Led a SharePoint redesign/migration for a 30-person analytics team.
+  - Translated stakeholder requirements into Jira tickets; worked with procurement, engineering, mobile.
+  - Documentation frameworks in Confluence/Jira.
+  - Intern representative on FCC Early Careers Committee; organised 4 networking events + a quiz social across UK sites.
+  - Ran a half marathon (first) during the Big Ride; raised £500.
+  - Attended 2025 Google Summit.
+- Universal Credit Case Manager, DWP (Jul–Sep 2023). Call handling, claimant support during cost-of-living crisis.
+- Assistant Youth Worker, Derry City & Strabane District Council (Jul 2023).
+
+Strengths: data analytics (BigQuery / SQL / reporting), process & documentation, stakeholder / commercial communication, teaching / explaining (500+ tutoring hours = strong demoing). Runs Basanite as CEO so comfortable with product/strategy. Less of an AI/ML builder profile than the other two — his edge is data, business framing, and polished delivery.

@@ -1,0 +1,241 @@
+Info from: <https://live.hackupc.com/>
+
+HackUPC Hacker Guide
+Hi, hacker! We’re very excited to share this amazing weekend with you. This guide will help you get ready so that you don’t miss anything and can enjoy it to the fullest.
+
+Before the event
+:briefcase: What to Bring
+Valid ID - Make sure to bring your government-issued or student ID. We will need this in order to check you in. You will also need this if you’d like to check out hardware.
+QR Invitation code - This is the QR we sent you when you’ve confirmed the participation. You can also find it at MyHackUPC.
+Laptop, Phone, Chargers, and Other Devices - Don’t forget to bring your chargers and extra batteries for any device you’ll be using.
+Headphones - If you need to focus it will be easier with them.
+Comfortable clothes - We will provide you with a T-shirt but you will surely need more clothes.
+Towel, toiletry (shampoo, gel, toothbrush, toothpaste) and flip-flops - We will have showers available and we really encourage you to use them!!
+Sleeping bag - If you’re sensitive to cold and plan to sleep, it may be a good option. During the day it’s warm but at night it gets colder.
+Pillow - A pillow might also help you to have a good rest.
+We will give out a water cup, sleeping mask and ear plugs, so you don’t need to bring them with you.
+
+:round_pushpin: Location
+Edifici A5 del Campus Nord, C/Jordi Girona, 1-3, 08034 Barcelona
+
+:round_pushpin: Google Maps location
+
+HackUPC will take place in the buildings A3 to A6 of the Campus Nord of the Universitat Politècnica de Catalunya (Facultat d’Informàtica de Barcelona). The entrance will be marked with signs so it will be easy for you to find it.
+
+:world_map: Directions
+You can check how to arrive at our live page.
+
+During the event
+:speech_balloon: Slack
+Slack is our primary method of communication during HackUPC. Anything you need to know during the event will be announced there, and all members of the staff team are easily found in it (look for the HackUPC logo in the profile picture - that’s us!). These are some important channels that we have:
+
+#announcements: Everything about the event itself will be in this channel: food being served, talks & workshops starting, activities such as the nerf gun battles, and other important stuff.
+#general: Talk about HackUPC and get to know fellow hackers.
+#help: Something happening in your room? Wi-Fi not working? Do you have any question? Tell us through this channel, and we’ll try to solve it as fast as possible.
+#mentors: If you’re stuck in your project, ask for help here and a mentor will come help you.
+#explore-bcn: If you’re coming a few days before, or staying after the event to visit Barcelona, this is the channel where you can ask the locals for suggestions about what to visit or where to eat.
+#accomodation: Get recommendations on places to stay in Barcelona. Maybe a local hacker can offer you a bed!
+#team-building: You still don’t have a team? Have an idea? Share your thoughts here and meet people to form a team.
+#random: BIENE.
+:alarm_clock: Preliminary Schedule
+You can check out our live page, where you’ll find the most recently updated schedule. Remember that all the times are UTC+2 (Barcelona local time)
+
+Some important times to be aware of:
+
+April 24th, Friday
+
+04:00 PM - 06:45 PM - Check in 👋
+07:00 PM - 08:30 PM - Opening Ceremony
+08:30 PM - 10:30 PM - Dinner
+09:00 PM - Hacking time starts!
+09:30 PM - 10:30 PM - Team Building
+10:30 PM - 11:59 PM - Talks and workshops
+11:00 PM - Take a picture at the Photocall with our photographers
+April 25th, Saturday
+
+00:00 AM - 00:30 PM - Talks and workshops
+01:30 AM - 02:30 AM - Midnight snack
+03:14 AM - TheGame starts!
+09:00 AM - 10:30 AM - Breakfast
+09:30 AM - 11:30 AM - Showers available
+10:00 AM - 12:00 AM - Workshops
+12:00 AM - 01:00 PM - WikiRace
+01:30 PM - 03:00 PM - Lunch
+04:00 PM - Quack
+04:00 PM - 05:00 PM - Dodgeball
+05:00 PM - 07:00 PM - Showers available
+05:30 AM - 06:30 PM - Cup Stacking
+06:00 PM - 07:00 PM - GeoGuessr
+08:30 PM - 10:00 PM - Dinner
+10:00 PM - 11:00 PM - SlideShare Show
+April 26th, Sunday
+
+00:00 AM - 00:30 AM - StickerXchange
+00:30 AM - 03:00 AM - NerfGun Battle
+01:00 AM - 02:30 AM - Midnight snack
+03:14 AM - TheGame ends
+08:00 AM - 09:15 AM - Hack Submissions
+09:00 AM - Hacking time ends!
+09:00 AM - 10:00 AM - Breakfast
+09:00 AM - 11:00 AM - Showers available
+10:15 AM - 01:15 PM - Hack Demos
+01:00 PM - 02:30 PM - Lunch
+03:00 PM - 05:00 PM - Closing ceremony
+05:00 PM - See you soon hackers 👋
+:wave: Check in
+Check-in will be open from 4:00 PM to 6:45 PM. While in the queue, please have your ID prepared or the QR we sent you in the mail, as it will help us go quicker! In the check in we will check the rest of the information and we will give you, among other things, a bracelet that you will have to wear at all times.
+
+If you arrive later, go to the info desk for late check-in. If you let us know that you’ll arrive late, we’ll have your welcome bag prepared for you!
+
+We will also have baggage check-in so that you can leave your bags in a safe place.
+
+:clapper: Opening Ceremony
+The opening ceremony will be at the Vertex building at 7:00 PM. Doors will open at 6:30 PM.
+
+Keep in mind that the auditorium has limited seating. For the ones that can not make it, we will stream the opening ceremony as well as the closing, on our Youtube channel.
+
+:handshake: Teams
+Team sizes are limited to a maximum of 4 people each.
+Join the #team-building channel on our Slack to meet other hackers and potential team members before the event.
+We will also have a Team Building event after dinner on Friday at 9:30PM!
+:raised_hand: Rules
+The #1 rule is “Be respectful”. Please read HackUPC’s code of conduct. We require all hackers to abide by these rules.
+
+Check out the full list of rules in our live page.
+
+:bulb: Hacking
+Hacking is only allowed from 9:00 PM on Friday to 9:00 AM on Sunday!! You can start planning your project and setting up your work environment (libraries you may use, IDEs you may need…) before that, but no coding. Every project that has been started before the event will be disqualified.
+
+:sos: Need help? Mentors!
+During all the weekend we have mentors available for you! If you have any tech-related question or issue, you can contact our mentors through the #mentors channel on Slack. Also you can find them around the venue, they will be wearing a T-Shirt with “MENTOR” on their back!
+
+We also have a Mentor Lobby, located in classroom A5105. If you don’t find mentors in the hacking rooms, you can go to the Mentor Lobby to try your luck! Don’t get stuck in your project and use them to fix the problems fasters so you can finish your project in time.
+
+:trophy: Project Submissions
+Please submit your projects on our Devpost by Sunday 14 at 9:00 AM. Also remember to opt-in for any sponsor prizes that you are eligible for. You can submit early and still be able to edit your submission until 9:00AM!
+
+Our judging will be in expo style. You’ll have 3 minutes to demo your project to our judges and show what you’ve learned and built during the weekend. We encourage you to demo even if your project it’s not finished, as our main criteria don’t include finishing it, and you will gain experience in demoing your own project ideas.
+
+If you have taken part in a sponsor challenge, you will have to do 2 expos: one in the Sponsor’s judging room and one at a HackUPC judging room. At HackUPC’s judging rooms, it is mandatory to do a code demo, powerpoint presentations and videos are not allowed and your evaluation will be severely undermined by doing a PowerPoint presentation.
+
+:woman_office_worker: Sponsor challenges
+Remember to opt in the challenges when submitting your project! (By submitting and presenting to HackUPC judges, you automatically opt to the HackUPC prize.) All the challenges will be presented in the opening ceremony as well as the prizes.
+
+Check them during HackUPC in our live page: live.hackupc.com.
+
+:computer: Workshops and talks
+On Friday night and Saturday morning, you will have the opportunity to attend several workshops given by our sponsors.
+
+Check them in our live page to know the full list of topics! We will also announce them on Slack as soon as they start.
+
+:man_juggling: Activities
+If you’re looking for a moment to relax and get away from any difficulties in your project, enjoy the activities that we have prepared for you. Just like the talks, we will announce them on Slack as they start! Check them out in our live page!
+
+Take a look at some of the activities we will be hosting during the event!
+
+🕵️‍♂️ Find the bienes: There are 24 bienes hidden in the venue! Find at least 12 of them, take a selfie and show it on the InfoDesk to check your mission stamp!
+
+📌 Pins Collection: We have 11 company booths, each one has a pin. Collect them all and show them at the InfoDesk to earn the last pin!
+
+🏎️ Wiki Race: How fast can you be? Start in a wikipedia link and be the first person to reach the destination page using WikiLinks.
+
+🔫 Nerf Gun Battle: Compete with your friends in the Nerf Gun Battle!
+
+🔄 Sticker Exchange: Want to improve your sticker collection? Come to the cafeteria and exchange your stickers with other hackathon lovers!
+
+🎮 Tetris Tournament: Are you really the best player of Tetris, or are you just showing off? Become the champion of our Tetris tournament, beating all of your friends along the way!
+
+🏐 Dodgeball: Want to stretch your legs? Relax from coding and play a 4 vs 4 dodgeball match. Don’t forget to bring your friends!
+
+🎤 SlideShare Show: Do you dare to present a slide presentation you have never seen before? Get some laughs in this activity watching hackers presenting random slides!
+
+🦆 Rubber duck finding: Quack! Oh, it looks like some ducks have gone missing. Can you help us find them? You can keep the one you find!
+
+📸 Photocall: Get a cool memory! Take a picture in our photocall, share it in social media tagging us (@hackupc) and come to the InfoDesk to claim your mission stamp!
+
+🥤 Cup Stacking by MLH: How many cups can you stack? Join the challenge, where you’ll race against another team to build the tallest tower using only cups.
+
+If you want to know more about the activities, you can check out our live page, where you’ll find the most recently updated information.
+
+:zzz: Sleeping rooms
+We will have sleeping rooms available for those hackers who may need a rest at night. They will be open from 12:00 PM to 8:00 AM (both on Friday and on Saturday) and we will have air mattresses so that you don’t have to sleep on the floor. Although we provide sleeping masks and ear plugs, please be respectful of other people’s rest when you enter or exit the rooms. You will find the sleeping rooms in the A3 building. You can check the maps in our live page.
+
+Reminder: It’s forbidden to take the mattress outside of the sleeping area building!
+
+:shower: Showers
+Don’t forget to take a shower! We will provide various time slots on Saturday and Sunday where you will be able to shower.
+
+Showers will be available from 9:30AM to 11:30AM and from 5:00PM to 7:00PM on Saturday. From 9:00AM to 11:00AM on Sunday. Please bring your towel and toiletry, as we will not provide it. Although they are gender separated, the showers are shared with other people, so you can bring a swimming suit if you feel uncomfortable.
+
+Location: Poliesportiu
+
+:woman_technologist: Hacking rooms
+Except for the cafeteria in A5106 and the mentor lobby at A5105, all the rooms in the 1st and 2nd floors of the buildings A5 and A6, as well as A4’s second floor are open for you to hack in there!
+
+Spain uses the two-pin continental plugs, types C and F and operates on a 230V supply voltage and 50Hz. Please bring an adapter if needed.
+
+:wrench: Hardware
+You can check the hardware you can ask for at MyHackUPC.
+
+:shallow_pan_of_food: Meals
+The food will be given out in front of the A5 building. We will let you know through #announcements when it’s ready! We provide food taking into account every special diet that you may have. If you have a special diet and are unsure of the contents of each meal, don’t hesitate to ask the organisers and volunteers who will be next to the food. Remember to bring your water bottle if your drink of choice is water!
+
+Check the full menu in our live page.
+
+:fork_and_knife: Diets
+When you check in, you will be provided with a bracelet specifying your diet. Please check that the color of your bracelet is correct:
+
+White: No restriction
+Green: Vegetarian
+Blue: Other restrictions and alergies
+:link: Links you need!
+Our website: hackupc.com
+Hacker’s personal area: my.hackupc.com
+Live page: live.hackupc.com
+Devpost: hackupc-2026.devpost.com
+Slack: hackupc2026.slack.com
+Twitch: Our channel
+Youtube: Our channel
+:cry: I can’t come to HackUPC, what should I do?
+That’s sad!! But, if for any reason, you’re unable to finally join us, we would appreciate that you cancel your attendance through MyHackUPC, so that others can take your spot.
+
+:camera: Connect with Us
+Make sure to tag social media posts related to the event with #HackUPC11thEdition. We’ll be featuring your posts and highlights from the event on our Instagram, Twitter, and Facebook.
+
+After the event
+:airplane: Travel Reimbursement
+:moneybag: Amount
+We will be offering flight reimbursements on a case-by-case basis. If you are eligible you will have received an email, you will be required to submit travel receipts on our travel reimbursement form in MyHackUPC. Take in account that your transport may or may not be fully covered by reimbursements.
+
+Check out the whole process in our live page.
+
+For any travel reimbursement related questions, you can send them to reimbursements@hackupc.com
+
+:warning: Requirements
+In order to be eligible to get the money back, you should meet the requirements:
+
+Confirm your attendance and attend to the event (you need to have the QR invitation code)
+Be approved by the HackUPC team for reimbursement, received via email.
+Submit your project to Devpost and make the demo to HackUPC jury (presenting only to the sponsors is not valid).
+Submit a valid receipt with your travel expenses.
+Your project must follow all the HackUPC rules.
+:page_facing_up: Submitting a receipt
+All the receipts should include the following information:
+
+Purchase date
+Your name
+Travel dates
+Detailed price
+Proof of payment of the purchase
+:money_with_wings: Reimbursement method
+We will send reimbursements through PayPal to the email address that you’ve set when submitting your receipt.
+The money may take between 30-60 days to arrive.
+:envelope: Attendance letter
+If you need to verify your attendance to HackUPC 2026 for any reason (i.e. proof to get ECTS for winning the hackathon), you can ask for an attendance letter after the event at contact@hackupc.com with the following information:
+
+Link to your Devpost project
+Complete name
+ID number
+University name
+More questions?
+Check out our FAQ or email us at contact@hackupc.com! You can also reach out to us on our Twitter, Facebook or Instagram.

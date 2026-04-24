@@ -1,0 +1,26 @@
+Andrew Robertson
+
+https://www.linkedin.com/in/andrewrobertsonamr/
+
+Based: London, UK.
+
+Education:
+- BSc Computer Science with Industrial Experience, University of Manchester (Sep 2022 – Jul 2026, final year). Manchester Bursary.
+- HSDC Alton, A*A*A A-levels; 2nd in year for Maths; Gold Maths Challenge (top 7%).
+
+Current roles:
+- Founder, Basanite (Apr 2026 – present). "The next era of technical screening." (co-founded with Aditya who is CEO.)
+- AI Engineer, Outlier AI (Apr 2026 – present, part-time, remote).
+- AI Engineer, DataAnnotation (Sep 2025 – present, part-time, remote).
+
+Past experience:
+- SWE Intern, The Trade Desk (Jun–Sep 2025, London, hybrid). Ad-tech / high-scale platform.
+- Software Developer, Record (Oct 2024 – Jun 2025, London, on-site, 9 months).
+- Pizza Chef, JD Wetherspoon (listed skill – Pizza).
+- 9 experiences total on LinkedIn.
+
+Recent hackathon / competition wins:
+- 1st Place, Bloomberg BPuzzled (Mar 2026). Team of 4 – first team to finish.
+- 1st & 2nd Place Prize Winner, ICHack26 (Jan 2026, Imperial College London). Built "Guardian" – an ElevenLabs voice agent answering 999/111 emergency hotlines, with RAG over roleplay scenarios and JetBrains Koog orchestrating multi-agent backend (medical agent etc.). Won Best Use of ElevenLabs + runner-up JetBrains.
+
+Skills on file: Linux, Pizza, plus 63 listed skills overall. Strong on full-stack + AI agents.
