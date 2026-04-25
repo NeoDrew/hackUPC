@@ -77,6 +77,16 @@ export default async function CreativeDetailPage(
             <Link
               href={`/creatives/${id}/variant${twinSuffix}`}
               className="btn primary"
+              style={{
+                padding: "12px 22px",
+                fontSize: 15,
+                fontWeight: 700,
+                letterSpacing: "-0.01em",
+                background: "var(--accent)",
+                borderColor: "var(--accent)",
+                color: "#fff",
+                boxShadow: "var(--shadow-1)",
+              }}
             >
               Improve →
             </Link>
