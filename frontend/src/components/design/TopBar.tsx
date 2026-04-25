@@ -1,3 +1,5 @@
+import { SearchInput } from "./SearchInput";
+
 export function TopBar() {
   return (
     <header className="topbar">
@@ -6,11 +8,7 @@ export function TopBar() {
         <span>Smadex</span>
         <span className="crumb">/ Creative Twin Copilot</span>
       </div>
-      <input
-        className="search"
-        placeholder="Search creatives, advertisers… (preview)"
-        readOnly
-      />
+      <SearchInput />
       <div className="right">
         <span className="filter-chip">
           <span className="muted">Period</span>

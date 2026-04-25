@@ -292,15 +292,108 @@ a:focus-visible {
   color: var(--t-3);
   font-size: 12px;
 }
-.topbar .search {
+.topbar .search-wrap {
+  position: relative;
   flex: 1;
   max-width: 480px;
+}
+.topbar .search {
+  width: 100%;
   background: var(--bg-2);
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 6px 10px;
-  font-size: 12px;
+  padding: 7px 12px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--t-1);
+  transition:
+    border-color var(--t-fast) var(--ease-out),
+    background var(--t-fast) var(--ease-out);
+}
+.topbar .search::placeholder {
   color: var(--t-3);
+  font-size: 13px;
+}
+.topbar .search:hover {
+  border-color: var(--t-4);
+}
+.topbar .search:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--bg-1);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.search-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: var(--bg-1);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow:
+    0 18px 44px rgba(18, 16, 24, 0.16),
+    0 4px 14px rgba(18, 16, 24, 0.08);
+  overflow: hidden;
+  z-index: 90;
+  max-height: 60vh;
+  overflow-y: auto;
+  animation: fadeIn 140ms var(--ease-out) both;
+}
+.search-empty {
+  padding: 14px 16px;
+  color: var(--t-3);
+  font-size: 13px;
+}
+
+.search-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line-soft);
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: background var(--t-fast) var(--ease-out);
+}
+.search-row:last-child {
+  border-bottom: none;
+}
+.search-row.active,
+.search-row:hover {
+  background: var(--bg-2);
+}
+.search-row img {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  flex-shrink: 0;
+}
+.search-row-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+.search-row-headline {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--t-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.search-row-meta {
+  font-size: 11px;
+  color: var(--t-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .topbar .right {
   margin-left: auto;

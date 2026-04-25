@@ -114,6 +114,82 @@ def tab_counts(store: Datastore) -> dict[str, int]:
     return store.tab_counts
 
 
+def search_creatives(
+    store: Datastore, query: str, limit: int = 8
+) -> list[dict[str, Any]]:
+    """Return weighted-relevance matches for ``query`` across creative fields.
+
+    Priority order (descending weight):
+      - Exact creative_id match (numeric query)
+      - Headline substring
+      - Advertiser name substring
+      - Theme / hook_type / cta_text substring
+      - Vertical / format substring
+    """
+    q = query.strip().lower()
+    if not q:
+        return []
+    rows = list(store.flat_row_by_creative.values())
+
+    # Pull richer fields from creative_detail for theme/hook/cta matches.
+    detail_lookup = store.creative_detail
+
+    matches: list[tuple[float, dict[str, Any]]] = []
+    for row in rows:
+        cid = row["creative_id"]
+        d = detail_lookup.get(cid, {})
+        score = 0.0
+
+        # Exact creative-id match (when the user types a number).
+        if q.isdigit() and int(q) == cid:
+            score += 10.0
+
+        headline = (row.get("headline") or "").lower()
+        if q in headline:
+            # Boost when the headline starts with the query.
+            score += 6.0 if headline.startswith(q) else 5.0
+
+        advertiser = (row.get("advertiser_name") or "").lower()
+        if q in advertiser:
+            score += 3.0
+
+        for field in ("theme", "hook_type", "cta_text"):
+            v = str(d.get(field) or "").lower()
+            if v and q in v:
+                score += 1.5
+
+        for field in ("vertical", "format"):
+            v = (row.get(field) or "").lower()
+            if v and q in v:
+                score += 1.0
+
+        if score <= 0:
+            continue
+        matches.append((score, row))
+
+    matches.sort(key=lambda t: (t[0], t[1].get("health") or 0), reverse=True)
+    out: list[dict[str, Any]] = []
+    for score, row in matches[:limit]:
+        d = detail_lookup.get(row["creative_id"], {})
+        out.append(
+            {
+                "creative_id": row["creative_id"],
+                "headline": row.get("headline"),
+                "advertiser_name": row.get("advertiser_name"),
+                "vertical": row.get("vertical"),
+                "format": row.get("format"),
+                "status_band": row.get("status_band"),
+                "status": row.get("status"),
+                "health": row.get("health"),
+                "asset_file": row.get("asset_file"),
+                "theme": d.get("theme"),
+                "hook_type": d.get("hook_type"),
+                "score": round(float(score), 2),
+            }
+        )
+    return out
+
+
 def list_creatives_flat(
     store: Datastore,
     *,

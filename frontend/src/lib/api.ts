@@ -18,6 +18,8 @@ export type CreativeDetail = components["schemas"]["CreativeDetail"];
 export type Quadrant = components["schemas"]["Quadrant"];
 export type Saturation = components["schemas"]["Saturation"];
 export type CreativeListResponse = components["schemas"]["CreativeListResponse"];
+export type SearchHit = components["schemas"]["SearchHit"];
+export type SearchResponse = components["schemas"]["SearchResponse"];
 export type CreativeTimeseries = components["schemas"]["CreativeTimeseries"];
 export type TimeseriesPoint = components["schemas"]["TimeseriesPoint"];
 export type CreativeRow = components["schemas"]["CreativeRow"];
@@ -77,6 +79,12 @@ export const api = {
   getCreativeTimeseries: (id: number) =>
     fetchJSON<CreativeTimeseries>(`/api/creatives/${id}/timeseries`),
 
-  // Twin (stub).
+  // Twin.
   getTwin: (id: number) => fetchJSON<TwinSummary>(`/api/creatives/${id}/twin`),
+
+  // Search.
+  search: (q: string, limit = 8) =>
+    fetchJSON<SearchResponse>(
+      `/api/search?q=${encodeURIComponent(q)}&limit=${limit}`,
+    ),
 };
