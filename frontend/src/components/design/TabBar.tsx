@@ -42,8 +42,19 @@ export function TabBar({ counts: initialCounts }: { counts: TabCounts }) {
   if (end) rangeQs.set("end", end);
   const rangeStr = rangeQs.toString();
 
+  const actionCount = (counts.rescue ?? 0) + (counts.cut ?? 0);
+  const actionHref = rangeStr ? `/?${rangeStr}` : "/";
+  const isActionActive = activeTab === "action";
+
   return (
     <div className="tabbar">
+      <Link
+        href={actionHref}
+        className={`tab${isActionActive ? " active" : ""}`}
+      >
+        <span>Action</span>
+        <span className="count">{actionCount}</span>
+      </Link>
       {TABS.map((tab) => {
         const baseHref = tab.utility ? "/explore" : `/?tab=${tab.key}`;
         const href = rangeStr
@@ -66,7 +77,9 @@ export function TabBar({ counts: initialCounts }: { counts: TabCounts }) {
   );
 }
 
-function resolveActiveTab(pathname: string, tabParam: string | null): TabKey | null {
+type ActiveTab = TabKey | "action" | null;
+
+function resolveActiveTab(pathname: string, tabParam: string | null): ActiveTab {
   if (pathname.startsWith("/explore")) return "explore";
   // No tab is active when drilled into a creative; keeps the bar's underline
   // off so the user knows they're outside the cohort browser.
@@ -77,5 +90,6 @@ function resolveActiveTab(pathname: string, tabParam: string | null): TabKey | n
   if (requested && ["scale", "watch", "rescue", "cut"].includes(requested)) {
     return requested;
   }
-  return "scale";
+  // "/" without a tab param → the Action page is the new default landing.
+  return "action";
 }
