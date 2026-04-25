@@ -72,7 +72,7 @@ function prettyField(field: string): string {
 }
 
 function formatValue(v: unknown): string {
-  if (v === null || v === undefined) return "—";
+  if (v === null || v === undefined) return "–";
   if (typeof v === "number") return Number.isInteger(v) ? String(v) : v.toFixed(2);
   if (typeof v === "boolean") return v ? "yes" : "no";
   if (typeof v === "string") return v;

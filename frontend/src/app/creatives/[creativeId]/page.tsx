@@ -148,9 +148,9 @@ export default async function CreativeDetailPage(
           }}
         >
           <header className="row center between">
-            <h3 className="t-section">Daily CTR — fatigue signature</h3>
+            <h3 className="t-section">Daily CTR · fatigue signature</h3>
             <span className="t-micro">
-              Launched day 0 · fatigue flagged day {fatigueDay ?? "—"}
+              Launched day 0 · fatigue flagged day {fatigueDay ?? "–"}
             </span>
           </header>
           <FatigueChart creativeId={id} fatigueDay={fatigueDay} />
@@ -183,5 +183,5 @@ function bandVsLabel(band: string | null, status: string | null): string {
   if (!expectedBand) return "";
   return band === expectedBand
     ? "✓ our trajectory band agrees with Smadex's label"
-    : "✗ diverges from Smadex's label — talking point";
+    : "✗ diverges from Smadex's label · talking point";
 }

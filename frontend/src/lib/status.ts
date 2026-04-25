@@ -44,7 +44,7 @@ export const TABS: { key: TabKey; label: string; urgent: boolean; utility?: bool
 ];
 
 export function statusToVerb(status: string | null | undefined): string {
-  if (!status) return "—";
+  if (!status) return "–";
   if (status in STATUS_TO_VERB) return STATUS_TO_VERB[status as CreativeStatus];
   return status;
 }
@@ -71,7 +71,7 @@ export const BAND_TO_TONE: Record<string, string> = {
 };
 
 export function bandToVerb(band: string | null | undefined): string {
-  if (!band) return "—";
+  if (!band) return "–";
   return BAND_TO_VERB[band] ?? band;
 }
 

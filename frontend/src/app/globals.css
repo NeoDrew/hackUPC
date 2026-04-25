@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* ──────────────────────────────────────────────────────────────
-   Smadex Creative Twin Copilot — design tokens
+   Smadex Creative Twin Copilot · design tokens
    Canonical source: inline <style> in resources/uidesign/Smadex Twin Copilot.html.
    smadex.css and tokens.json are older iterations and superseded.
    ────────────────────────────────────────────────────────────── */
@@ -25,7 +25,7 @@
   --t-3: #8a8496;
   --t-4: #b4afbf;
 
-  /* Accent — used only on active tab, primary CTA, focus, selected. */
+  /* Accent: used only on active tab, primary CTA, focus, selected. */
   --accent: #7e2c8c;
   --accent-soft: rgba(126, 44, 140, 0.08);
   --accent-line: rgba(126, 44, 140, 0.35);
@@ -59,7 +59,7 @@
   --t-tab: 180ms;
   --t-drawer: 240ms;
 
-  /* Type — fonts assigned via next/font in layout.tsx */
+  /* Type: fonts assigned via next/font in layout.tsx */
   --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --font-mono: var(--font-roboto-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 }
@@ -1011,6 +1011,261 @@ a:focus-visible {
 .btn.dense {
   padding: 5px 10px;
   font-size: 12px;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Phone-immersive feed (/m route)
+   Vertical TikTok-style snap-scroll. Each card fills the viewport.
+   ────────────────────────────────────────────────────────────── */
+.phone-shell {
+  position: fixed;
+  inset: 0;
+  background: #0d0a14;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.phone-header {
+  flex: 0 0 auto;
+  padding: 14px 16px 8px;
+  background: rgba(13, 10, 20, 0.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+.phone-header-mark {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.phone-header-mark .mark {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+.phone-header-sub {
+  margin: 4px 0 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+}
+.phone-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 -4px;
+  padding: 0 4px 2px;
+}
+.phone-tab {
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
+}
+.phone-tab.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.phone-feed {
+  flex: 1 1 auto;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.phone-card {
+  position: relative;
+  height: 100dvh;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.phone-card-bg {
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  filter: saturate(1.05);
+  z-index: 0;
+}
+.phone-card-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(13, 10, 20, 0.55) 0%,
+    rgba(13, 10, 20, 0.05) 30%,
+    rgba(13, 10, 20, 0.05) 50%,
+    rgba(13, 10, 20, 0.85) 100%
+  );
+  z-index: 1;
+}
+
+.phone-card-top,
+.phone-card-mid,
+.phone-card-bottom {
+  position: relative;
+  z-index: 2;
+  padding: 16px 18px;
+}
+
+.phone-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-top: max(env(safe-area-inset-top), 16px);
+}
+.phone-card-top .status-pill {
+  background: rgba(255, 255, 255, 0.92);
+  border: 0;
+}
+
+.phone-card-mid {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.phone-card-mid h2 {
+  font-size: 28px;
+  line-height: 32px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: #fff;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.55);
+}
+.phone-meta {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.phone-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 6px;
+}
+.phone-stat {
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.phone-stat-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+}
+.phone-stat-value {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.phone-card-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom), 24px);
+}
+.phone-trend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.phone-trend-label {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+}
+.phone-card .health-ring .val .n {
+  color: #fff;
+}
+.phone-card .health-ring .val .l {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.phone-empty {
+  height: 60vh;
+  display: grid;
+  place-items: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 14px;
+}
+
+/* QR landing for desktop, pointing the judge's phone at /m */
+.qr-landing {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(180deg, #0d0a14 0%, #1a1424 100%);
+  color: #fff;
+  padding: 24px;
+}
+.qr-landing-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 16px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  max-width: 420px;
+  text-align: center;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4);
+}
+.qr-landing-card h1 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: -0.015em;
+}
+.qr-landing-card p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.qr-landing-card .qr-frame {
+  background: #fff;
+  padding: 14px;
+  border-radius: 14px;
+}
+.qr-landing-card .qr-url {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+  word-break: break-all;
 }
 
 /* Skeleton (kept for future loading states) */

@@ -60,9 +60,9 @@ export default async function VariantPage(
   ];
 
   const rationale = [
-    `Mirror the winner's hook type "${winnerData.hook_type ?? ""}" — adjacent combos in the cohort average 2× CVR.`,
+    `Mirror the winner's hook type "${winnerData.hook_type ?? ""}". Adjacent combos in the cohort average 2× CVR.`,
     `Keep clutter score low (${winnerData.clutter_score ?? "<0.3"}). Fatigued creatives in this cohort trend above 0.5.`,
-    `Run at ${winnerData.duration_sec ?? 15}s — the winning duration ceiling in ${twin.segment.format}.`,
+    `Run at ${winnerData.duration_sec ?? 15}s, the winning duration ceiling in ${twin.segment.format}.`,
     `Restate the discount proof; it's the single largest driver of CVR in this vertical.`,
   ];
 
@@ -102,7 +102,7 @@ export default async function VariantPage(
             <PreviewChip />
           </div>
           <h1 className="t-page" style={{ margin: 0 }}>
-            AI-generated variant — {twin.segment.vertical} / {twin.segment.format}
+            AI-generated variant · {twin.segment.vertical} / {twin.segment.format}
           </h1>
           <p className="t-body muted">
             Brief derived from the twin winner. Swap in Gemma + Q3 bandit output once wired.

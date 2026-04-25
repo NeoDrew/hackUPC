@@ -17,7 +17,7 @@ export function KpiTile({
         <span className={`kpi-delta ${delta.direction}`}>{delta.text}</span>
       ) : (
         <span className="kpi-delta" style={{ visibility: "hidden" }}>
-          —
+          –
         </span>
       )}
     </div>

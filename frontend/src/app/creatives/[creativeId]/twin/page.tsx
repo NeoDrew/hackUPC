@@ -25,7 +25,7 @@ const WINNING_PATTERNS: WinningPattern[] = [
     lift: "+29%",
     prevalence: "in 44% of winners",
     trait: "Visible price / discount proof",
-    what: "Concrete value proof beats aspirational copy in this cohort — especially at low-CTR placements.",
+    what: "Concrete value proof beats aspirational copy in this cohort, especially at low-CTR placements.",
   },
   {
     lift: "+21%",
@@ -119,7 +119,7 @@ export default async function TwinPage(
       <VisionInsightCard insight={twin.vision_insight} />
 
       <section className="col gap-2">
-        <h3 className="t-section">Attribute diffs — where the winner pulls ahead</h3>
+        <h3 className="t-section">Attribute diffs · where the winner pulls ahead</h3>
         <DiffTable diffs={twin.diffs} />
       </section>
 

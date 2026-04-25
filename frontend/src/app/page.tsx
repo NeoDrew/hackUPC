@@ -7,18 +7,18 @@ import { TAB_TO_STATUS, type TabKey } from "@/lib/status";
 const TAB_HEADINGS: Record<TabKey, { heading: string; subcopy: string }> = {
   scale: {
     heading: "Creatives recommended to scale",
-    subcopy: "Top performers — increase spend or replicate the winning attributes.",
+    subcopy: "Top performers. Increase spend or replicate the winning attributes.",
   },
   watch: {
     heading: "Stable creatives to watch",
     subcopy: "Maintain current spend; monitor for fatigue or sudden drops.",
   },
   rescue: {
-    heading: "Creatives losing performance — rescue or replace",
+    heading: "Losing performance: rescue or replace",
     subcopy: "These creatives have declining CTR/CVR. Drill in to find the twin and generate a variant.",
   },
   cut: {
-    heading: "Underperformers — cut or rework",
+    heading: "Underperformers: cut or rework",
     subcopy: "Below cohort baseline since launch. Pause or fundamentally redesign.",
   },
   explore: {

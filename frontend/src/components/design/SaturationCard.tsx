@@ -25,7 +25,7 @@ export function SaturationCard({ saturation }: { saturation: Saturation }) {
         <small>
           {cohort} creatives in this advertiser share{" "}
           <strong>{tripleParts.join(" · ")}</strong>
-          {saturation.used_triple ? "" : " (color too sparse — falling back to theme × hook)"}
+          {saturation.used_triple ? "" : " (color too sparse, falling back to theme × hook)"}
           {" · "}
           {saturation.cohort_global_size} cross-portfolio
         </small>
@@ -62,8 +62,8 @@ export function SaturationCard({ saturation }: { saturation: Saturation }) {
       </dl>
       {recommend !== null ? (
         <footer>
-          <strong>Recommend:</strong> consolidate to {recommend} creative{recommend === 1 ? "" : "s"} —
-          near-duplicates risk audience saturation; the cohort already averages{" "}
+          <strong>Recommend:</strong> consolidate to {recommend} creative{recommend === 1 ? "" : "s"}.
+          Near-duplicates risk audience saturation; the cohort already averages{" "}
           {formatPct(saturation.cohort_avg_ctr)} CTR with diminishing returns at scale.
         </footer>
       ) : null}

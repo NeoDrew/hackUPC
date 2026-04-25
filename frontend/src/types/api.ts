@@ -396,7 +396,7 @@ export interface components {
         /**
          * Quadrant
          * @description Diagnostic position of a creative in CTR×CVR space, relative to its
-         *     cohort. Cohort = (vertical, format). Percentiles are raw — they will be
+         *     cohort. Cohort = (vertical, format). Percentiles are raw; they will be
          *     Bayesian-shrunk once Q1 ranking ships, so low-sample creatives no longer
          *     distort the picture.
          */
@@ -416,7 +416,7 @@ export interface components {
          * @description Portfolio-saturation signal: how many creatives in the same advertiser
          *     portfolio share this attribute combo. Triple = (theme, hook_type,
          *     dominant_color); falls back to (theme, hook_type) if the triple cohort is
-         *     too sparse — see ``used_triple``.
+         *     too sparse (see ``used_triple``).
          */
         Saturation: {
             triple: components["schemas"]["SaturationTriple"];

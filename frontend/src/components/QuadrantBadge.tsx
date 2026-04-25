@@ -30,7 +30,7 @@ export function QuadrantBadge({ quadrant }: { quadrant: Quadrant }) {
         </div>
       </dl>
       <footer>
-        Diagnostic only — raw cohort percentile. Will be Bayesian-shrunk once
+        Diagnostic only. Raw cohort percentile, to be Bayesian-shrunk once
         ranking ships.
       </footer>
     </aside>
@@ -38,7 +38,7 @@ export function QuadrantBadge({ quadrant }: { quadrant: Quadrant }) {
 }
 
 function formatPercentile(p: number | null | undefined): string {
-  if (p == null) return "—";
+  if (p == null) return "–";
   return `${Math.round(p * 100)}${ordinalSuffix(Math.round(p * 100))}`;
 }
 

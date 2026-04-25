@@ -51,7 +51,7 @@ export function TimeseriesChart({ creativeId }: { creativeId: number }) {
   return (
     <div data-chart="timeseries">
       <section data-chart-section>
-        <h4>Rates — CTR (left axis) &amp; CVR (right axis)</h4>
+        <h4>Rates · CTR (left axis) &amp; CVR (right axis)</h4>
         <div style={{ width: "100%", height: 220 }}>
           <ResponsiveContainer>
             <LineChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
@@ -104,7 +104,7 @@ export function TimeseriesChart({ creativeId }: { creativeId: number }) {
       </section>
 
       <section data-chart-section>
-        <h4>Volume — impressions (left axis) · clicks &amp; conversions (right axis)</h4>
+        <h4>Volume · impressions (left axis) · clicks &amp; conversions (right axis)</h4>
         <div style={{ width: "100%", height: 220 }}>
           <ResponsiveContainer>
             <LineChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>

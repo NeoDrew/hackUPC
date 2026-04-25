@@ -23,7 +23,7 @@ export function PredictedLift({ rows }: { rows: LiftRow[] }) {
         <h3 className="t-section" style={{ color: "var(--status-top)" }}>
           Predicted lift
         </h3>
-        <span className="t-micro muted">Templated projection — not yet model-backed</span>
+        <span className="t-micro muted">Templated projection · not yet model-backed</span>
       </header>
       <div
         style={{

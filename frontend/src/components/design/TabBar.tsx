@@ -35,7 +35,7 @@ export function TabBar({ counts }: { counts: TabCounts }) {
 
 function resolveActiveTab(pathname: string, tabParam: string | null): TabKey | null {
   if (pathname.startsWith("/explore")) return "explore";
-  // No tab is active when drilled into a creative — keeps the bar's underline
+  // No tab is active when drilled into a creative; keeps the bar's underline
   // off so the user knows they're outside the cohort browser.
   if (pathname.startsWith("/creatives/") || pathname.startsWith("/debug/")) {
     return null;
