@@ -19,6 +19,8 @@ export type Quadrant = components["schemas"]["Quadrant"];
 export type Saturation = components["schemas"]["Saturation"];
 export type CreativeListResponse =
   components["schemas"]["CreativeListResponse"];
+export type SearchHit = components["schemas"]["SearchHit"];
+export type SearchResponse = components["schemas"]["SearchResponse"];
 export type CreativeTimeseries = components["schemas"]["CreativeTimeseries"];
 export type TimeseriesPoint = components["schemas"]["TimeseriesPoint"];
 export type CreativeRow = components["schemas"]["CreativeRow"];
@@ -46,10 +48,17 @@ export interface ListCreativesArgs {
   sort?: string;
   desc?: boolean;
   limit?: number;
+  start?: string;
+  end?: string;
+}
+
+export interface DateRange {
+  start?: string;
+  end?: string;
 }
 
 function buildQuery(
-  params: Record<string, string | number | boolean | undefined>,
+  params: Record<string, string | number | boolean | undefined> | object,
 ): string {
   const out = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) {
@@ -74,21 +83,28 @@ export const api = {
     ),
 
   // Cockpit / portfolio.
-  portfolioKpis: () => fetchJSON<PortfolioKPIs>("/api/portfolio/kpis"),
-  tabCounts: () => fetchJSON<TabCounts>("/api/portfolio/tab-counts"),
-  healthDiagnostics: () =>
-    fetchJSON<HealthDiagnostics>("/api/portfolio/health-diagnostics"),
+  portfolioKpis: (range: DateRange = {}) =>
+    fetchJSON<PortfolioKPIs>(`/api/portfolio/kpis${buildQuery(range)}`),
+  tabCounts: (range: DateRange = {}) =>
+    fetchJSON<TabCounts>(`/api/portfolio/tab-counts${buildQuery(range)}`),
   listCreatives: (args: ListCreativesArgs = {}) =>
     fetchJSON<CreativeListResponse>(
       `/api/creatives${buildQuery(args as Record<string, string | number | boolean | undefined>)}`,
     ),
 
   // Drawer / detail.
-  getCreative: (id: number) =>
-    fetchJSON<CreativeDetail>(`/api/creatives/${id}`),
+  getCreative: (id: number, range: DateRange = {}) =>
+    fetchJSON<CreativeDetail>(`/api/creatives/${id}${buildQuery(range)}`),
   getCreativeTimeseries: (id: number) =>
     fetchJSON<CreativeTimeseries>(`/api/creatives/${id}/timeseries`),
 
-  // Twin (stub).
-  getTwin: (id: number) => fetchJSON<TwinSummary>(`/api/creatives/${id}/twin`),
+  // Twin.
+  getTwin: (id: number, range: DateRange = {}) =>
+    fetchJSON<TwinSummary>(`/api/creatives/${id}/twin${buildQuery(range)}`),
+
+  // Search.
+  search: (q: string, limit = 8) =>
+    fetchJSON<SearchResponse>(
+      `/api/search?q=${encodeURIComponent(q)}&limit=${limit}`,
+    ),
 };

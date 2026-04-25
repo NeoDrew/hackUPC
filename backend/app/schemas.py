@@ -216,6 +216,26 @@ class CreativeRow(BaseModel):
     asset_file: str
 
 
+class SearchHit(BaseModel):
+    creative_id: int
+    headline: str | None = None
+    advertiser_name: str | None = None
+    vertical: str | None = None
+    format: str | None = None
+    status: str | None = None
+    status_band: str | None = None
+    health: int | None = None
+    asset_file: str | None = None
+    theme: str | None = None
+    hook_type: str | None = None
+    score: float
+
+
+class SearchResponse(BaseModel):
+    query: str
+    hits: list[SearchHit]
+
+
 class CreativeListResponse(BaseModel):
     """Paginated wrapper for ``/api/creatives``. Total reflects the count
     *after filters but before limit*, so callers can render a

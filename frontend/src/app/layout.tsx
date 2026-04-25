@@ -3,6 +3,7 @@ import { Inter, Roboto_Mono } from "next/font/google";
 
 import "./globals.css";
 
+import { ChatLauncher } from "@/components/design/ChatLauncher";
 import { DesktopChrome, PhoneOnly } from "@/components/design/DesktopChrome";
 import { TopBar } from "@/components/design/TopBar";
 import { TabBar } from "@/components/design/TabBar";
@@ -46,6 +47,7 @@ export default async function RootLayout({
           <main className="page-pad">{children}</main>
         </DesktopChrome>
         <PhoneOnly>{children}</PhoneOnly>
+        <ChatLauncher />
       </body>
     </html>
   );

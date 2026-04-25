@@ -1,6 +1,9 @@
+import { Suspense } from "react";
+
 import { api } from "@/lib/api";
-import { KpiTile } from "@/components/design/KpiTile";
 import { CreativeTable } from "@/components/design/CreativeTable";
+import { CreativeTableSkeleton } from "@/components/design/CreativeTableSkeleton";
+import { KpiTile } from "@/components/design/KpiTile";
 import { formatCount, formatCurrency, formatPct, formatRoas } from "@/lib/format";
 import { TAB_TO_STATUS, type TabKey } from "@/lib/status";
 
@@ -30,23 +33,29 @@ const TAB_HEADINGS: Record<TabKey, { heading: string; subcopy: string }> = {
 interface CockpitSearchParams {
   tab?: string;
   limit?: string;
+  sort?: string;
+  desc?: string;
+  start?: string;
+  end?: string;
 }
 
 const PAGE_SIZE = 100;
+const SORTABLE = new Set(["ctr", "cvr", "roas", "spend_usd", "days_active", "health"]);
 
 export default async function Cockpit(props: {
   searchParams: Promise<CockpitSearchParams>;
 }) {
-  const { tab: rawTab, limit: rawLimit } = await props.searchParams;
-  const tab = normalizeTab(rawTab);
-  const limit = clampLimit(rawLimit);
-  const [kpis, listing] = await Promise.all([
-    api.portfolioKpis(),
-    api.listCreatives({ tab, limit }),
-  ]);
+  const params = await props.searchParams;
+  const tab = normalizeTab(params.tab);
+  const limit = clampLimit(params.limit);
+  const sort = params.sort && SORTABLE.has(params.sort) ? params.sort : undefined;
+  const desc = params.desc !== "false";
+  const start = params.start;
+  const end = params.end;
+  // KPIs depend on the date range; tab-independent so fetched in the parent.
+  const kpis = await api.portfolioKpis({ start, end });
   const headings = TAB_HEADINGS[tab];
-  const total = listing.total;
-  const shown = listing.rows.length;
+  const suspenseKey = `${tab}|${sort ?? ""}|${desc ? "d" : "a"}|${limit}|${start ?? ""}|${end ?? ""}`;
   return (
     <>
       <section className="kpi-strip">
@@ -60,27 +69,83 @@ export default async function Cockpit(props: {
           urgent
         />
       </section>
-      <CreativeTable
-        rows={listing.rows}
-        heading={headings.heading}
-        subcopy={headings.subcopy}
-        from={tab}
-        footer={
-          shown < total ? (
-            <ShowMoreFooter
-              tab={tab}
-              shown={shown}
-              total={total}
-              currentLimit={limit}
-            />
-          ) : (
-            <p className="t-micro muted" style={{ padding: "10px 16px" }}>
-              Showing all {total} creatives in this view.
-            </p>
-          )
+      <Suspense
+        key={suspenseKey}
+        fallback={
+          <CreativeTableSkeleton
+            heading={headings.heading}
+            subcopy={headings.subcopy}
+          />
         }
-      />
+      >
+        <CockpitTable tab={tab} limit={limit} sort={sort} desc={desc} start={start} end={end} />
+      </Suspense>
     </>
+  );
+}
+
+async function CockpitTable({
+  tab,
+  limit,
+  sort,
+  desc,
+  start,
+  end,
+}: {
+  tab: TabKey;
+  limit: number;
+  sort?: string;
+  desc: boolean;
+  start?: string;
+  end?: string;
+}) {
+  const listing = await api.listCreatives({ tab, limit, sort, desc, start, end });
+  const headings = TAB_HEADINGS[tab];
+  const total = listing.total;
+  const shown = listing.rows.length;
+  const buildSortHref = (key: string) => {
+    // 3-click cycle: off → asc → desc → off
+    const next: Record<string, string> = { tab };
+    if (limit !== PAGE_SIZE) next.limit = String(limit);
+    if (sort !== key) {
+      next.sort = key;
+      next.desc = "false";
+    } else if (!desc) {
+      next.sort = key;
+      next.desc = "true";
+    }
+    if (start) next.start = start;
+    if (end) next.end = end;
+    const qp = new URLSearchParams(next).toString();
+    return `/?${qp}`;
+  };
+  return (
+    <CreativeTable
+      rows={listing.rows}
+      heading={headings.heading}
+      subcopy={headings.subcopy}
+      from={tab}
+      range={{ start, end }}
+      sortState={{ sort, desc, buildHref: buildSortHref }}
+      footer={
+        shown < total ? (
+          <ShowMoreFooter
+            tab={tab}
+            shown={shown}
+            total={total}
+            currentLimit={limit}
+            sort={sort}
+            desc={desc}
+            start={start}
+            end={end}
+          />
+        ) : (
+          <p className="t-micro muted" style={{ padding: "10px 16px" }}>
+            Showing all {total} creatives in this view.
+          </p>
+        )
+      }
+    />
   );
 }
 
@@ -89,14 +154,29 @@ function ShowMoreFooter({
   shown,
   total,
   currentLimit,
+  sort,
+  desc,
+  start,
+  end,
 }: {
   tab: TabKey;
   shown: number;
   total: number;
   currentLimit: number;
+  sort?: string;
+  desc: boolean;
+  start?: string;
+  end?: string;
 }) {
   const next = Math.min(currentLimit + PAGE_SIZE, total);
-  const href = `/?tab=${tab}&limit=${next}`;
+  const params: Record<string, string> = { tab, limit: String(next) };
+  if (sort) {
+    params.sort = sort;
+    params.desc = desc ? "true" : "false";
+  }
+  if (start) params.start = start;
+  if (end) params.end = end;
+  const href = `/?${new URLSearchParams(params).toString()}`;
   return (
     <div
       className="row between center"

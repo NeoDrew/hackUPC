@@ -42,16 +42,24 @@ export default async function TwinPage(
   const id = Number(creativeId);
   if (!Number.isFinite(id)) notFound();
 
+  const sp = await props.searchParams;
+  const start = typeof sp?.start === "string" ? sp.start : undefined;
+  const end = typeof sp?.end === "string" ? sp.end : undefined;
+  const rangeQs = new URLSearchParams();
+  if (start) rangeQs.set("start", start);
+  if (end) rangeQs.set("end", end);
+  const rangeSuffix = rangeQs.toString() ? `?${rangeQs.toString()}` : "";
+
   let twin;
   try {
-    twin = await api.getTwin(id);
+    twin = await api.getTwin(id, { start, end });
   } catch {
     notFound();
   }
 
   const [source, winner] = await Promise.all([
-    api.getCreative(twin.fatigued_id),
-    api.getCreative(twin.winner_id),
+    api.getCreative(twin.fatigued_id, { start, end }),
+    api.getCreative(twin.winner_id, { start, end }),
   ]);
 
   return (
@@ -62,7 +70,7 @@ export default async function TwinPage(
       <header className="row between center" style={{ flexWrap: "wrap", gap: 12 }}>
         <div className="col gap-1">
           <div className="row center gap-3">
-            <Link href={`/creatives/${id}`} className="btn dense">
+            <Link href={`/creatives/${id}${rangeSuffix}`} className="btn dense">
               ← Back to detail
             </Link>
             <span className="filter-chip">
@@ -80,7 +88,7 @@ export default async function TwinPage(
           <button className="btn dense" type="button">
             Save
           </button>
-          <Link href={`/creatives/${id}/variant`} className="btn primary">
+          <Link href={`/creatives/${id}/variant${rangeSuffix}`} className="btn primary">
             Generate next variant →
           </Link>
         </div>

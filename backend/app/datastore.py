@@ -5,6 +5,7 @@ import math
 from dataclasses import dataclass, field
 from typing import Any
 
+import numpy as np
 import pandas as pd
 
 from .config import (
@@ -115,6 +116,7 @@ class Datastore:
         self._compute_quadrants()
         self._compute_flat_rows()
         self._compute_saturation()
+        self._compute_creative_vectors()
         self._compute_portfolio_aggregates()
         self._verify_counts()
 

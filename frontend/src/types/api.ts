@@ -38,15 +38,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/portfolio/health-diagnostics": {
+    "/api/search": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get Health Diagnostics */
-        get: operations["get_health_diagnostics_api_portfolio_health_diagnostics_get"];
+        /** Search */
+        get: operations["search_api_search_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -208,6 +208,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/agent/chat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Chat */
+        post: operations["chat_api_agent_chat_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/agent/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Status */
+        get: operations["status_api_agent_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -272,6 +306,22 @@ export interface components {
             daily_budget_usd: number;
             /** Kpi Goal */
             kpi_goal: string;
+        };
+        /** ChatMessage */
+        ChatMessage: {
+            /** Role */
+            role: string;
+            /** Content */
+            content: string;
+        };
+        /** ChatRequest */
+        ChatRequest: {
+            /** Messages */
+            messages: components["schemas"]["ChatMessage"][];
+            /** Context */
+            context?: {
+                [key: string]: unknown;
+            } | null;
         };
         /** CohortKeys */
         CohortKeys: {
@@ -544,6 +594,40 @@ export interface components {
             /** Dominant Color */
             dominant_color: string | null;
         };
+        /** SearchHit */
+        SearchHit: {
+            /** Creative Id */
+            creative_id: number;
+            /** Headline */
+            headline?: string | null;
+            /** Advertiser Name */
+            advertiser_name?: string | null;
+            /** Vertical */
+            vertical?: string | null;
+            /** Format */
+            format?: string | null;
+            /** Status */
+            status?: string | null;
+            /** Status Band */
+            status_band?: string | null;
+            /** Health */
+            health?: number | null;
+            /** Asset File */
+            asset_file?: string | null;
+            /** Theme */
+            theme?: string | null;
+            /** Hook Type */
+            hook_type?: string | null;
+            /** Score */
+            score: number;
+        };
+        /** SearchResponse */
+        SearchResponse: {
+            /** Query */
+            query: string;
+            /** Hits */
+            hits: components["schemas"]["SearchHit"][];
+        };
         /** TabCounts */
         TabCounts: {
             /** Scale */
@@ -697,6 +781,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthDiagnostics"];
+                };
+            };
+        };
+    };
+    search_api_search_get: {
+        parameters: {
+            query: {
+                /** @description Search query */
+                q: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -972,6 +1089,61 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    chat_api_agent_chat_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    status_api_agent_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
         };

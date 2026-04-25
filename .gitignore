@@ -1,6 +1,12 @@
-# Smadex dataset (large, re-download from sponsor if needed)
-resources/smadex/Smadex_Creative_Intelligence_Dataset_FULL/
+# Smadex dataset zip (we ship the unpacked CSVs + assets in-repo for deploy)
 resources/smadex/Smadex_Creative_Intelligence_Dataset_FULL.zip
 
 # macOS
 .DS_Store
+
+# Backend secrets / env
+backend/.env
+
+# Build output
+frontend/.next/
+frontend/.vercel/

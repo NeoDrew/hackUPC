@@ -6,10 +6,21 @@ import { formatCount, formatCurrency, formatDays, formatPct, formatRoas } from "
 import { Sparkline } from "./Sparkline";
 import { HealthRing } from "./HealthRing";
 
-export function CreativeRow({ row, from }: { row: CreativeRowT; from?: string }) {
-  const href = from
-    ? `/creatives/${row.creative_id}?from=${encodeURIComponent(from)}`
-    : `/creatives/${row.creative_id}`;
+export function CreativeRow({
+  row,
+  from,
+  range,
+}: {
+  row: CreativeRowT;
+  from?: string;
+  range?: { start?: string; end?: string };
+}) {
+  const qp = new URLSearchParams();
+  if (from) qp.set("from", from);
+  if (range?.start) qp.set("start", range.start);
+  if (range?.end) qp.set("end", range.end);
+  const qs = qp.toString();
+  const href = qs ? `/creatives/${row.creative_id}?${qs}` : `/creatives/${row.creative_id}`;
   return (
     <Link href={href} className="creative-row" prefetch={false}>
       <div className="thumb">
