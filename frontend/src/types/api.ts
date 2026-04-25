@@ -540,6 +540,11 @@ export interface components {
             cvr: number;
             /** Attention Count */
             attention_count: number;
+            /** Daily KPI series for sparklines (one entry per day in active window) */
+            spend_series?: number[];
+            ctr_series?: number[];
+            cvr_series?: number[];
+            roas_series?: number[];
         };
         /**
          * Quadrant

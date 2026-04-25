@@ -97,7 +97,7 @@ export function SearchInput() {
         ref={inputRef}
         className="search"
         type="text"
-        placeholder="Search creatives, advertisers, themes…"
+        placeholder="Search creatives by ID, advertiser, or theme"
         value={query}
         onChange={(e) => {
           setQuery(e.target.value);

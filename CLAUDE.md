@@ -77,6 +77,7 @@ FastAPI + Next.js web app with three tabs mapped to the brief's five capabilitie
 
 - **`resources/taskInfo/strategy.md` is the living plan.** Update it when decisions change — don't just reply in chat.
 - **`resources/smadex/dataset_notes.md` is the data reference.** Update it the moment you discover a new gotcha.
+- **`resources/uidesign/HOUSE_RULES.md` is the UI rulebook.** Lucide icons only (no emoji as chrome), accent color reserved for active state + primary action, neutral-by-default controls, 6/8/10 px radius scale, `**This product is a trading cockpit for media buyers — operational, dense, calm, expensive; never cute, magical, or eager.**`
 - **Keep teammate files in sync with reality.** If skills or responsibilities shift, update `resources/teamInfo/*.txt`.
 - **Don't re-scrape LinkedIn or the live page** without reason. Distilled summaries exist.
 

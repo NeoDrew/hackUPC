@@ -58,6 +58,9 @@ export default async function Cockpit(props: {
   const tableKey = `${tab}|${sort ?? ""}|${desc ? "d" : "a"}|${limit}|${rangeKey}`;
   return (
     <>
+      <Suspense key={`hero|${rangeKey}`} fallback={null}>
+        <CockpitHero />
+      </Suspense>
       <Suspense key={rangeKey} fallback={<KpiStripSkeleton />}>
         <KpiStrip start={start} end={end} />
       </Suspense>
@@ -76,14 +79,36 @@ export default async function Cockpit(props: {
   );
 }
 
+async function CockpitHero() {
+  const counts = await api.tabCounts();
+  const refreshedMinutes = 2; // synthetic; replace with real refresh timestamp later
+  return (
+    <section className="cockpit-hero">
+      <div className="col gap-1">
+        <h1 className="cockpit-hero-title">Hi Maya, here&apos;s your portfolio</h1>
+        <p className="cockpit-hero-sub">
+          <strong>{counts.scale}</strong> to scale ·{" "}
+          <strong>{counts.rescue}</strong> to rescue ·{" "}
+          <strong>{counts.cut}</strong> to cut · last refresh{" "}
+          {refreshedMinutes} min ago
+        </p>
+      </div>
+    </section>
+  );
+}
+
 async function KpiStrip({ start, end }: { start?: string; end?: string }) {
   const kpis = await api.portfolioKpis({ start, end });
   return (
     <section className="kpi-strip">
-      <KpiTile label="ROAS" value={formatRoas(kpis.roas)} />
-      <KpiTile label="Spend" value={formatCurrency(kpis.total_spend_usd, { compact: true })} />
-      <KpiTile label="CTR" value={formatPct(kpis.ctr, 2)} />
-      <KpiTile label="CVR" value={formatPct(kpis.cvr, 1)} />
+      <KpiTile label="ROAS" value={formatRoas(kpis.roas)} series={kpis.roas_series} />
+      <KpiTile
+        label="Spend"
+        value={formatCurrency(kpis.total_spend_usd, { compact: true })}
+        series={kpis.spend_series}
+      />
+      <KpiTile label="CTR" value={formatPct(kpis.ctr, 2)} series={kpis.ctr_series} />
+      <KpiTile label="CVR" value={formatPct(kpis.cvr, 1)} series={kpis.cvr_series} />
       <KpiTile
         label="Need attention"
         value={formatCount(kpis.attention_count)}
@@ -134,6 +159,8 @@ async function CockpitTable({
       heading={headings.heading}
       subcopy={headings.subcopy}
       from={tab}
+      tab={tab}
+      total={total}
       range={{ start, end }}
       sortState={{ sort, desc, buildHref: buildSortHref }}
       footer={

@@ -17,21 +17,21 @@ export function Sparkline({
     return <svg className="sparkline" width={width} height={height} aria-hidden />;
   }
 
-  // Right-align: series shorter than the design's 30 sits at the right.
+  // Right-align short series in a 30-slot logical window (table sparklines
+  // assume daily-ish density). For longer series (KPI tile spans the whole
+  // active window), distribute points evenly across the full width.
   const max = Math.max(...series);
   const min = Math.min(...series);
   const range = Math.max(1e-9, max - min);
   const n = series.length;
-  // We assume a logical width of 30 slots; if the series is shorter, plot it
-  // starting at slot (30 - n).
   const slots = 30;
-  const stepX = width / (slots - 1);
+  const useFullWidth = n >= slots;
+  const stepX = useFullWidth ? width / Math.max(1, n - 1) : width / (slots - 1);
 
   const points = series.map((v, i) => {
-    const slot = slots - n + i;
-    const x = slot * stepX;
+    const x = useFullWidth ? i * stepX : (slots - n + i) * stepX;
     const y = height - ((v - min) / range) * (height - 2) - 1;
-    return { x, y, slot };
+    return { x, y, slot: i };
   });
 
   const linePath = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
@@ -47,9 +47,22 @@ export function Sparkline({
   }
 
   return (
-    <svg className="sparkline" width={width} height={height} aria-hidden>
+    <svg
+      className="sparkline"
+      width={width}
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio="none"
+      aria-hidden
+    >
       <path d={areaPath} fill={fill} stroke="none" />
-      <path d={linePath} fill="none" stroke={stroke} strokeWidth={1.5} />
+      <path
+        d={linePath}
+        fill="none"
+        stroke={stroke}
+        strokeWidth={1.5}
+        vectorEffect="non-scaling-stroke"
+      />
       {fatigueDot && (
         <circle cx={fatigueDot.x} cy={fatigueDot.y} r={2.2} fill="var(--status-cut)" />
       )}

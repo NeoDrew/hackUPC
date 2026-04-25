@@ -2,6 +2,7 @@
 
 import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ChevronDown, Mic, Square } from "lucide-react";
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8001";
 
@@ -201,11 +202,11 @@ export function ChatLauncher() {
       <button
         type="button"
         className="chat-launcher"
-        aria-label="Ask Smadex Copilot"
+        aria-label="Open assistant"
         onClick={beginOpen}
       >
         <span className="chat-launcher-glyph">✦</span>
-        <span className="chat-launcher-label">Ask Copilot</span>
+        <span className="chat-launcher-label">Open assistant</span>
       </button>
     );
   }
@@ -214,14 +215,14 @@ export function ChatLauncher() {
     <section
       className="chat-panel"
       role="dialog"
-      aria-label="Smadex Copilot chat"
+      aria-label="Assistant"
       data-state={panelState}
       data-expanded={expanded ? "true" : undefined}
     >
       <header className="chat-panel-head">
         <span className="chat-panel-title">
           <span className="chat-launcher-glyph small">✦</span>
-          Smadex Copilot
+          Assistant
           <span className="chat-panel-sub">Gemini 2.5 Flash · grounded on portfolio data</span>
         </span>
         <div className="chat-panel-actions">
@@ -291,7 +292,11 @@ export function ChatLauncher() {
             onClick={() => (dictation.listening ? dictation.stop() : dictation.start())}
             disabled={streaming}
           >
-            {dictation.listening ? "■" : "🎙"}
+            {dictation.listening ? (
+              <Square size={12} strokeWidth={2} fill="currentColor" aria-hidden />
+            ) : (
+              <Mic size={14} strokeWidth={1.75} aria-hidden />
+            )}
           </button>
         ) : null}
         <button
@@ -340,7 +345,7 @@ function ToolCallChip({ call }: { call: ToolCall }) {
         <span className="chat-tool-name">{call.name}</span>
         {argSummary ? <span className="chat-tool-args">{argSummary}</span> : null}
         <span className="chat-tool-state" aria-hidden>
-          {hasResult ? "▾" : "…"}
+          {hasResult ? <ChevronDown size={12} strokeWidth={1.75} /> : "…"}
         </span>
       </summary>
       {hasResult ? (

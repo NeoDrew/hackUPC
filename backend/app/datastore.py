@@ -606,6 +606,32 @@ class Datastore:
                 band_counts[band] += 1
         attention = int(band_counts["rescue"] + band_counts["cut"])
 
+        # Daily aggregates over the full date range for KPI sparklines.
+        daily_agg = (
+            self.daily.groupby("date", as_index=False)
+            .agg(
+                impressions=("impressions", "sum"),
+                clicks=("clicks", "sum"),
+                conversions=("conversions", "sum"),
+                spend_usd=("spend_usd", "sum"),
+                revenue_usd=("revenue_usd", "sum"),
+            )
+            .sort_values("date")
+        )
+        spend_series = [float(v) for v in daily_agg["spend_usd"].tolist()]
+        ctr_series = [
+            (float(c) / float(i)) if i else 0.0
+            for c, i in zip(daily_agg["clicks"], daily_agg["impressions"])
+        ]
+        cvr_series = [
+            (float(c) / float(k)) if k else 0.0
+            for c, k in zip(daily_agg["conversions"], daily_agg["clicks"])
+        ]
+        roas_series = [
+            (float(r) / float(s_)) if s_ else 0.0
+            for r, s_ in zip(daily_agg["revenue_usd"], daily_agg["spend_usd"])
+        ]
+
         self.portfolio_kpis = {
             "total_spend_usd": total_spend,
             "total_revenue_usd": total_revenue,
@@ -613,6 +639,10 @@ class Datastore:
             "ctr": (total_clicks / total_impressions) if total_impressions else 0.0,
             "cvr": (total_conversions / total_clicks) if total_clicks else 0.0,
             "attention_count": attention,
+            "spend_series": spend_series,
+            "ctr_series": ctr_series,
+            "cvr_series": cvr_series,
+            "roas_series": roas_series,
         }
 
         self.tab_counts = {

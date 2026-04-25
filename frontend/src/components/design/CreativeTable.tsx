@@ -1,7 +1,9 @@
 import Link from "next/link";
 
 import type { CreativeRow as CreativeRowT } from "@/lib/api";
+import type { TabKey } from "@/lib/status";
 import { CreativeRow } from "./CreativeRow";
+import { FilterRow } from "./FilterRow";
 
 export interface SortState {
   sort?: string;
@@ -30,6 +32,8 @@ export function CreativeTable({
   range,
   footer,
   sortState,
+  tab,
+  total,
 }: {
   rows: CreativeRowT[];
   heading?: string;
@@ -38,6 +42,8 @@ export function CreativeTable({
   range?: { start?: string; end?: string };
   footer?: React.ReactNode;
   sortState?: SortState;
+  tab?: TabKey;
+  total?: number;
 }) {
   return (
     <section className="col gap-3">
@@ -48,6 +54,14 @@ export function CreativeTable({
             {subcopy ? <p className="t-body muted">{subcopy}</p> : null}
           </div>
         </header>
+      ) : null}
+      {tab ? (
+        <FilterRow
+          tab={tab}
+          start={range?.start}
+          end={range?.end}
+          total={total ?? rows.length}
+        />
       ) : null}
       <div className="creative-table">
         <div className="creative-thead">
