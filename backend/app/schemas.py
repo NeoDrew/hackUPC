@@ -78,6 +78,51 @@ class Saturation(BaseModel):
     recommend_consolidate_to: int | None = None
 
 
+class HealthComponents(BaseModel):
+    """Q1 evidence-based health metric components, each clamped to [0, 1].
+
+    S = posterior strength, C = confidence, T = trend, R = cohort rank,
+    E = efficiency, B = reliability bonus.
+    """
+
+    S: float
+    C: float
+    T: float
+    R: float
+    E: float
+    B: float
+
+
+class HealthBreakdown(BaseModel):
+    """Transparent payload behind the 0-100 Q1 health score.
+
+    ``components`` contains the six normalized inputs; ``weights`` and
+    ``contributions`` make the frontend explanation deterministic.
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    health: int
+    status_band: str
+    objective_mode: str
+    kpi_goal: str | None = None
+    components: HealthComponents
+    weights: dict[str, float]
+    contributions: dict[str, float]
+    cohort: dict[str, Any]
+    raw: dict[str, Any]
+
+
+class HealthDiagnostics(BaseModel):
+    """Startup validation checks for Q1 before UI rollout."""
+
+    model_config = ConfigDict(extra="allow")
+
+    ablation: dict[str, Any]
+    distribution: dict[str, Any]
+    sanity: dict[str, Any]
+
+
 class CreativeListItem(BaseModel):
     creative_id: int
     campaign_id: int
@@ -107,6 +152,8 @@ class CreativeDetail(BaseModel):
     saturation: Saturation | None = None
     health: int | None = None
     status_band: str | None = None
+    health_components: HealthComponents | None = None
+    health_breakdown: HealthBreakdown | None = None
 
 
 class TimeseriesPoint(BaseModel):
@@ -162,6 +209,8 @@ class CreativeRow(BaseModel):
     revenue_usd: float
     days_active: int
     health: int
+    health_components: HealthComponents | None = None
+    health_breakdown: HealthBreakdown | None = None
     sparkline: list[float]
     fatigue_day: int | None = None
     asset_file: str

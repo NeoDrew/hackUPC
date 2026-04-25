@@ -17,12 +17,16 @@ export type CreativeListItem = components["schemas"]["CreativeListItem"];
 export type CreativeDetail = components["schemas"]["CreativeDetail"];
 export type Quadrant = components["schemas"]["Quadrant"];
 export type Saturation = components["schemas"]["Saturation"];
-export type CreativeListResponse = components["schemas"]["CreativeListResponse"];
+export type CreativeListResponse =
+  components["schemas"]["CreativeListResponse"];
 export type CreativeTimeseries = components["schemas"]["CreativeTimeseries"];
 export type TimeseriesPoint = components["schemas"]["TimeseriesPoint"];
 export type CreativeRow = components["schemas"]["CreativeRow"];
 export type PortfolioKPIs = components["schemas"]["PortfolioKPIs"];
 export type TabCounts = components["schemas"]["TabCounts"];
+export type HealthComponents = components["schemas"]["HealthComponents"];
+export type HealthBreakdown = components["schemas"]["HealthBreakdown"];
+export type HealthDiagnostics = components["schemas"]["HealthDiagnostics"];
 export type TwinSummary = components["schemas"]["TwinSummary"];
 export type TwinDiff = components["schemas"]["TwinDiff"];
 export type VisionInsight = components["schemas"]["VisionInsight"];
@@ -44,7 +48,9 @@ export interface ListCreativesArgs {
   limit?: number;
 }
 
-function buildQuery(params: Record<string, string | number | boolean | undefined>): string {
+function buildQuery(
+  params: Record<string, string | number | boolean | undefined>,
+): string {
   const out = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) {
     if (v === undefined || v === null || v === "") continue;
@@ -57,23 +63,29 @@ function buildQuery(params: Record<string, string | number | boolean | undefined
 export const api = {
   // Legacy hierarchical browser (kept for /debug/ routes).
   listAdvertisers: () => fetchJSON<AdvertisersResponse>("/api/advertisers"),
-  getAdvertiser: (id: number) => fetchJSON<Advertiser>(`/api/advertisers/${id}`),
+  getAdvertiser: (id: number) =>
+    fetchJSON<Advertiser>(`/api/advertisers/${id}`),
   listCampaigns: (advertiserId: number) =>
     fetchJSON<CampaignsResponse>(`/api/advertisers/${advertiserId}/campaigns`),
   getCampaign: (id: number) => fetchJSON<Campaign>(`/api/campaigns/${id}`),
   listCreativesForCampaign: (campaignId: number) =>
-    fetchJSON<CampaignCreativesResponse>(`/api/campaigns/${campaignId}/creatives`),
+    fetchJSON<CampaignCreativesResponse>(
+      `/api/campaigns/${campaignId}/creatives`,
+    ),
 
   // Cockpit / portfolio.
   portfolioKpis: () => fetchJSON<PortfolioKPIs>("/api/portfolio/kpis"),
   tabCounts: () => fetchJSON<TabCounts>("/api/portfolio/tab-counts"),
+  healthDiagnostics: () =>
+    fetchJSON<HealthDiagnostics>("/api/portfolio/health-diagnostics"),
   listCreatives: (args: ListCreativesArgs = {}) =>
     fetchJSON<CreativeListResponse>(
       `/api/creatives${buildQuery(args as Record<string, string | number | boolean | undefined>)}`,
     ),
 
   // Drawer / detail.
-  getCreative: (id: number) => fetchJSON<CreativeDetail>(`/api/creatives/${id}`),
+  getCreative: (id: number) =>
+    fetchJSON<CreativeDetail>(`/api/creatives/${id}`),
   getCreativeTimeseries: (id: number) =>
     fetchJSON<CreativeTimeseries>(`/api/creatives/${id}/timeseries`),
 

@@ -45,7 +45,9 @@ def list_creatives_for_campaign(
     store: Datastore, campaign_id: int
 ) -> list[dict[str, Any]]:
     rows = store.creatives[store.creatives["campaign_id"] == campaign_id]
-    summary = store.creative_summary.set_index("creative_id")["creative_status"].to_dict()
+    summary = store.creative_summary.set_index("creative_id")[
+        "creative_status"
+    ].to_dict()
     out: list[dict[str, Any]] = []
     for _, row in rows.iterrows():
         creative_id = int(row["creative_id"])
@@ -64,9 +66,7 @@ def list_creatives_for_campaign(
     return out
 
 
-def get_creative_detail(
-    store: Datastore, creative_id: int
-) -> dict[str, Any] | None:
+def get_creative_detail(store: Datastore, creative_id: int) -> dict[str, Any] | None:
     record = store.creative_detail.get(creative_id)
     if record is None:
         return None
@@ -85,12 +85,7 @@ def get_creative_timeseries(
 # --- Cockpit / portfolio queries ---
 
 
-_STATUS_TAB_MAP: dict[str, str] = {
-    "scale": "top_performer",
-    "watch": "stable",
-    "rescue": "fatigued",
-    "cut": "underperformer",
-}
+_STATUS_BANDS = {"scale", "watch", "rescue", "cut"}
 
 _ROW_SORTABLE = {
     "ctr",
@@ -114,6 +109,10 @@ def tab_counts(store: Datastore) -> dict[str, int]:
     return store.tab_counts
 
 
+def health_diagnostics(store: Datastore) -> dict[str, Any]:
+    return store.health_diagnostics
+
+
 def list_creatives_flat(
     store: Datastore,
     *,
@@ -134,10 +133,9 @@ def list_creatives_flat(
     rows = list(store.flat_row_by_creative.values())
 
     if tab and tab != "explore":
-        target = _STATUS_TAB_MAP.get(tab)
-        if target is None:
+        if tab not in _STATUS_BANDS:
             return {"rows": [], "total": 0, "limit": limit}
-        rows = [r for r in rows if r["status"] == target]
+        rows = [r for r in rows if r.get("status_band") == tab]
     elif status:
         rows = [r for r in rows if r["status"] == status]
 

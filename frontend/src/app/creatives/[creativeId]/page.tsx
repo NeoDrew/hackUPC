@@ -10,6 +10,7 @@ import { MetadataPills } from "@/components/design/MetadataPills";
 import { PerformanceGrid } from "@/components/design/PerformanceGrid";
 import { FatigueChart } from "@/components/design/FatigueChart";
 import { SaturationCard } from "@/components/design/SaturationCard";
+import { HealthBreakdownCard } from "@/components/design/HealthBreakdownCard";
 
 const VALID_FROM = new Set(["scale", "watch", "rescue", "cut", "explore"]);
 
@@ -32,15 +33,27 @@ export default async function CreativeDetailPage(
   } catch {
     notFound();
   }
-  const data = creative as unknown as Record<string, number | string | null | undefined>;
+  const data = creative as unknown as Record<string, unknown>;
   const health = (creative.health as number | null) ?? 0;
   const status = (data.creative_status as string | null) ?? null;
   const band = (creative.status_band as string | null) ?? null;
   const fatigueDay = (data.fatigue_day as number | null) ?? null;
 
   return (
-    <section className="col gap-5" style={{ paddingTop: 16, maxWidth: 1040, margin: "0 auto" }}>
-      <div className="row center between" style={{ position: "sticky", top: 0, zIndex: 5, background: "var(--bg-0)", padding: "8px 0" }}>
+    <section
+      className="col gap-5"
+      style={{ paddingTop: 16, maxWidth: 1040, margin: "0 auto" }}
+    >
+      <div
+        className="row center between"
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 5,
+          background: "var(--bg-0)",
+          padding: "8px 0",
+        }}
+      >
         <Link href={backHref} className="btn dense">
           ← Back
         </Link>
@@ -59,9 +72,7 @@ export default async function CreativeDetailPage(
         <div className="row center gap-2" style={{ flexWrap: "wrap" }}>
           <BandPill band={band} health={health} />
           <StatusPill status={status} dense />
-          <span className="t-micro muted">
-            {bandVsLabel(band, status)}
-          </span>
+          <span className="t-micro muted">{bandVsLabel(band, status)}</span>
         </div>
         <div className="t-body muted">
           {String(data.advertiser_name ?? "")} · {String(data.vertical ?? "")} ·{" "}
@@ -137,6 +148,36 @@ export default async function CreativeDetailPage(
         </div>
       </div>
 
+      <HealthBreakdownCard
+        breakdown={
+          data.health_breakdown as
+            | {
+                health?: number;
+                status_band?: string;
+                objective_mode?: string;
+                kpi_goal?: string | null;
+                components?: {
+                  S?: number;
+                  C?: number;
+                  T?: number;
+                  R?: number;
+                  E?: number;
+                  B?: number;
+                } | null;
+                weights?: Record<string, number>;
+                contributions?: Record<string, number>;
+                cohort?: {
+                  level?: string;
+                  size?: number;
+                  keys?: Record<string, unknown>;
+                };
+                raw?: Record<string, unknown>;
+              }
+            | null
+            | undefined
+        }
+      />
+
       {status === "fatigued" && (
         <section
           className="col gap-2"
@@ -162,7 +203,9 @@ export default async function CreativeDetailPage(
         <MetadataPills creative={creative} />
       </section>
 
-      {creative.saturation ? <SaturationCard saturation={creative.saturation} /> : null}
+      {creative.saturation ? (
+        <SaturationCard saturation={creative.saturation} />
+      ) : null}
     </section>
   );
 }

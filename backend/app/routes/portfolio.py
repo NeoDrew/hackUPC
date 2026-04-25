@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from ..datastore import get_store
-from ..schemas import PortfolioKPIs, TabCounts
+from ..schemas import HealthDiagnostics, PortfolioKPIs, TabCounts
 from ..services import queries
 
 router = APIRouter()
@@ -17,3 +17,8 @@ def get_portfolio_kpis() -> dict:
 @router.get("/portfolio/tab-counts", response_model=TabCounts)
 def get_tab_counts() -> dict:
     return queries.tab_counts(get_store())
+
+
+@router.get("/portfolio/health-diagnostics", response_model=HealthDiagnostics)
+def get_health_diagnostics() -> dict:
+    return queries.health_diagnostics(get_store())

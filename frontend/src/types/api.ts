@@ -38,6 +38,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/portfolio/health-diagnostics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Health Diagnostics */
+        get: operations["get_health_diagnostics_api_portfolio_health_diagnostics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/creatives": {
         parameters: {
             query?: never;
@@ -285,6 +302,8 @@ export interface components {
             health?: number | null;
             /** Status Band */
             status_band?: string | null;
+            health_components?: components["schemas"]["HealthComponents"] | null;
+            health_breakdown?: components["schemas"]["HealthBreakdown"] | null;
         } & {
             [key: string]: unknown;
         };
@@ -359,6 +378,8 @@ export interface components {
             days_active: number;
             /** Health */
             health: number;
+            health_components?: components["schemas"]["HealthComponents"] | null;
+            health_breakdown?: components["schemas"]["HealthBreakdown"] | null;
             /** Sparkline */
             sparkline: number[];
             /** Fatigue Day */
@@ -377,6 +398,83 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /**
+         * HealthBreakdown
+         * @description Transparent payload behind the 0-100 Q1 health score.
+         *
+         *     ``components`` contains the six normalized inputs; ``weights`` and
+         *     ``contributions`` make the frontend explanation deterministic.
+         */
+        HealthBreakdown: {
+            /** Health */
+            health: number;
+            /** Status Band */
+            status_band: string;
+            /** Objective Mode */
+            objective_mode: string;
+            /** Kpi Goal */
+            kpi_goal?: string | null;
+            components: components["schemas"]["HealthComponents"];
+            /** Weights */
+            weights: {
+                [key: string]: number;
+            };
+            /** Contributions */
+            contributions: {
+                [key: string]: number;
+            };
+            /** Cohort */
+            cohort: {
+                [key: string]: unknown;
+            };
+            /** Raw */
+            raw: {
+                [key: string]: unknown;
+            };
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * HealthComponents
+         * @description Q1 evidence-based health metric components, each clamped to [0, 1].
+         *
+         *     S = posterior strength, C = confidence, T = trend, R = cohort rank,
+         *     E = efficiency, B = reliability bonus.
+         */
+        HealthComponents: {
+            /** S */
+            S: number;
+            /** C */
+            C: number;
+            /** T */
+            T: number;
+            /** R */
+            R: number;
+            /** E */
+            E: number;
+            /** B */
+            B: number;
+        };
+        /**
+         * HealthDiagnostics
+         * @description Startup validation checks for Q1 before UI rollout.
+         */
+        HealthDiagnostics: {
+            /** Ablation */
+            ablation: {
+                [key: string]: unknown;
+            };
+            /** Distribution */
+            distribution: {
+                [key: string]: unknown;
+            };
+            /** Sanity */
+            sanity: {
+                [key: string]: unknown;
+            };
+        } & {
+            [key: string]: unknown;
         };
         /** PortfolioKPIs */
         PortfolioKPIs: {
@@ -579,6 +677,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TabCounts"];
+                };
+            };
+        };
+    };
+    get_health_diagnostics_api_portfolio_health_diagnostics_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HealthDiagnostics"];
                 };
             };
         };
