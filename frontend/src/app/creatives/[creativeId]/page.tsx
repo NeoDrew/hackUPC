@@ -44,6 +44,8 @@ export default async function CreativeDetailPage(
   const data = creative as unknown as Record<string, unknown>;
   const health = (creative.health as number | null) ?? 0;
   const status = (data.creative_status as string | null) ?? null;
+  const band = (creative.status_band as string | null) ?? null;
+  const needsRescue = band === "rescue" || band === "cut";
   const fatigueDay = (data.fatigue_day as number | null) ?? null;
 
   return (
@@ -64,10 +66,21 @@ export default async function CreativeDetailPage(
         <Link href={backHref} className="btn dense">
           ← Back
         </Link>
-        {status === "fatigued" && (
-          <Link href={`/creatives/${id}/twin${twinSuffix}`} className="btn dense primary">
-            Why is this losing?
-          </Link>
+        {needsRescue && (
+          <div className="row center gap-2">
+            <Link
+              href={`/creatives/${id}/twin${twinSuffix}`}
+              className="btn dense"
+            >
+              Why is this losing?
+            </Link>
+            <Link
+              href={`/creatives/${id}/variant${twinSuffix}`}
+              className="btn dense primary"
+            >
+              Recreate →
+            </Link>
+          </div>
         )}
       </div>
 
