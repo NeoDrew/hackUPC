@@ -26,16 +26,22 @@ const SUGGESTIONS = [
   "What's working in our gaming portfolio?",
 ];
 
+type PanelState = "idle" | "open" | "closing";
+
+const CLOSE_ANIMATION_MS = 220;
+
 export function ChatLauncher() {
   const pathname = usePathname();
   const search = useSearchParams();
-  const [open, setOpen] = useState(false);
+  const [panelState, setPanelState] = useState<PanelState>("idle");
+  const [expanded, setExpanded] = useState(false);
   const [draft, setDraft] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Hide on phone-immersive routes.
   if (pathname.startsWith("/m")) return null;
@@ -121,16 +127,37 @@ export function ChatLauncher() {
   );
 
   useEffect(() => {
-    return () => abortRef.current?.abort();
+    return () => {
+      abortRef.current?.abort();
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    };
   }, []);
 
-  if (!open) {
+  const beginClose = useCallback(() => {
+    if (panelState !== "open") return;
+    setPanelState("closing");
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    closeTimerRef.current = setTimeout(() => {
+      setPanelState("idle");
+      setExpanded(false);
+    }, CLOSE_ANIMATION_MS);
+  }, [panelState]);
+
+  const beginOpen = useCallback(() => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+    setPanelState("open");
+  }, []);
+
+  if (panelState === "idle") {
     return (
       <button
         type="button"
         className="chat-launcher"
         aria-label="Ask Smadex Copilot"
-        onClick={() => setOpen(true)}
+        onClick={beginOpen}
       >
         <span className="chat-launcher-glyph">✦</span>
         <span className="chat-launcher-label">Ask Copilot</span>
@@ -139,21 +166,38 @@ export function ChatLauncher() {
   }
 
   return (
-    <section className="chat-panel" role="dialog" aria-label="Smadex Copilot chat">
+    <section
+      className="chat-panel"
+      role="dialog"
+      aria-label="Smadex Copilot chat"
+      data-state={panelState}
+      data-expanded={expanded ? "true" : undefined}
+    >
       <header className="chat-panel-head">
         <span className="chat-panel-title">
           <span className="chat-launcher-glyph small">✦</span>
           Smadex Copilot
           <span className="chat-panel-sub">Gemini 2.5 Flash · grounded on portfolio data</span>
         </span>
-        <button
-          type="button"
-          className="chat-panel-close"
-          aria-label="Close chat"
-          onClick={() => setOpen(false)}
-        >
-          ×
-        </button>
+        <div className="chat-panel-actions">
+          <button
+            type="button"
+            className="chat-panel-icon"
+            aria-label={expanded ? "Collapse chat" : "Expand chat"}
+            title={expanded ? "Collapse" : "Expand"}
+            onClick={() => setExpanded((v) => !v)}
+          >
+            {expanded ? "⤓" : "⤒"}
+          </button>
+          <button
+            type="button"
+            className="chat-panel-icon chat-panel-close"
+            aria-label="Close chat"
+            onClick={beginClose}
+          >
+            ×
+          </button>
+        </div>
       </header>
       <div className="chat-panel-body" ref={scrollerRef}>
         {messages.length === 0 ? (

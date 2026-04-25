@@ -1297,12 +1297,23 @@ a:focus-visible {
   transition:
     transform var(--t-fast) var(--ease-out),
     box-shadow var(--t-fast) var(--ease-out);
+  animation: launcherIn 220ms var(--ease-out) both;
 }
 .chat-launcher:hover {
   transform: translateX(-50%) translateY(-2px);
   box-shadow:
     0 18px 44px rgba(126, 44, 140, 0.42),
     0 4px 12px rgba(18, 16, 24, 0.22);
+}
+@keyframes launcherIn {
+  from {
+    transform: translateX(-50%) translateY(20px) scale(0.6);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0) scale(1);
+    opacity: 1;
+  }
 }
 .chat-launcher-glyph {
   font-size: 18px;
@@ -1329,17 +1340,52 @@ a:focus-visible {
   display: flex;
   flex-direction: column;
   z-index: 80;
-  animation: chatPanelIn 220ms var(--ease-out) both;
   overflow: hidden;
+  /* Smooth height when toggling expanded mode. */
+  transition:
+    height var(--t-drawer) var(--ease-out),
+    min-height var(--t-drawer) var(--ease-out);
+  transform-origin: bottom center;
+  will-change: transform, opacity;
+}
+.chat-panel[data-state="open"] {
+  animation: chatPanelIn 220ms var(--ease-out) both;
+}
+.chat-panel[data-state="closing"] {
+  animation: chatPanelOut 220ms var(--ease-out) both;
+  pointer-events: none;
+}
+.chat-panel[data-expanded="true"] {
+  height: 30vh;
+  min-height: 360px;
 }
 @keyframes chatPanelIn {
   from {
-    transform: translateX(-50%) translateY(12px);
+    transform: translateX(-50%) translateY(60px) scale(0.4);
     opacity: 0;
+    border-radius: 999px;
+  }
+  60% {
+    transform: translateX(-50%) translateY(8px) scale(0.95);
+    opacity: 1;
+    border-radius: 24px;
   }
   to {
-    transform: translateX(-50%) translateY(0);
+    transform: translateX(-50%) translateY(0) scale(1);
     opacity: 1;
+    border-radius: 14px;
+  }
+}
+@keyframes chatPanelOut {
+  from {
+    transform: translateX(-50%) translateY(0) scale(1);
+    opacity: 1;
+    border-radius: 14px;
+  }
+  to {
+    transform: translateX(-50%) translateY(60px) scale(0.4);
+    opacity: 0;
+    border-radius: 999px;
   }
 }
 
@@ -1369,19 +1415,34 @@ a:focus-visible {
   letter-spacing: 0.02em;
   margin-left: 8px;
 }
-.chat-panel-close {
+.chat-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.chat-panel-icon {
   width: 28px;
   height: 28px;
   border-radius: 6px;
   border: 1px solid var(--line);
   background: var(--bg-2);
   color: var(--t-2);
-  font-size: 18px;
+  font-size: 14px;
   line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    border-color var(--t-fast) var(--ease-out),
+    color var(--t-fast) var(--ease-out),
+    background var(--t-fast) var(--ease-out);
 }
-.chat-panel-close:hover {
+.chat-panel-icon:hover {
   border-color: var(--t-4);
   color: var(--t-1);
+}
+.chat-panel-close {
+  font-size: 18px;
 }
 
 .chat-panel-body {
