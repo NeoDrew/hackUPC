@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Roboto_Mono } from "next/font/google";
 
 import "./globals.css";
+import "./advisor.css";
 
 import { ChatLauncher } from "@/components/design/ChatLauncher";
 import { DesktopChrome, PhoneOnly } from "@/components/design/DesktopChrome";
@@ -25,7 +26,7 @@ const robotoMono = Roboto_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Smadex Creative Twin Copilot",
+  title: "Smadex Cooking",
   description: "Creative intelligence cockpit for mobile advertising",
 };
 

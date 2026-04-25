@@ -289,7 +289,11 @@ class CreativeRow(BaseModel):
     health_components: HealthComponents | None = None
     health_breakdown: HealthBreakdown | None = None
     sparkline: list[float]
+    # Predicted by the trained fatigue classifier. ``fatigue_day`` carries
+    # our predicted break (not the dataset's ground-truth column).
     fatigue_day: int | None = None
+    is_fatigued: bool = False
+    fatigue_score: float | None = None
     asset_file: str
 
 

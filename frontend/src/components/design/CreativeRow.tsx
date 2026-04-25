@@ -84,6 +84,22 @@ export function CreativeRow({
           <div className="meta">
             {row.advertiser_name} · {row.vertical} · {row.format} · #
             {row.creative_id}
+            {row.is_fatigued ? (
+              <span
+                className="row-fatigue-chip"
+                title={
+                  row.fatigue_score != null
+                    ? `Predicted fatigued (confidence ${Math.round(
+                        row.fatigue_score * 100,
+                      )}%)`
+                    : "Predicted fatigued"
+                }
+              >
+                <span className="row-fatigue-dot" aria-hidden />
+                fatigued
+                {row.fatigue_day != null ? ` · d${row.fatigue_day}` : ""}
+              </span>
+            ) : null}
           </div>
         </div>
         <div className="num-cell">{formatPct(row.ctr)}</div>

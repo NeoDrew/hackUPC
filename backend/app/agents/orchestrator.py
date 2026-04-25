@@ -22,6 +22,7 @@ from dotenv import load_dotenv
 
 from ..datastore import Datastore
 from ..services import queries
+from ._llm_retry import post_with_retry
 
 log = logging.getLogger(__name__)
 
@@ -53,18 +54,34 @@ _SYSTEM_PROMPT = (
     "successful ad?', 'Shall I queue these changes?', 'Should I push these to "
     "the live ad?'.\n"
     "4. Read-only tools (get_creative_diagnosis, get_cohort_summary, "
-    "list_top_creatives, get_twin) — call freely before answering.\n"
-    "5. The mutating tool (apply_variant) writes a queued change. Call it ONLY "
-    "after Maya has explicitly said yes ('apply', 'do it', 'yes please push'). "
-    "If unsure, ask first.\n"
+    "list_top_creatives, get_twin, get_slice_recommendations) — call freely "
+    "before answering.\n"
+    "5. Mutating tools (apply_variant, apply_slice_recommendation, "
+    "snooze_slice_recommendation, dismiss_slice_recommendation) write state. "
+    "Call them ONLY after Maya has explicitly said yes ('apply', 'do it', "
+    "'pause that', 'snooze it', 'dismiss it'). If unsure, ask first.\n"
+    "\n"
+    "THE /actions PAGE — Maya's daily action queue:\n"
+    "Per-(creative · country · OS) advisor recommendations live at /actions. "
+    "Each card has a single canonical verb (Pause / Rotate / Scale / Shift / "
+    "Refresh / Archive), a severity (critical / warning / opportunity), and "
+    "an estimated $/day impact. When Maya asks 'what should I do today?', "
+    "'where is money being wasted?', 'what should I scale?' — call "
+    "get_slice_recommendations and walk her through the top 2–3, leading with "
+    "the dollar impact. When she says yes to one, call "
+    "apply_slice_recommendation with the matching recommendation_id and a "
+    "one-line rationale. When she says 'not now' / 'remind me later', call "
+    "snooze_slice_recommendation. When she says 'ignore that', call "
+    "dismiss_slice_recommendation.\n"
     "\n"
     "RECOMMENDATION PATTERN — diagnose, recommend, confirm:\n"
     "Turn 1: Maya asks a question → you call read tools → you reply with the "
     "diagnosis + a recommended next step + a question.\n"
     "Turn 2: Maya says yes → you call the next read tool → you describe the "
     "fix + a question asking to apply it.\n"
-    "Turn 3 (only after explicit approval): you call apply_variant → you confirm "
-    "with a plain-language sentence and an undo link.\n"
+    "Turn 3 (only after explicit approval): you call the matching mutating "
+    "tool → you confirm with a plain-language sentence (and for "
+    "apply_variant, an undo link).\n"
     "\n"
     "EXAMPLES OF GOOD vs BAD OUTPUT:\n"
     "BAD:  'Creative 500071 has status_band=rescue, S=0.045, T=0.609. "
@@ -261,6 +278,89 @@ def _tool_get_slice_recommendations(
     }
 
 
+def _find_recommendation(store: Datastore, recommendation_id: str) -> Any | None:
+    for recs in store.recommendations_by_advertiser.values():
+        for r in recs:
+            if r.recommendation_id == recommendation_id:
+                return r
+    return None
+
+
+def _serialise_rec(rec: Any) -> dict[str, Any]:
+    return {
+        "recommendation_id": rec.recommendation_id,
+        "creative_id": rec.creative_id,
+        "country": rec.country,
+        "os": rec.os,
+        "action_type": rec.action_type,
+        "severity": rec.severity,
+        "headline": rec.headline,
+        "rationale": rec.rationale,
+        "est_daily_impact_usd": round(rec.est_daily_impact_usd, 2),
+        "applied_at": rec.applied_at,
+        "snoozed_until": rec.snoozed_until,
+        "dismissed_at": rec.dismissed_at,
+    }
+
+
+def _tool_apply_slice_recommendation(
+    store: Datastore, recommendation_id: str, rationale: str | None = None
+) -> dict[str, Any]:
+    """Mark a slice-level advisor recommendation as applied. MUTATES STATE
+    via the recommendation cache. Caller should only invoke after explicit
+    user confirmation (the system prompt enforces that pattern)."""
+    rec = _find_recommendation(store, recommendation_id)
+    if rec is None:
+        return {"error": f"recommendation {recommendation_id} not found"}
+    cache = store.recommendation_cache
+    if cache is None:
+        return {"error": "recommendation cache unavailable"}
+    cache.mark_applied(recommendation_id)
+    rec.applied_at = cache.get_state(recommendation_id).applied_at
+    out = _serialise_rec(rec)
+    if rationale:
+        out["audit_rationale"] = rationale
+    return out
+
+
+def _tool_snooze_slice_recommendation(
+    store: Datastore, recommendation_id: str, hours: int = 24
+) -> dict[str, Any]:
+    """Snooze a slice recommendation for N hours. Default 24h. MUTATES STATE."""
+    rec = _find_recommendation(store, recommendation_id)
+    if rec is None:
+        return {"error": f"recommendation {recommendation_id} not found"}
+    cache = store.recommendation_cache
+    if cache is None:
+        return {"error": "recommendation cache unavailable"}
+    from datetime import datetime, timedelta, timezone
+
+    h = max(1, min(24 * 30, int(hours)))
+    until = (datetime.now(timezone.utc) + timedelta(hours=h)).strftime(
+        "%Y-%m-%dT%H:%M:%SZ"
+    )
+    cache.mark_snoozed(recommendation_id, until)
+    rec.snoozed_until = until
+    out = _serialise_rec(rec)
+    out["snoozed_for_hours"] = h
+    return out
+
+
+def _tool_dismiss_slice_recommendation(
+    store: Datastore, recommendation_id: str
+) -> dict[str, Any]:
+    """Permanently dismiss a slice recommendation. MUTATES STATE."""
+    rec = _find_recommendation(store, recommendation_id)
+    if rec is None:
+        return {"error": f"recommendation {recommendation_id} not found"}
+    cache = store.recommendation_cache
+    if cache is None:
+        return {"error": "recommendation cache unavailable"}
+    cache.mark_dismissed(recommendation_id)
+    rec.dismissed_at = cache.get_state(recommendation_id).dismissed_at
+    return _serialise_rec(rec)
+
+
 _TOOL_FUNCTIONS = {
     "get_creative_diagnosis": _tool_get_creative_diagnosis,
     "get_cohort_summary": _tool_get_cohort_summary,
@@ -268,6 +368,9 @@ _TOOL_FUNCTIONS = {
     "get_twin": _tool_get_twin,
     "apply_variant": _tool_apply_variant,
     "get_slice_recommendations": _tool_get_slice_recommendations,
+    "apply_slice_recommendation": _tool_apply_slice_recommendation,
+    "snooze_slice_recommendation": _tool_snooze_slice_recommendation,
+    "dismiss_slice_recommendation": _tool_dismiss_slice_recommendation,
 }
 
 
@@ -385,6 +488,77 @@ _TOOL_SCHEMA: list[dict[str, Any]] = [
         },
     },
     {
+        "name": "apply_slice_recommendation",
+        "description": (
+            "Mark a slice-level advisor recommendation as applied (the same "
+            "as clicking 'Apply' on its card on the /actions page). MUTATES "
+            "STATE. Only call AFTER the user has explicitly confirmed they "
+            "want to take the action — phrases like 'apply', 'do it', 'yes "
+            "push it', 'pause that one'. Never call proactively. Pass the "
+            "exact ``recommendation_id`` from a prior get_slice_recommendations "
+            "call."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "recommendation_id": {
+                    "type": "string",
+                    "description": "The 16-char hex id from get_slice_recommendations.",
+                },
+                "rationale": {
+                    "type": "string",
+                    "description": (
+                        "One short sentence describing why we're applying this, "
+                        "in plain English. Stored alongside the audit log entry."
+                    ),
+                },
+            },
+            "required": ["recommendation_id"],
+        },
+    },
+    {
+        "name": "snooze_slice_recommendation",
+        "description": (
+            "Snooze a slice-level advisor recommendation so it won't appear "
+            "in the queue until the snooze expires. MUTATES STATE. Use when "
+            "the user says 'remind me later', 'not now', 'check back tomorrow'. "
+            "Default 24 hours; user can specify another duration."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "recommendation_id": {
+                    "type": "string",
+                    "description": "The 16-char hex id from get_slice_recommendations.",
+                },
+                "hours": {
+                    "type": "integer",
+                    "description": "How many hours to snooze. Default 24, min 1, max 720 (30 days).",
+                },
+            },
+            "required": ["recommendation_id"],
+        },
+    },
+    {
+        "name": "dismiss_slice_recommendation",
+        "description": (
+            "Permanently dismiss a slice-level advisor recommendation. The "
+            "recommendation will not return to the queue until the underlying "
+            "data changes. MUTATES STATE. Use when the user says 'ignore that', "
+            "'not relevant', 'remove it'."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "recommendation_id": {
+                    "type": "string",
+                    "description": "The 16-char hex id from get_slice_recommendations.",
+                },
+            },
+            "required": ["recommendation_id"],
+        },
+    },
+    {
         "name": "apply_variant",
         "description": (
             "Queue a variant change against a creative. MUTATES STATE. Only "
@@ -488,7 +662,7 @@ async def stream_chat(
         }
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
-                resp = await client.post(url, json=body)
+                resp = await post_with_retry(client, url, json=body, label="gemini-chat")
                 resp.raise_for_status()
                 data = resp.json()
         except httpx.HTTPError as e:

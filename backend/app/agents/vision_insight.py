@@ -23,6 +23,8 @@ import re
 from typing import Any
 
 import httpx
+
+from ._llm_retry import post_with_retry
 from dotenv import load_dotenv
 
 log = logging.getLogger(__name__)
@@ -202,7 +204,7 @@ async def generate_insight(
 
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
-            resp = await client.post(url, json=body)
+            resp = await post_with_retry(client, url, json=body, label="gemma-vision")
             resp.raise_for_status()
             data = resp.json()
     except httpx.HTTPError as e:

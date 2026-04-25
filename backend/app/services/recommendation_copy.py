@@ -29,6 +29,7 @@ from typing import Any
 import httpx
 from dotenv import load_dotenv
 
+from ..agents._llm_retry import post_with_retry
 from ..schemas import SliceRecommendation
 
 log = logging.getLogger(__name__)
@@ -246,7 +247,7 @@ async def _polish_one(
     }
     url = f"{GENAI_BASE}/{model}:generateContent?key={key}"
     try:
-        resp = await client.post(url, json=body)
+        resp = await post_with_retry(client, url, json=body, label="gemma-polish")
         resp.raise_for_status()
         data = resp.json()
         candidates = data.get("candidates", [])

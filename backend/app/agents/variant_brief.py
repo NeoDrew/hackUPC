@@ -26,6 +26,8 @@ from typing import Any
 import httpx
 from dotenv import load_dotenv
 
+from ._llm_retry import post_with_retry
+
 log = logging.getLogger(__name__)
 
 load_dotenv()
@@ -115,7 +117,7 @@ async def generate_brief(
 
     try:
         async with httpx.AsyncClient(timeout=20.0) as client:
-            resp = await client.post(url, json=body)
+            resp = await post_with_retry(client, url, json=body, label="gemma-variant")
             resp.raise_for_status()
             data = resp.json()
     except httpx.HTTPError as e:

@@ -162,6 +162,7 @@ class Datastore:
 
         self._compute_health_scores()
         self._compute_fatigue_predictions()
+        self._apply_fatigue_penalty_to_health()
         self._compute_quadrants()
         self._compute_flat_rows()
         self._compute_saturation()
@@ -288,6 +289,47 @@ class Datastore:
         except Exception as e:  # noqa: BLE001
             log.warning("failed to persist fatigue model: %s", e)
         return classifier, threshold
+
+    def _apply_fatigue_penalty_to_health(self) -> None:
+        """Mutate ``health_by_creative`` so the per-creative fatigue verdict
+        from the trained classifier feeds back into the health score and
+        the cockpit band routing.
+
+        Penalty model: multiplicative on the base health, scaled by the
+        classifier's calibrated probability:
+
+            new_health = round(old_health * (1 − 0.5 × model_score))
+
+        At a typical 0.85+ probability this lands a "scale" creative in
+        "rescue" — which is what the marketer wants: a strong CTR launch
+        that's now decaying should be flagged for action, not buried in
+        the top-of-portfolio tab.
+
+        We adjust ``health`` and re-derive ``status_band`` in place.
+        ``health_breakdown.components`` is left alone (the underlying
+        S/C/T/R/E/B inputs haven't changed, only the verdict
+        layered on top).
+        """
+        adjusted = 0
+        for cid, pred in self.predicted_fatigue.items():
+            if not pred.get("is_fatigued"):
+                continue
+            rec = self.health_by_creative.get(cid)
+            if not rec:
+                continue
+            score = float(pred.get("model_score") or 1.0)
+            old_h = int(rec.get("health") or 0)
+            new_h = max(0, min(100, round(old_h * (1.0 - 0.5 * score))))
+            rec["health"] = new_h
+            rec["status_band"] = _band_from_health(new_h)
+            rec["fatigue_penalty_applied"] = True
+            rec["pre_fatigue_health"] = old_h
+            adjusted += 1
+        log.info(
+            "fatigue penalty applied to %d / %d creatives",
+            adjusted,
+            len(self.health_by_creative),
+        )
 
     def _compute_fatigue_predictions(self) -> None:
         """Run our changepoint-based fatigue detector on every creative.
@@ -800,11 +842,21 @@ class Datastore:
             health_record = self.health_by_creative.get(creative_id, {})
             health = max(0, min(100, int(health_record.get("health") or 0)))
             band = str(health_record.get("status_band") or _band_from_health(health))
-            fatigue_day = summary_row.get("fatigue_day")
+            # The row's ``fatigue_day`` exposes our **predicted** fatigue
+            # break — never the dataset's ground-truth ``fatigue_day``
+            # column (that's reserved for validation). When the
+            # classifier flags a creative we surface the predicted day on
+            # the card and the FatigueChart annotation so the marketer
+            # sees the verdict without drilling into detail.
+            pred = self.predicted_fatigue.get(creative_id) or {}
+            predicted_fd = pred.get("predicted_fatigue_day")
             fatigue_day_v: int | None = (
-                int(fatigue_day)
-                if fatigue_day is not None and not pd.isna(fatigue_day)
-                else None
+                int(predicted_fd) if predicted_fd is not None else None
+            )
+            is_fatigued_v = bool(pred.get("is_fatigued"))
+            model_score_v = pred.get("model_score")
+            fatigue_score_v: float | None = (
+                float(model_score_v) if model_score_v is not None else None
             )
             campaign_id = int(meta_row["campaign_id"])
             campaign_row = (
@@ -857,6 +909,8 @@ class Datastore:
                 "health_breakdown": health_record,
                 "sparkline": _sparkline(creative_id),
                 "fatigue_day": fatigue_day_v,
+                "is_fatigued": is_fatigued_v,
+                "fatigue_score": fatigue_score_v,
                 "asset_file": meta_row["asset_file"],
             }
             # Mirror band+health onto creative_detail so the detail page can

@@ -63,6 +63,9 @@ export default async function ActionsPage(props: {
   return (
     <div className="actions-page">
       <header className="actions-page-head">
+        <Link href="/" prefetch={false} className="btn dense actions-page-back">
+          ← Back
+        </Link>
         <h1 className="t-section">Advisor</h1>
         <p className="t-body muted">
           Per-(creative · country · OS) recommendations, ranked by est.
