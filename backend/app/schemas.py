@@ -254,6 +254,32 @@ class CreativeListResponse(BaseModel):
     limit: int | None = None
 
 
+# --- Apply-variant queue ---
+
+
+class ApplyRequest(BaseModel):
+    rationale: str | None = None
+
+
+class AppliedVariant(BaseModel):
+    """A queued variant application. The dataset is read-only, so this is a
+    process-lifetime queue — the entry stays until the user undoes it or the
+    service restarts. Carried purely so the UI can render a "queued" banner
+    and let the user undo without losing what they applied.
+    """
+
+    creative_id: int
+    rationale: str | None = None
+    queued_at: str  # ISO 8601
+    eta_hours: int = 24
+
+
+class ApplyResponse(BaseModel):
+    creative_id: int
+    queued: bool
+    entry: AppliedVariant | None = None
+
+
 # --- Twin (stub) ---
 
 

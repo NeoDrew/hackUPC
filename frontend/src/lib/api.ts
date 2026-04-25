@@ -107,4 +107,39 @@ export const api = {
     fetchJSON<SearchResponse>(
       `/api/search?q=${encodeURIComponent(q)}&limit=${limit}`,
     ),
+
+  // Variant queue (mock — process-lifetime in-memory).
+  applyVariant: async (creativeId: number, rationale?: string) => {
+    const res = await fetch(`${BASE}/api/creatives/${creativeId}/apply-variant`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ rationale: rationale ?? null }),
+    });
+    if (!res.ok) throw new Error(`POST apply-variant ${creativeId} → ${res.status}`);
+    return (await res.json()) as {
+      creative_id: number;
+      queued: boolean;
+      entry: AppliedVariant | null;
+    };
+  },
+  undoVariant: async (creativeId: number) => {
+    const res = await fetch(`${BASE}/api/creatives/${creativeId}/apply-variant`, {
+      method: "DELETE",
+    });
+    if (!res.ok) throw new Error(`DELETE apply-variant ${creativeId} → ${res.status}`);
+    return (await res.json()) as {
+      creative_id: number;
+      queued: boolean;
+      entry: AppliedVariant | null;
+    };
+  },
+  listAppliedVariants: () =>
+    fetchJSON<AppliedVariant[]>("/api/applied-variants"),
 };
+
+export interface AppliedVariant {
+  creative_id: number;
+  rationale?: string | null;
+  queued_at: string;
+  eta_hours: number;
+}

@@ -32,17 +32,46 @@ GENAI_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 MAX_LOOP_TURNS = 6
 
 _SYSTEM_PROMPT = (
-    "You are Smadex Copilot, a creative-strategy agent for mobile advertisers. "
-    "You have tools that inspect any creative's diagnosis, cohort summaries, "
-    "and top performers in our portfolio. Use them aggressively before "
-    "answering. Always cite specific numbers from the tool output (CTR%, CVR%, "
-    "ROAS, health, days-active). Speak in DSP-native vocabulary. Never invent "
-    "creative IDs, headlines, or metrics that the tools didn't return. If the "
-    "user asks something unrelated to the dataset, say you can only help with "
-    "Smadex creative analysis. Keep answers tight (3-5 sentences) unless the "
-    "user asks for detail. End with a single concrete next step. "
-    "The UI renders **bold**, *italic*, `code`, and `- ` bullet lists — use "
-    "them lightly to highlight numbers and IDs, never headings."
+    "You are Smadex Copilot, advising a marketer named Maya on her ad portfolio. "
+    "Speak like a senior creative-strategy advisor at the meeting — never like "
+    "a data engineer or a database. Maya wants recommendations and decisions, "
+    "not column dumps.\n"
+    "\n"
+    "HARD RULES — these matter:\n"
+    "1. NEVER mention raw column names: do not say 'creative_id', 'status_band', "
+    "'creative_status', 'health_breakdown', 'S/C/T/R/E/B', 'objective_mode', "
+    "'posterior', 'percentile', 'credible interval'. Use plain English: 'this ad', "
+    "'a similar ad', 'confidence', 'the trend', 'cohort'. Numbers are formatted "
+    "(4.10× ROAS, 0.18% CTR, $24k spend, 70-day flight) — never raw decimals "
+    "like 0.045 or 0.7042.\n"
+    "2. When you reference a specific ad, render it as a markdown link with a "
+    "short descriptive name: `[your fintech ROAS spot](#creative-500071)` or "
+    "`[a similar ad in the same cohort](#creative-500147)`. The frontend turns "
+    "the `#creative-NNNNNN` anchor into a clickable link to the ad's page.\n"
+    "3. Each reply is 1–3 sentences in plain English. End with a SINGLE question "
+    "that drives the next action — 'Would you like me to find a similar "
+    "successful ad?', 'Shall I queue these changes?', 'Should I push these to "
+    "the live ad?'.\n"
+    "4. Read-only tools (get_creative_diagnosis, get_cohort_summary, "
+    "list_top_creatives, get_twin) — call freely before answering.\n"
+    "5. The mutating tool (apply_variant) writes a queued change. Call it ONLY "
+    "after Maya has explicitly said yes ('apply', 'do it', 'yes please push'). "
+    "If unsure, ask first.\n"
+    "\n"
+    "RECOMMENDATION PATTERN — diagnose, recommend, confirm:\n"
+    "Turn 1: Maya asks a question → you call read tools → you reply with the "
+    "diagnosis + a recommended next step + a question.\n"
+    "Turn 2: Maya says yes → you call the next read tool → you describe the "
+    "fix + a question asking to apply it.\n"
+    "Turn 3 (only after explicit approval): you call apply_variant → you confirm "
+    "with a plain-language sentence and an undo link.\n"
+    "\n"
+    "EXAMPLES OF GOOD vs BAD OUTPUT:\n"
+    "BAD:  'Creative 500071 has status_band=rescue, S=0.045, T=0.609. "
+    "creative_status=stable. Recommend cohort_replace.'\n"
+    "GOOD: '[Your fintech ROAS spot](#creative-500071) is fading — confidence "
+    "is low and the trend is dropping. Would you like me to find a similar "
+    "successful ad to compare?'"
 )
 
 
@@ -175,11 +204,21 @@ async def _tool_get_twin(store: Datastore, creative_id: int) -> dict[str, Any]:
     }
 
 
+def _tool_apply_variant(
+    store: Datastore, creative_id: int, rationale: str | None = None
+) -> dict[str, Any]:
+    """Mutating tool — only call after the user explicitly confirms. Writes
+    to the in-memory queue; idempotent (re-applying the same creative_id
+    overwrites the entry)."""
+    return queries.queue_variant(store, int(creative_id), rationale)
+
+
 _TOOL_FUNCTIONS = {
     "get_creative_diagnosis": _tool_get_creative_diagnosis,
     "get_cohort_summary": _tool_get_cohort_summary,
     "list_top_creatives": _tool_list_top_creatives,
     "get_twin": _tool_get_twin,
+    "apply_variant": _tool_apply_variant,
 }
 
 
@@ -264,6 +303,33 @@ _TOOL_SCHEMA: list[dict[str, Any]] = [
                     "type": "integer",
                     "description": "Creative ID of the fatigued creative.",
                 }
+            },
+            "required": ["creative_id"],
+        },
+    },
+    {
+        "name": "apply_variant",
+        "description": (
+            "Queue a variant change against a creative. MUTATES STATE. Only "
+            "call this after the user has explicitly confirmed — phrases like "
+            "'apply', 'do it', 'yes push it'. If unsure, ask first; never call "
+            "this proactively."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "creative_id": {
+                    "type": "integer",
+                    "description": "Creative ID of the ad to update.",
+                },
+                "rationale": {
+                    "type": "string",
+                    "description": (
+                        "One-sentence explanation of what's being changed and "
+                        "why, in plain English. Stored alongside the queued "
+                        "entry for the audit trail."
+                    ),
+                },
             },
             "required": ["creative_id"],
         },

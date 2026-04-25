@@ -198,8 +198,12 @@ export function HealthBreakdownPanel({
   alwaysOpen?: boolean;
   rowData?: RowData;
 }) {
-  // expandedKey is null when no row is expanded; otherwise the component key.
+  // expandedKey is null when no component-row is expanded; otherwise the component key.
   const [expandedKey, setExpandedKey] = useState<ComponentDef["key"] | null>(null);
+  // Customer-summary by default — full breakdown table starts collapsed
+  // even on the always-open detail page. Marketers don't want bars + weights
+  // in their face on first glance.
+  const [showFull, setShowFull] = useState(false);
 
   if (!breakdown?.components) return null;
 
@@ -235,26 +239,45 @@ export function HealthBreakdownPanel({
         .join(" · ")
     : null;
 
+  const verdictTone =
+    (breakdown.health ?? 0) >= 70 ? "good"
+    : (breakdown.health ?? 0) >= 45 ? "warn"
+    : "bad";
+  const bandLabel = (breakdown.status_band ?? "").charAt(0).toUpperCase() +
+    (breakdown.status_band ?? "").slice(1);
+
   return (
     <section className={`health-panel${alwaysOpen ? " always-open" : ""}`}>
       <header className="health-panel-head">
-        <div className="col gap-1">
-          <h3 className="t-section" style={{ margin: 0 }}>Q1 health breakdown</h3>
-          <p className="t-micro muted" style={{ margin: 0 }}>
-            Evidence-based score: posterior strength, confidence, trend, cohort
-            rank, efficiency, and reliability — weighted, no LLM in the loop.
-          </p>
+        <div className="col gap-1" style={{ minWidth: 0 }}>
+          <h3 className="t-section" style={{ margin: 0 }}>Health</h3>
+          <span className="t-micro muted">
+            {kpiGoal} goal · {bandLabel || "–"}
+          </span>
         </div>
         <div className="col gap-1" style={{ alignItems: "flex-end" }}>
-          <span className="t-overline">{kpiGoal} GOAL</span>
-          <strong className="health-panel-score">
+          <strong className={`health-panel-score tone-${verdictTone}`}>
             {Number.isFinite(breakdown.health ?? NaN) ? breakdown.health : "–"}
           </strong>
         </div>
       </header>
 
-      <div className="health-panel-rows">
-        {COMPONENTS.map((cdef) => {
+      <p className="health-panel-narrative">{narrative}</p>
+
+      <button
+        type="button"
+        className="health-panel-toggle"
+        onClick={() => setShowFull((v) => !v)}
+        aria-expanded={showFull}
+      >
+        {showFull ? "Hide full breakdown" : "See full breakdown"}
+        <span className="health-panel-toggle-icon">▾</span>
+      </button>
+
+      {showFull ? (
+        <>
+          <div className="health-panel-rows">
+            {COMPONENTS.map((cdef) => {
           const value = components[cdef.key];
           const dimmed = trendGated && cdef.key === "T";
           const weight = weights[cdef.weightKey] ?? 0;
@@ -332,24 +355,25 @@ export function HealthBreakdownPanel({
         })}
       </div>
 
-      <footer className="health-panel-foot">
-        <p className="health-panel-narrative">{narrative}</p>
-        <div className="health-panel-meta">
-          <span className="t-micro muted">
-            Cohort:{" "}
-            <strong>
-              {cohort?.level ?? "fallback"}
-              {cohort?.size ? ` · n=${cohort.size}` : ""}
-            </strong>
-            {cohortKeys ? ` · ${cohortKeys}` : ""}
-          </span>
-          <span className="t-micro muted">
-            Final: 100 ×
-            (w₁·S + w₂·C + w₃·T + w₄·R + w₅·E + w₆·B)
-            =&nbsp;<strong>{breakdown.health ?? "–"}</strong>
-          </span>
-        </div>
-      </footer>
+          <footer className="health-panel-foot">
+            <div className="health-panel-meta">
+              <span className="t-micro muted">
+                Cohort:{" "}
+                <strong>
+                  {cohort?.level ?? "fallback"}
+                  {cohort?.size ? ` · n=${cohort.size}` : ""}
+                </strong>
+                {cohortKeys ? ` · ${cohortKeys}` : ""}
+              </span>
+              <span className="t-micro muted">
+                Final: 100 ×
+                (w₁·S + w₂·C + w₃·T + w₄·R + w₅·E + w₆·B)
+                =&nbsp;<strong>{breakdown.health ?? "–"}</strong>
+              </span>
+            </div>
+          </footer>
+        </>
+      ) : null}
     </section>
   );
 }

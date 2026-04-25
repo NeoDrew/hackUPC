@@ -66,7 +66,7 @@ export default async function CreativeDetailPage(
         <Link href={backHref} className="btn dense">
           ← Back
         </Link>
-        {needsRescue && (
+        {needsRescue ? (
           <div className="row center gap-2">
             <Link
               href={`/creatives/${id}/twin${twinSuffix}`}
@@ -76,11 +76,19 @@ export default async function CreativeDetailPage(
             </Link>
             <Link
               href={`/creatives/${id}/variant${twinSuffix}`}
-              className="btn dense primary"
+              className="btn primary"
             >
               Recreate →
             </Link>
           </div>
+        ) : (
+          <Link
+            href={`/creatives/${id}/variant${twinSuffix}`}
+            className="t-micro"
+            style={{ color: "var(--accent)" }}
+          >
+            Generate variant →
+          </Link>
         )}
       </div>
 

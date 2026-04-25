@@ -169,6 +169,34 @@ def health_diagnostics(store: Datastore) -> dict[str, Any]:
     return store.health_diagnostics
 
 
+# --- Apply-variant queue (process-lifetime, cleared on restart) ---
+
+
+def queue_variant(
+    store: Datastore, creative_id: int, rationale: str | None
+) -> dict[str, Any]:
+    from datetime import datetime, timezone
+
+    entry = {
+        "creative_id": int(creative_id),
+        "rationale": rationale,
+        "queued_at": datetime.now(timezone.utc).isoformat(),
+        "eta_hours": 24,
+    }
+    store.applied_variants[int(creative_id)] = entry
+    return {"creative_id": int(creative_id), "queued": True, "entry": entry}
+
+
+def dequeue_variant(store: Datastore, creative_id: int) -> dict[str, Any]:
+    cid = int(creative_id)
+    removed = store.applied_variants.pop(cid, None)
+    return {"creative_id": cid, "queued": False, "entry": removed}
+
+
+def list_applied_variants(store: Datastore) -> list[dict[str, Any]]:
+    return list(store.applied_variants.values())
+
+
 def search_creatives(
     store: Datastore, query: str, limit: int = 8
 ) -> list[dict[str, Any]]:

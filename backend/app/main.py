@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .config import ASSET_ROOT
 from .datastore import init_store
-from .routes import advertisers, agent, campaigns, creatives, portfolio
+from .routes import actions, advertisers, agent, campaigns, creatives, portfolio
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 
@@ -41,7 +41,7 @@ if _extra_origin:
 app.add_middleware(
     CORSMiddleware,
     allow_origin_regex="|".join(f"({p})" for p in _origin_regex_parts),
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -52,6 +52,7 @@ app.include_router(creatives.router, prefix="/api", tags=["creatives"])
 app.include_router(advertisers.router, prefix="/api", tags=["advertisers"])
 app.include_router(campaigns.router, prefix="/api", tags=["campaigns"])
 app.include_router(agent.router, prefix="/api", tags=["agent"])
+app.include_router(actions.router, prefix="/api", tags=["actions"])
 
 
 @app.get("/healthz")

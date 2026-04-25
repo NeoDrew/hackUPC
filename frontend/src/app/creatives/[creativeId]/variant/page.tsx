@@ -5,8 +5,8 @@ import { api } from "@/lib/api";
 import { BriefPanel, type BriefField } from "@/components/design/BriefPanel";
 import { Lineage } from "@/components/design/Lineage";
 import { PredictedLift, type LiftRow } from "@/components/design/PredictedLift";
+import { ApplyVariantBar } from "@/components/design/ApplyVariantBar";
 import { PreviewChip } from "@/components/design/PreviewChip";
-import { PushToTestButton } from "@/components/design/Toast";
 import {
   RenderedVariantSvg,
   type VariantBrief,
@@ -108,12 +108,12 @@ export default async function VariantPage(
             Brief derived from the twin winner. Swap in Gemma + Q3 bandit output once wired.
           </p>
         </div>
-        <div className="row center gap-2">
-          <button type="button" className="btn dense">Save</button>
-          <button type="button" className="btn dense">Send to designer</button>
-          <PushToTestButton />
-        </div>
       </header>
+
+      <ApplyVariantBar
+        creativeId={id}
+        rationale={`Adopt ${twin.segment.vertical}/${twin.segment.format} cohort leader's attributes`}
+      />
 
       <Lineage fatiguedId={twin.fatigued_id} winnerId={twin.winner_id} />
 

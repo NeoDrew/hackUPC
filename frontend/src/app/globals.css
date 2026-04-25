@@ -1229,6 +1229,127 @@ a:focus-visible {
   font-weight: 700;
   letter-spacing: -0.02em;
 }
+.health-panel-score.tone-good { color: var(--status-top); }
+.health-panel-score.tone-warn { color: var(--status-fatigued); }
+.health-panel-score.tone-bad { color: var(--status-cut); }
+.health-panel-toggle {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 0;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--accent-line);
+  text-underline-offset: 3px;
+}
+.health-panel-toggle:hover {
+  color: var(--accent-hover);
+}
+.health-panel-toggle-icon {
+  display: inline-block;
+  transition: transform var(--t-fast) var(--ease-out);
+  font-size: 11px;
+}
+.health-panel-toggle[aria-expanded="true"] .health-panel-toggle-icon {
+  transform: rotate(180deg);
+}
+
+/* Inline links rendered by MarkdownLite in the agent chat. */
+.chat-link {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-color: var(--accent-line);
+  text-underline-offset: 2px;
+  font-weight: 500;
+}
+.chat-link:hover {
+  color: var(--accent-hover);
+  text-decoration-color: var(--accent);
+}
+.chat-link.applied {
+  cursor: default;
+  font-style: italic;
+}
+.chat-link.external::after {
+  content: " ↗";
+  font-size: 0.85em;
+  opacity: 0.7;
+}
+
+/* ApplyVariantBar — primary action surface on the variant page. */
+.apply-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  background: var(--bg-1);
+  border: 1px solid var(--accent-line);
+  border-radius: 12px;
+  box-shadow: var(--shadow-1);
+}
+.apply-bar-cta {
+  flex-shrink: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+.apply-bar-error {
+  color: var(--status-cut);
+  font-size: 12px;
+  width: 100%;
+  margin-top: 6px;
+}
+.apply-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: var(--status-top-soft);
+  border: 1px solid rgba(23, 124, 99, 0.35);
+  border-radius: 12px;
+  color: var(--status-top);
+}
+.apply-banner.success strong {
+  color: var(--t-1);
+}
+.apply-banner.success .muted {
+  color: var(--t-2);
+}
+.apply-banner-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--status-top);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.apply-banner-undo {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--t-1);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--t-fast) var(--ease-out);
+}
+.apply-banner-undo:hover {
+  background: var(--bg-2);
+}
+.apply-banner-undo:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 .health-panel-rows {
   display: flex;
   flex-direction: column;

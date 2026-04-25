@@ -46,6 +46,9 @@ class Datastore:
     # L2-normalised attribute feature vectors for cosine-similarity twin lookup.
     creative_vectors: dict[int, np.ndarray] = field(default_factory=dict)
     creative_vector_dims: int = 0
+    # Process-lifetime queue of variant applications (creative_id → entry).
+    # Cleared on restart. Mock for the demo since the dataset is read-only.
+    applied_variants: dict[int, dict[str, Any]] = field(default_factory=dict)
 
     def load(self) -> None:
         self.advertisers = pd.read_csv(DATASET_ROOT / "advertisers.csv")

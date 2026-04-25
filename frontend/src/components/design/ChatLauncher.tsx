@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronDown, Mic, Square } from "lucide-react";
@@ -432,8 +433,11 @@ function parseBlocks(text: string): Block[] {
 }
 
 function renderInline(text: string): React.ReactNode[] {
-  // Tokenize on **bold**, *italic*, and `code` in one pass.
-  const re = /(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g;
+  // Tokenize on **bold**, *italic*, `code`, and [text](url) links in one
+  // pass. Links to `#creative-NNN` / `#twin-NNN` are rewritten as Next.js
+  // <Link>s so the chat can deep-link to the relevant page; other URLs
+  // open in a new tab.
+  const re = /(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`|\[[^\]]+\]\([^)]+\))/g;
   const out: React.ReactNode[] = [];
   let last = 0;
   let key = 0;
@@ -445,6 +449,14 @@ function renderInline(text: string): React.ReactNode[] {
       out.push(<strong key={key++}>{tok.slice(2, -2)}</strong>);
     } else if (tok.startsWith("`")) {
       out.push(<code key={key++}>{tok.slice(1, -1)}</code>);
+    } else if (tok.startsWith("[")) {
+      const linkMatch = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(tok);
+      if (linkMatch) {
+        const [, label, href] = linkMatch;
+        out.push(renderChatLink(href, label, key++));
+      } else {
+        out.push(tok);
+      }
     } else {
       out.push(<em key={key++}>{tok.slice(1, -1)}</em>);
     }
@@ -452,6 +464,59 @@ function renderInline(text: string): React.ReactNode[] {
   }
   if (last < text.length) out.push(text.slice(last));
   return out;
+}
+
+function renderChatLink(href: string, label: string, key: number): React.ReactNode {
+  // #creative-500071 → /creatives/500071?from=chat
+  const creative = /^#creative-(\d+)$/.exec(href);
+  if (creative) {
+    return (
+      <Link
+        key={key}
+        href={`/creatives/${creative[1]}?from=chat`}
+        className="chat-link"
+        prefetch={false}
+      >
+        {label}
+      </Link>
+    );
+  }
+  // #twin-500071 → /creatives/500071/twin
+  const twin = /^#twin-(\d+)$/.exec(href);
+  if (twin) {
+    return (
+      <Link
+        key={key}
+        href={`/creatives/${twin[1]}/twin?from=chat`}
+        className="chat-link"
+        prefetch={false}
+      >
+        {label}
+      </Link>
+    );
+  }
+  // #applied-NNN — non-route anchor for the agent's "undo" affordance. We
+  // don't have an applied-list page yet, so render as an inline pill that
+  // does nothing on click. Future: open the queue drawer.
+  if (/^#applied-\d+$/.test(href)) {
+    return (
+      <span key={key} className="chat-link applied">
+        {label}
+      </span>
+    );
+  }
+  // Anything else: external link, new tab.
+  return (
+    <a
+      key={key}
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="chat-link external"
+    >
+      {label}
+    </a>
+  );
 }
 
 function parseSseEvent(raw: string): { event: string; data: unknown } | null {
