@@ -118,14 +118,20 @@ export default async function ExplorePage(props: {
           sort,
           desc,
           buildHref: (key: string) => {
+            // 3-click cycle: off → asc → desc → off
             const next: Record<string, string | undefined> = { ...params };
-            if (next.sort === key) {
-              next.desc = desc ? "false" : "true";
-            } else {
+            delete next.limit; // restart pagination on re-sort
+            if (sort !== key) {
+              next.sort = key;
+              next.desc = "false";
+            } else if (!desc) {
               next.sort = key;
               next.desc = "true";
+            } else {
+              // Currently descending → fall off back to default.
+              delete next.sort;
+              delete next.desc;
             }
-            delete next.limit; // restart pagination on re-sort
             const qp = new URLSearchParams();
             for (const [k, v] of Object.entries(next)) {
               if (v !== undefined && v !== "") qp.set(k, v);

@@ -537,7 +537,7 @@ a:focus-visible {
 }
 .creative-thead {
   display: grid;
-  grid-template-columns: 88px minmax(0, 2fr) 76px 76px 76px 76px 80px 120px 110px;
+  grid-template-columns: 88px minmax(0, 2fr) 76px 76px 76px 76px 80px 148px 110px;
   padding: 10px 16px;
   font-size: 10px;
   font-weight: 600;
@@ -572,7 +572,7 @@ a:focus-visible {
 }
 .creative-row {
   display: grid;
-  grid-template-columns: 88px minmax(0, 2fr) 76px 76px 76px 76px 80px 120px 110px;
+  grid-template-columns: 88px minmax(0, 2fr) 76px 76px 76px 76px 80px 148px 110px;
   align-items: center;
   padding: 0 16px;
   min-height: 80px;
@@ -585,7 +585,7 @@ a:focus-visible {
    Days value in the previous column. */
 .creative-thead > :nth-child(8),
 .creative-row > :nth-child(8) {
-  padding-left: 24px;
+  padding-left: 52px;
 }
 .creative-row:hover {
   background: var(--bg-2);

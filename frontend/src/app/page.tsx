@@ -53,15 +53,20 @@ export default async function Cockpit(props: {
   const total = listing.total;
   const shown = listing.rows.length;
   const buildSortHref = (key: string) => {
+    // 3-click cycle: off → asc → desc → off
     const next: Record<string, string> = { tab };
     if (limit !== PAGE_SIZE) next.limit = String(limit);
-    next.sort = key;
-    if (sort === key) {
-      // Toggle direction if clicking the active column.
-      next.desc = desc ? "false" : "true";
-    } else {
+    if (sort !== key) {
+      // Clicking an inactive column starts the cycle at ascending.
+      next.sort = key;
+      next.desc = "false";
+    } else if (!desc) {
+      // Currently ascending → flip to descending.
+      next.sort = key;
       next.desc = "true";
     }
+    // else (currently descending): omit sort entirely → falls back to
+    // the backend's default order (health desc).
     const qp = new URLSearchParams(next).toString();
     return `/?${qp}`;
   };
