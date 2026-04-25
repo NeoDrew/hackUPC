@@ -2,16 +2,7 @@
 
 import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  ChevronDown,
-  Loader2,
-  Maximize2,
-  Mic,
-  Minimize2,
-  PanelRight,
-  Square,
-  X,
-} from "lucide-react";
+import { ChevronDown, Mic, Square } from "lucide-react";
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8001";
 
@@ -211,11 +202,11 @@ export function ChatLauncher() {
       <button
         type="button"
         className="chat-launcher"
-        aria-label="Open assistant"
+        aria-label="Ask Smadex Copilot"
         onClick={beginOpen}
       >
-        <PanelRight size={14} strokeWidth={1.75} aria-hidden />
-        <span className="chat-launcher-label">Open assistant</span>
+        <span className="chat-launcher-glyph">✦</span>
+        <span className="chat-launcher-label">Ask Copilot</span>
       </button>
     );
   }
@@ -224,32 +215,33 @@ export function ChatLauncher() {
     <section
       className="chat-panel"
       role="dialog"
-      aria-label="Assistant"
+      aria-label="Smadex Copilot chat"
       data-state={panelState}
       data-expanded={expanded ? "true" : undefined}
     >
       <header className="chat-panel-head">
         <span className="chat-panel-title">
-          Assistant
+          <span className="chat-launcher-glyph small">✦</span>
+          Smadex Copilot
           <span className="chat-panel-sub">Gemini 2.5 Flash · grounded on portfolio data</span>
         </span>
         <div className="chat-panel-actions">
           <button
             type="button"
             className="chat-panel-icon"
-            aria-label={expanded ? "Collapse" : "Expand"}
+            aria-label={expanded ? "Collapse chat" : "Expand chat"}
             title={expanded ? "Collapse" : "Expand"}
             onClick={() => setExpanded((v) => !v)}
           >
-            {expanded ? <Minimize2 size={14} strokeWidth={1.75} aria-hidden /> : <Maximize2 size={14} strokeWidth={1.75} aria-hidden />}
+            {expanded ? "⤓" : "⤒"}
           </button>
           <button
             type="button"
             className="chat-panel-icon chat-panel-close"
-            aria-label="Close"
+            aria-label="Close chat"
             onClick={beginClose}
           >
-            <X size={16} strokeWidth={1.75} aria-hidden />
+            ×
           </button>
         </div>
       </header>
@@ -312,7 +304,7 @@ export function ChatLauncher() {
           className="chat-send"
           disabled={streaming || !draft.trim()}
         >
-          {streaming ? <Loader2 size={14} strokeWidth={2} className="chat-send-spin" aria-hidden /> : "Send"}
+          {streaming ? "…" : "Send"}
         </button>
       </form>
     </section>

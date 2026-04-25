@@ -3,8 +3,8 @@ export function Sparkline({
   fatigueDay,
   width = 80,
   height = 24,
-  stroke = "var(--t-3)",
-  fill = "transparent",
+  stroke = "var(--accent)",
+  fill = "var(--accent-soft)",
 }: {
   series: number[];
   fatigueDay?: number | null;

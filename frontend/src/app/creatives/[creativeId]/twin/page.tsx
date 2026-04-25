@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowRight } from "lucide-react";
 
 import { api } from "@/lib/api";
 import { DiffTable } from "@/components/design/DiffTable";
@@ -72,7 +71,7 @@ export default async function TwinPage(
         <div className="col gap-1">
           <div className="row center gap-3">
             <Link href={`/creatives/${id}${rangeSuffix}`} className="btn dense">
-              <ArrowLeft size={14} strokeWidth={1.75} aria-hidden /> Back to detail
+              ← Back to detail
             </Link>
             <span className="filter-chip">
               {Math.round(twin.similarity * 100)}% similar · {twin.segment.vertical} ×{" "}
@@ -90,7 +89,7 @@ export default async function TwinPage(
             Save
           </button>
           <Link href={`/creatives/${id}/variant${rangeSuffix}`} className="btn primary">
-            Generate variant <ArrowRight size={14} strokeWidth={1.75} aria-hidden />
+            Generate next variant →
           </Link>
         </div>
       </header>
