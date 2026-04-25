@@ -1,6 +1,9 @@
+import { Suspense } from "react";
+
 import { api } from "@/lib/api";
-import { KpiTile } from "@/components/design/KpiTile";
 import { CreativeTable } from "@/components/design/CreativeTable";
+import { CreativeTableSkeleton } from "@/components/design/CreativeTableSkeleton";
+import { KpiTile } from "@/components/design/KpiTile";
 import { formatCount, formatCurrency, formatPct, formatRoas } from "@/lib/format";
 import { TAB_TO_STATUS, type TabKey } from "@/lib/status";
 
@@ -45,31 +48,12 @@ export default async function Cockpit(props: {
   const limit = clampLimit(params.limit);
   const sort = params.sort && SORTABLE.has(params.sort) ? params.sort : undefined;
   const desc = params.desc !== "false";
-  const [kpis, listing] = await Promise.all([
-    api.portfolioKpis(),
-    api.listCreatives({ tab, limit, sort, desc }),
-  ]);
+  // KPIs don't depend on the tab — fetch in the parent so the strip
+  // renders instantly. Table moves into a Suspense below so tab clicks
+  // swap the rows without flashing the whole page.
+  const kpis = await api.portfolioKpis();
   const headings = TAB_HEADINGS[tab];
-  const total = listing.total;
-  const shown = listing.rows.length;
-  const buildSortHref = (key: string) => {
-    // 3-click cycle: off → asc → desc → off
-    const next: Record<string, string> = { tab };
-    if (limit !== PAGE_SIZE) next.limit = String(limit);
-    if (sort !== key) {
-      // Clicking an inactive column starts the cycle at ascending.
-      next.sort = key;
-      next.desc = "false";
-    } else if (!desc) {
-      // Currently ascending → flip to descending.
-      next.sort = key;
-      next.desc = "true";
-    }
-    // else (currently descending): omit sort entirely → falls back to
-    // the backend's default order (health desc).
-    const qp = new URLSearchParams(next).toString();
-    return `/?${qp}`;
-  };
+  const suspenseKey = `${tab}|${sort ?? ""}|${desc ? "d" : "a"}|${limit}`;
   return (
     <>
       <section className="kpi-strip">
@@ -83,30 +67,74 @@ export default async function Cockpit(props: {
           urgent
         />
       </section>
-      <CreativeTable
-        rows={listing.rows}
-        heading={headings.heading}
-        subcopy={headings.subcopy}
-        from={tab}
-        sortState={{ sort, desc, buildHref: buildSortHref }}
-        footer={
-          shown < total ? (
-            <ShowMoreFooter
-              tab={tab}
-              shown={shown}
-              total={total}
-              currentLimit={limit}
-              sort={sort}
-              desc={desc}
-            />
-          ) : (
-            <p className="t-micro muted" style={{ padding: "10px 16px" }}>
-              Showing all {total} creatives in this view.
-            </p>
-          )
+      <Suspense
+        key={suspenseKey}
+        fallback={
+          <CreativeTableSkeleton
+            heading={headings.heading}
+            subcopy={headings.subcopy}
+          />
         }
-      />
+      >
+        <CockpitTable tab={tab} limit={limit} sort={sort} desc={desc} />
+      </Suspense>
     </>
+  );
+}
+
+async function CockpitTable({
+  tab,
+  limit,
+  sort,
+  desc,
+}: {
+  tab: TabKey;
+  limit: number;
+  sort?: string;
+  desc: boolean;
+}) {
+  const listing = await api.listCreatives({ tab, limit, sort, desc });
+  const headings = TAB_HEADINGS[tab];
+  const total = listing.total;
+  const shown = listing.rows.length;
+  const buildSortHref = (key: string) => {
+    // 3-click cycle: off → asc → desc → off
+    const next: Record<string, string> = { tab };
+    if (limit !== PAGE_SIZE) next.limit = String(limit);
+    if (sort !== key) {
+      next.sort = key;
+      next.desc = "false";
+    } else if (!desc) {
+      next.sort = key;
+      next.desc = "true";
+    }
+    const qp = new URLSearchParams(next).toString();
+    return `/?${qp}`;
+  };
+  return (
+    <CreativeTable
+      rows={listing.rows}
+      heading={headings.heading}
+      subcopy={headings.subcopy}
+      from={tab}
+      sortState={{ sort, desc, buildHref: buildSortHref }}
+      footer={
+        shown < total ? (
+          <ShowMoreFooter
+            tab={tab}
+            shown={shown}
+            total={total}
+            currentLimit={limit}
+            sort={sort}
+            desc={desc}
+          />
+        ) : (
+          <p className="t-micro muted" style={{ padding: "10px 16px" }}>
+            Showing all {total} creatives in this view.
+          </p>
+        )
+      }
+    />
   );
 }
 

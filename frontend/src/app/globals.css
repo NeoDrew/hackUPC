@@ -295,7 +295,7 @@ a:focus-visible {
 .topbar .search-wrap {
   position: relative;
   flex: 1;
-  max-width: 480px;
+  max-width: 1440px;
 }
 .topbar .search {
   width: 100%;
@@ -1693,12 +1693,24 @@ a:focus-visible {
   cursor: not-allowed;
 }
 
-/* Skeleton (kept for future loading states) */
+/* Skeleton (used by CreativeTableSkeleton during Suspense fallback) */
 .skeleton {
   background: linear-gradient(90deg, var(--line-soft) 0%, var(--bg-3) 50%, var(--line-soft) 100%);
   background-size: 400px 100%;
   animation: shimmer 1500ms linear infinite;
   border-radius: 4px;
+}
+.skeleton-thumb {
+  width: 64px;
+  height: 64px;
+  border-radius: 6px;
+}
+.creative-row.creative-row-skeleton {
+  cursor: default;
+  background: var(--bg-1);
+}
+.creative-row.creative-row-skeleton:hover {
+  background: var(--bg-1);
 }
 
 /* Keyframes */
