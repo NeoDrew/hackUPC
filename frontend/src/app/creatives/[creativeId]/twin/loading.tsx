@@ -2,13 +2,23 @@
  * three sequential awaits (twin lookup, source detail, winner detail)
  * plus a Gemma call for vision insight — easily 1-3 s on a warm Render.
  * Cold start adds another ~30 s; this skeleton means the user is never
- * staring at a frozen old page during the navigation. */
+ * staring at a frozen old page during the navigation, and the explicit
+ * "Generating analysis…" banner tells them the latency is the LLM
+ * doing work, not the app being broken. */
 export default function TwinLoading() {
   return (
     <section
       className="col gap-5"
       style={{ paddingTop: 16, maxWidth: 1100, margin: "0 auto" }}
     >
+      <div className="generating-banner" role="status" aria-live="polite">
+        <span className="generating-dot" />
+        <span>
+          <strong>Generating analysis with Gemma 4</strong>
+          <span className="generating-sub"> · finding the closest twin and diffing attributes</span>
+        </span>
+      </div>
+
       <header className="row between center" style={{ flexWrap: "wrap", gap: 12 }}>
         <div className="col gap-2">
           <div className="row center gap-3">
@@ -46,7 +56,12 @@ export default function TwinLoading() {
         }}
         className="col gap-2"
       >
-        <div className="skeleton" style={{ height: 18, width: 280 }} />
+        <div className="row center between">
+          <div className="skeleton" style={{ height: 18, width: 280 }} />
+          <span className="t-micro generating-pill">
+            <span className="generating-dot" /> generating
+          </span>
+        </div>
         <div className="skeleton" style={{ height: 12, width: "85%" }} />
         <div className="skeleton" style={{ height: 12, width: "70%" }} />
       </section>
