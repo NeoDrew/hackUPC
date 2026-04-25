@@ -20,11 +20,53 @@ interface ChatMessage {
   pending?: boolean;
 }
 
-const SUGGESTIONS = [
-  "What are the worst-fatiguing creatives this week?",
-  "Why is creative 500001 losing?",
-  "What's working in our gaming portfolio?",
-];
+const TAB_LABEL: Record<string, string> = {
+  scale: "scale",
+  watch: "watch",
+  rescue: "rescue",
+  cut: "cut",
+};
+
+function buildSuggestions(context: Record<string, unknown>): string[] {
+  const creativeId = context.creative_id as number | undefined;
+  const advertiserId = context.advertiser_id as number | undefined;
+  const tab = context.tab as string | undefined;
+  const pathname = (context.pathname as string | undefined) ?? "";
+
+  if (creativeId && pathname.endsWith("/twin")) {
+    return [
+      `Why is creative ${creativeId} losing to its twin?`,
+      `Which attributes should I copy from the winner?`,
+      `What's the predicted lift if I ship the variant?`,
+    ];
+  }
+  if (creativeId) {
+    return [
+      `Why is this creative losing?`,
+      `Find me a twin for ${creativeId}`,
+      `What attributes are dragging it down?`,
+    ];
+  }
+  if (advertiserId) {
+    return [
+      `Which of this advertiser's creatives are winning?`,
+      `Where is fatigue concentrated in their portfolio?`,
+      `What should they test next?`,
+    ];
+  }
+  if (tab && TAB_LABEL[tab]) {
+    return [
+      `What's driving the ${TAB_LABEL[tab]} list?`,
+      `Top 3 creatives in ${TAB_LABEL[tab]} right now`,
+      `What attributes do these share?`,
+    ];
+  }
+  return [
+    "What are the worst-fatiguing creatives this week?",
+    "What's working in our gaming portfolio?",
+    "Top performers I should scale today",
+  ];
+}
 
 type PanelState = "idle" | "open" | "closing";
 
@@ -42,6 +84,9 @@ export function ChatLauncher() {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dictation = useDictation((finalText) => {
+    setDraft((prev) => (prev ? `${prev.trimEnd()} ${finalText}` : finalText));
+  });
 
   // Hide on phone-immersive routes.
   if (pathname.startsWith("/m")) return null;
@@ -204,7 +249,7 @@ export function ChatLauncher() {
           <div className="chat-empty">
             <p className="t-micro muted">Ask anything about the portfolio. Try:</p>
             <div className="chat-suggestions">
-              {SUGGESTIONS.map((s) => (
+              {buildSuggestions(context).map((s) => (
                 <button
                   key={s}
                   type="button"
@@ -230,12 +275,25 @@ export function ChatLauncher() {
       >
         <input
           type="text"
-          placeholder="Ask about creatives, cohorts, fatigue…"
+          placeholder={dictation.listening ? "Listening…" : "Ask about creatives, cohorts, fatigue…"}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           disabled={streaming}
           autoFocus
         />
+        {dictation.supported ? (
+          <button
+            type="button"
+            className="chat-mic"
+            data-active={dictation.listening ? "true" : undefined}
+            aria-label={dictation.listening ? "Stop dictation" : "Start dictation"}
+            title={dictation.listening ? "Stop dictation" : "Speak"}
+            onClick={() => (dictation.listening ? dictation.stop() : dictation.start())}
+            disabled={streaming}
+          >
+            {dictation.listening ? "■" : "🎙"}
+          </button>
+        ) : null}
         <button
           type="submit"
           className="chat-send"
@@ -254,19 +312,41 @@ function ChatMessageRow({ message }: { message: ChatMessage }) {
       {message.toolCalls.length > 0 ? (
         <div className="chat-tools">
           {message.toolCalls.map((t, i) => (
-            <span key={i} className="chat-tool">
-              <span className="chat-tool-name">{t.name}</span>
-              <span className="chat-tool-args">
-                {Object.entries(t.args)
-                  .map(([k, v]) => `${k}=${formatToolArg(v)}`)
-                  .join(" · ")}
-              </span>
-            </span>
+            <ToolCallChip key={i} call={t} />
           ))}
         </div>
       ) : null}
-      <p>{message.content || (message.pending ? "Thinking…" : "")}</p>
+      {message.role === "assistant" ? (
+        message.content ? (
+          <MarkdownLite text={message.content} />
+        ) : message.pending ? (
+          <p className="chat-thinking">Thinking…</p>
+        ) : null
+      ) : (
+        <p>{message.content}</p>
+      )}
     </div>
+  );
+}
+
+function ToolCallChip({ call }: { call: ToolCall }) {
+  const argSummary = Object.entries(call.args)
+    .map(([k, v]) => `${k}=${formatToolArg(v)}`)
+    .join(" · ");
+  const hasResult = call.result !== undefined;
+  return (
+    <details className="chat-tool" data-has-result={hasResult ? "true" : undefined}>
+      <summary>
+        <span className="chat-tool-name">{call.name}</span>
+        {argSummary ? <span className="chat-tool-args">{argSummary}</span> : null}
+        <span className="chat-tool-state" aria-hidden>
+          {hasResult ? "▾" : "…"}
+        </span>
+      </summary>
+      {hasResult ? (
+        <pre className="chat-tool-result">{formatToolResult(call.result)}</pre>
+      ) : null}
+    </details>
   );
 }
 
@@ -274,6 +354,99 @@ function formatToolArg(v: unknown): string {
   if (typeof v === "string") return v;
   if (typeof v === "number" || typeof v === "boolean") return String(v);
   return JSON.stringify(v);
+}
+
+function formatToolResult(result: unknown): string {
+  try {
+    return JSON.stringify(result, null, 2);
+  } catch {
+    return String(result);
+  }
+}
+
+// Tiny markdown renderer for the agent's tight prose: **bold**, *italic*,
+// `code`, and `- ` bullet lists. The system prompt asks for 3-5 sentences,
+// so headings/tables aren't worth the dependency.
+function MarkdownLite({ text }: { text: string }) {
+  const blocks = parseBlocks(text);
+  return (
+    <div className="chat-md">
+      {blocks.map((block, i) =>
+        block.type === "list" ? (
+          <ul key={i}>
+            {block.items.map((item, j) => (
+              <li key={j}>{renderInline(item)}</li>
+            ))}
+          </ul>
+        ) : (
+          <p key={i}>{renderInline(block.text)}</p>
+        ),
+      )}
+    </div>
+  );
+}
+
+type Block = { type: "p"; text: string } | { type: "list"; items: string[] };
+
+function parseBlocks(text: string): Block[] {
+  const lines = text.split(/\r?\n/);
+  const blocks: Block[] = [];
+  let para: string[] = [];
+  let list: string[] = [];
+  const flushPara = () => {
+    if (para.length) {
+      blocks.push({ type: "p", text: para.join(" ") });
+      para = [];
+    }
+  };
+  const flushList = () => {
+    if (list.length) {
+      blocks.push({ type: "list", items: list });
+      list = [];
+    }
+  };
+  for (const raw of lines) {
+    const line = raw.trimEnd();
+    const bullet = /^\s*[-*]\s+(.*)$/.exec(line);
+    if (bullet) {
+      flushPara();
+      list.push(bullet[1]);
+      continue;
+    }
+    if (line.trim() === "") {
+      flushPara();
+      flushList();
+      continue;
+    }
+    flushList();
+    para.push(line);
+  }
+  flushPara();
+  flushList();
+  return blocks;
+}
+
+function renderInline(text: string): React.ReactNode[] {
+  // Tokenize on **bold**, *italic*, and `code` in one pass.
+  const re = /(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g;
+  const out: React.ReactNode[] = [];
+  let last = 0;
+  let key = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) out.push(text.slice(last, m.index));
+    const tok = m[0];
+    if (tok.startsWith("**")) {
+      out.push(<strong key={key++}>{tok.slice(2, -2)}</strong>);
+    } else if (tok.startsWith("`")) {
+      out.push(<code key={key++}>{tok.slice(1, -1)}</code>);
+    } else {
+      out.push(<em key={key++}>{tok.slice(1, -1)}</em>);
+    }
+    last = m.index + tok.length;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return out;
 }
 
 function parseSseEvent(raw: string): { event: string; data: unknown } | null {
@@ -357,4 +530,91 @@ function buildContext(
   const advertiserMatch = pathname.match(/\/advertisers\/(\d+)/);
   if (advertiserMatch) ctx.advertiser_id = Number(advertiserMatch[1]);
   return ctx;
+}
+
+// Web Speech API wrapper. Chrome/Safari ship it under different names; Firefox
+// doesn't support it at all, so the mic button is hidden when unsupported.
+interface DictationApi {
+  supported: boolean;
+  listening: boolean;
+  start: () => void;
+  stop: () => void;
+}
+
+interface SpeechRecognitionLike {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }> }) => void) | null;
+  onerror: ((e: unknown) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+}
+
+function useDictation(onFinalText: (text: string) => void): DictationApi {
+  const [supported, setSupported] = useState(false);
+  const [listening, setListening] = useState(false);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const callbackRef = useRef(onFinalText);
+  callbackRef.current = onFinalText;
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const w = window as unknown as {
+      SpeechRecognition?: new () => SpeechRecognitionLike;
+      webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+    };
+    const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
+    if (!Ctor) return;
+    setSupported(true);
+    return () => {
+      recognitionRef.current?.abort();
+      recognitionRef.current = null;
+    };
+  }, []);
+
+  const start = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const w = window as unknown as {
+      SpeechRecognition?: new () => SpeechRecognitionLike;
+      webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+    };
+    const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
+    if (!Ctor) return;
+    const r = new Ctor();
+    r.continuous = false;
+    r.interimResults = false;
+    r.lang = "en-US";
+    r.onresult = (e) => {
+      let finalText = "";
+      for (let i = 0; i < e.results.length; i++) {
+        const result = e.results[i];
+        if (result.isFinal) finalText += result[0].transcript;
+      }
+      finalText = finalText.trim();
+      if (finalText) callbackRef.current(finalText);
+    };
+    r.onerror = () => {
+      setListening(false);
+    };
+    r.onend = () => {
+      setListening(false);
+      recognitionRef.current = null;
+    };
+    try {
+      r.start();
+      recognitionRef.current = r;
+      setListening(true);
+    } catch {
+      setListening(false);
+    }
+  }, []);
+
+  const stop = useCallback(() => {
+    recognitionRef.current?.stop();
+  }, []);
+
+  return { supported, listening, start, stop };
 }

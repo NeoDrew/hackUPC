@@ -40,7 +40,9 @@ _SYSTEM_PROMPT = (
     "creative IDs, headlines, or metrics that the tools didn't return. If the "
     "user asks something unrelated to the dataset, say you can only help with "
     "Smadex creative analysis. Keep answers tight (3-5 sentences) unless the "
-    "user asks for detail. End with a single concrete next step."
+    "user asks for detail. End with a single concrete next step. "
+    "The UI renders **bold**, *italic*, `code`, and `- ` bullet lists — use "
+    "them lightly to highlight numbers and IDs, never headings."
 )
 
 
@@ -311,8 +313,9 @@ async def stream_chat(
     # across model versions.
     contents: list[dict[str, Any]] = []
     preamble_parts = [_SYSTEM_PROMPT]
-    if context:
-        preamble_parts.append("Current UI context: " + json.dumps(context))
+    context_directive = _format_context_directive(context)
+    if context_directive:
+        preamble_parts.append(context_directive)
     contents.append(
         {"role": "user", "parts": [{"text": "\n\n".join(preamble_parts)}]}
     )
@@ -328,7 +331,17 @@ async def stream_chat(
         body = {
             "contents": contents,
             "tools": [{"functionDeclarations": _TOOL_SCHEMA}],
-            "generationConfig": {"temperature": 0.4, "maxOutputTokens": 800},
+            "generationConfig": {
+                "temperature": 0.4,
+                # Gemini 2.5 Flash thinking tokens count against this budget,
+                # so a low cap clips visible prose mid-sentence. 2048 leaves
+                # plenty of room even when thinking is verbose.
+                "maxOutputTokens": 2048,
+                # Cap thinking so most of the budget goes to the user-visible
+                # answer. -1 = dynamic; 0 = disabled (faster but worse tool
+                # selection).
+                "thinkingConfig": {"thinkingBudget": 512},
+            },
         }
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
@@ -376,6 +389,13 @@ async def stream_chat(
         text = "".join(p.get("text", "") for p in parts if "text" in p).strip()
         if text:
             yield _sse_event("delta", {"text": text})
+        finish_reason = candidate.get("finishReason")
+        if finish_reason == "MAX_TOKENS":
+            log.warning("chat orchestrator hit MAX_TOKENS")
+            yield _sse_event(
+                "delta",
+                {"text": "\n\n_…response truncated by token budget._"},
+            )
         yield _sse_event("done", {})
         return
 
@@ -411,6 +431,58 @@ def _truncate(value: Any, max_chars: int = 2000) -> Any:
 
 def _sse_event(event: str, payload: dict[str, Any]) -> str:
     return f"event: {event}\ndata: {json.dumps(payload)}\n\n"
+
+
+def _format_context_directive(context: dict[str, Any] | None) -> str | None:
+    """Turn the UI context dict into an explicit directive the model will use.
+
+    The frontend captures whatever creative/advertiser/tab the user is staring at;
+    without a directive, the model treats it as background noise. With one, it
+    resolves "this", "it", "why is this losing" against the right ID by default.
+    """
+    if not context:
+        return None
+    lines: list[str] = ["The user is currently viewing the Smadex Copilot UI."]
+    creative_id = context.get("creative_id")
+    advertiser_id = context.get("advertiser_id")
+    tab = context.get("tab")
+    pathname = context.get("pathname")
+
+    if creative_id is not None:
+        lines.append(
+            f"They are on the page for creative {creative_id}. When they say "
+            f"'this', 'it', 'this creative', or ask why something is losing/winning "
+            f"without naming an ID, default to creative {creative_id} and call "
+            f"get_creative_diagnosis on it before answering."
+        )
+        if isinstance(pathname, str) and pathname.endswith("/twin"):
+            lines.append(
+                f"Specifically the twin-comparison page — questions about "
+                f"'the winner' or 'the twin' refer to creative {creative_id}'s "
+                f"cohort leader; call get_twin first."
+            )
+        elif isinstance(pathname, str) and "/variant" in pathname:
+            lines.append(
+                "Specifically the variant page — they are about to ship a "
+                "remix of this creative."
+            )
+    if advertiser_id is not None:
+        lines.append(
+            f"They are scoped to advertiser {advertiser_id}. Cohort and 'top "
+            f"creatives' questions should be filtered to that advertiser when "
+            f"possible."
+        )
+    if tab in {"scale", "watch", "rescue", "cut"}:
+        lines.append(
+            f"They are on the '{tab}' tab. If they ask about 'top' or 'these' "
+            f"creatives without specifying, default list_top_creatives to "
+            f"tab='{tab}'."
+        )
+    if len(lines) == 1:
+        # No actionable context found — still pass the raw payload so the
+        # model can decide what (if anything) it means.
+        return "Current UI context: " + json.dumps(context)
+    return "\n".join(lines)
 
 
 def _safe_num(v: Any) -> float:
