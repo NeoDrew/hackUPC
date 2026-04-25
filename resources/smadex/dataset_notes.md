@@ -40,6 +40,8 @@ Numeric 0–1 scores: `text_density`, `readability_score`, `brand_visibility_sco
 
 Integers: `duration_sec`, `copy_length_chars`, `faces_count`, `product_count`, `width`, `height`.
 
+`duration_sec` is serving metadata from the synthetic generator, not something extracted from the PNG asset. For `rewarded_video` / `playable`, it is the creative runtime in seconds. For static formats (`banner`, `interstitial`, `native`), treat it as the intended exposure window per impression (how long the creative is eligible to remain visible before rotation/close), not "video length".
+
 Binary flags: `has_price`, `has_discount_badge`, `has_gameplay`, `has_ugc_style`.
 
 Use these directly for Q3's attribute cube — **no need to re-extract from images**. CLIP remains useful for visual similarity / clustering, but not as the primary attribute source.
