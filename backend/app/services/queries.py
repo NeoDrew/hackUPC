@@ -162,6 +162,13 @@ def tab_counts(
     return windowed.compute_window(store, s, e)["tab_counts"]
 
 
+def health_diagnostics(store: Datastore) -> dict[str, Any]:
+    """Return the precomputed Q1 health diagnostics payload (stability,
+    distribution, synthetic-label sanity checks). Computed at startup
+    inside ``Datastore._compute_health_scores``."""
+    return store.health_diagnostics
+
+
 def search_creatives(
     store: Datastore, query: str, limit: int = 8
 ) -> list[dict[str, Any]]:
