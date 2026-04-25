@@ -136,14 +136,34 @@ Eight action types. Each one is a deterministic function over the slice grain th
 |--:|---|---|---|
 | 1 | **Geographic prune** | `country_drop_ratio < 0.66 × creative_drop_ratio` AND slice impressions ≥ 5% of creative total | *"Pause in BR — CTR has dropped 67% there while holding flat in US/UK. Saves est. $X/day at current ROAS."* |
 | 2 | **Geographic scale** | `country_cohort_percentile ≥ 90` AND `slice_roas ≥ 1.5 × creative_roas` AND budget headroom in that market | *"Increase BR bid 25% — top decile in (gaming, playable, BR) cohort, ROAS 2.3× creative average."* |
-| 3 | **OS frequency cap** | `os_impressions_last_7d / os_baseline > τ` AND `os_ctr_decay > 0.4` AND opposite OS healthy | *"Cut Android bid 30% — frequency saturated, marginal CVR collapsing. iOS still healthy."* |
+| 3 | **OS frequency cap** | `os_impressions_last_7d / os_baseline > τ` AND `os_ctr_decay ≥ 0.30` AND opposite OS still healthy | *"Cut iOS bid 30% — frequency saturated (post-ATT pool exhausted), marginal CVR collapsing. Android still healthy."* (post-ATT iOS pools fatigue 2–5 days **before** Android — see "Industry anchors" below.) |
 | 4 | **Cross-market fatigue early warning** | Slice-level changepoint LR significant in ≥ 2 served countries AND not yet visible in the summed series | *"Fatigue starting in LATAM cluster (BR, MX). EU still healthy. Rotate creative in LATAM before global metrics catch up."* |
 | 5 | **Concentration risk** | `top_country_share > 0.6` AND `top_country_drop_ratio < 0.85` | *"70% of this creative's impressions are in DE, where CTR has dropped 23%. Diversify or replace before lifetime ROAS collapses."* |
 | 6 | **Format-market mismatch** | Within `(country, vertical)` cohort, peer formats outperform this creative's format by ≥ 30% on ROAS | *"Banners in JP underperform playables 3.4× on ROAS. Your DE banner spend should rotate into playable creative."* |
 | 7 | **Pattern transfer** | Sibling creative with similar attribute cube wins in country X; this creative not yet served in X | *"Sibling creative #501234 ranks top decile in MX (gaming, playable). Test this creative in MX — same hook, same CTA, untested."* |
 | 8 | **Reallocation** | Rank slices by marginal ROAS = `revenue_usd / spend_usd` per slice; shift budget from bottom quartile to top quartile within the same advertiser | *"Shift $1.2k/day from (rewarded_video × IT × Android) to (rewarded_video × US × iOS). Projected lift: +$840/day revenue at constant total spend."* |
 
-Every emitted recommendation should carry: **(a)** the slice that triggered it, **(b)** the magnitude of the trigger, **(c)** a counterfactual-flavoured estimate of impact ("$X/day"), and **(d)** a one-click verb — `pause`, `scale`, `cap`, `rotate`, `replace`, `test`. The Q3b bandit lives behind #7 and #8; the other six are deterministic rules.
+Every emitted recommendation should carry: **(a)** the slice that triggered it, **(b)** the magnitude of the trigger, **(c)** a counterfactual-flavoured estimate of impact ("$X/day"), and **(d)** a one-click verb. **Use the canonical six verbs** that AppLovin MAX, Liftoff Vector and Moloco Cloud DSP all converge on: `Pause` / `Rotate` / `Scale` / `Shift` / `Refresh` / `Archive`. The Q3b bandit lives behind #7 and #8; the other six are deterministic rules.
+
+### Recommendation-card anatomy (industry-canonical)
+
+The card layout that real DSPs ship — match this exactly so judges recognise it:
+
+1. **Entity label** — `creative_id · country · os` (e.g. `creative_500127 · BR · Android`)
+2. **Signal headline** — lead with the delta: *"CTR –31% vs. baseline (3-day window)"*
+3. **Imperative CTA** — one of the six canonical verbs
+4. **Projected impact** — *"Est. +18% IPM if replaced today"* — always quantitative, always hedged ("est.", "projected")
+5. **Action buttons** — `Apply` / `Snooze` / `Dismiss` (we'll persist the chosen state to MongoDB so the demo can show "8 of your 12 recommendations applied this week")
+
+Three-tier severity used across the industry, mirror it:
+
+| Level | Colour | Copy pattern |
+|---|---|---|
+| **Critical** | red | *"Pause now — CTR –42% vs. 7-day baseline"* |
+| **Warning** | amber | *"Fatigue signal — rotate within 48h"* |
+| **Opportunity** | green | *"Scale: iOS · US converting at 2.1× Android"* |
+
+(Sources: AppLovin MAX Automated Creative Testing, Liftoff Accelerate "Creative Health" cards, Moloco Cloud DSP product blog.)
 
 ## Slice-level features the advisor needs (compute once, cache per creative)
 
@@ -158,7 +178,7 @@ For each `creative_id`, the recommendation engine needs these aggregates over th
 
 **OS-divergence features** (per creative):
 - `os_ctr_ratio` = `ctr_android / ctr_ios` (or whichever is non-zero); deviation from 1.0 is the headline.
-- `os_drop_divergence` = `drop_ratio_android - drop_ratio_ios`; positive + significant = textbook "Android peeling off" early warning.
+- `os_drop_divergence` = `drop_ratio_ios − drop_ratio_android` (note ordering — **iOS is the leading indicator post-ATT**, not Android: smaller targeted audience pool accumulates frequency faster, so iOS CTR breaks 2–5 days before Android on the same creative at equivalent spend).
 - `os_volume_ratio` = `impressions_android / impressions_ios`; flags lopsided distribution that may bias other features.
 
 **Per-`(creative, country)` trajectory features** (one row per slice):
@@ -186,18 +206,137 @@ For each `creative_id`, the recommendation engine needs these aggregates over th
 (Numbers below are *illustrative shapes* — verify on the data once the engine runs end-to-end; the structure of the claim survives whatever specific numbers fall out.)
 
 1. *"This creative is healthy in 3 of 5 markets — but you've been treating it as one global asset. We'd pause it in MX (CTR -52% in last 7 days) and scale it 30% in US (still top quartile). Net effect: +$2.1k/day in revenue at constant total spend."*
-2. *"Across all 1,080 creatives, Android shows fatigue ~6 days earlier than iOS on average. Our system catches it from the OS-divergence signal alone, before the global CTR drops enough for a standard fatigue test to fire — that's a one-week head start on rotation."*
+2. *"Post-ATT, iOS audience pools are smaller and more densely targeted, so they burn frequency 2–5 days earlier than Android on the same creative — the industry rule of thumb (Liftoff 2024 Mobile Gaming Report). Our OS-divergence detector catches it before the summed CTR drops enough to fire a standard fatigue test: a 2–5 day head start on rotation."*
 3. *"Banners in JP underperform playables 3.4× on ROAS — across every advertiser in the dataset. Any banner spend in JP should rotate to playable creative. We surface this as a one-click recommendation, with the projected daily lift attached."*
+
+## Industry anchors — verified thresholds to bake into the rules
+
+External research (Perplexity sweep across IAB, Liftoff, AppLovin, Moloco, RevenueCat, Y77, finsi, 2026-04-25). **Use these as the production constants** — replaces our hand-waved placeholders.
+
+| Anchor | Value | Source / framing |
+|---|---|---|
+| **Frequency at which CTR materially decays (prospecting)** | ≥ 2.5 impressions/user | Y77 / Meta-style inventory; earliest reliable fatigue signal |
+| **Frequency tolerance (retargeting)** | up to ~4.0 imp/user | Same; retargeted audiences tolerate higher frequency |
+| **CTR-decay "warning" trigger** | 15% drop vs. first-week baseline | finsi / industry rule of thumb |
+| **CTR-decay "replace now" trigger** | 30% drop vs. first-week baseline | finsi / industry rule of thumb |
+| **Creative-age elevated-risk floor** | > 14 days active | AdsGo heuristic; aligns with our existing 14-day production floor |
+| **Healthy mobile-app CTR (week 1)** | 1.5–3% range | Industry baseline; below = struggling launch, above = standout |
+| **iOS-vs-Android fatigue lead time** | iOS fatigues **2–5 days earlier** than Android on the same creative at equivalent spend | Liftoff 2024 Mobile Gaming Report (post-ATT pools smaller → frequency saturates faster). Industry rule of thumb, not a peer-reviewed figure. |
+| **LATAM cluster propagation** | If BR fatigues, MX typically follows in **3–7 days** at similar spend | Liftoff operational observation; SEA (ID/PH/TH/VN) clusters similarly; Tier-1 EN markets (US/UK/AU/CA) propagate independently |
+| **IAB Attention Measurement Guidelines** | Recommend per-campaign baselines, not universal thresholds | IAB November 2025 Attention Measurement Guidelines |
+
+**What to wire into our action triggers:**
+
+- Action #3 (OS frequency cap): use `os_ctr_decay ≥ 0.30` (matches the "replace now" threshold) AND `os_frequency_proxy ≥ 2.5`. Direction is **iOS-first**, not Android.
+- Action #4 (cross-market early warning): the LATAM/SEA cluster propagation gives us a concrete claim — *"BR fatigued today; based on industry-typical 3–7 day LATAM propagation, expect MX to follow this week. Rotate now."*
+- Soundbite copy lifts CTR-decay numbers from this table (15% / 30%) instead of inventing them.
+
+## Counterfactual lift estimation — the defensible 24-hour formula
+
+Action #8 (reallocation) and #2 (geographic scale) emit "projected lift" numbers. Without an A/B test, every such number is an **observational extrapolation**, and the only honest framing is hedged language. Use this template verbatim:
+
+> "Estimated lift based on observed spend-response curve — not an experimental result."
+
+**Method:** linearised marginal-ROAS extrapolation. Per slice, fit a diminishing-returns curve (log or power) on the trailing-14-day `(spend_usd, revenue_usd)` observations:
+
+```
+revenue ≈ α · spend^β   (β < 1 = diminishing returns)
+marginal_ROAS_at_spend = α · β · spend^(β-1)
+```
+
+Recommend reallocating budget *from* low-marginal-ROAS slices *to* high-marginal-ROAS slices within the same advertiser. The projected lift is the integrated difference between the two curves over the proposed shift; report it as a point estimate **with the hedging disclaimer above attached**.
+
+**What we're not doing in 24h** (but the demo language should know about, in case judges probe):
+
+| Method | Why we're not implementing | Reference |
+|---|---|---|
+| Geo-incrementality / geo-lift testing | Needs matched-market holdout + 1–2 weeks runtime | Meta's open-source GeoLift; gold-standard for geo decisions |
+| MMM (Robyn / LightweightMMM) | Needs ≥ 1 week of calibration; full media-mix decomposition is overkill for slice-level reallocation | Meta's open-source Robyn (R) |
+| Synthetic control | Needs 10+ pre-treatment periods per market; brittle with our 75-day window | Standard causal-inference text |
+| Causal forests / uplift modelling | Needs user-level data we don't have | EconML, grf |
+
+When a judge asks *"how do you know your projected lift is real?"*, the answer is:
+
+> "It's a **marginal-ROAS extrapolation** off the observed spend-response curve — explicitly an observational projection, not a causal claim. For a causal answer we'd run a geo-lift test; the GeoLift integration is a one-day next step."
+
+That answer survives expert scrutiny because it's honest about its category.
+
+## Smadex's actual vocabulary — mirror these terms in our UI copy
+
+From a sweep of Smadex's public surface (creative-studio guide, blog, case studies, reports page). **Use these terms verbatim** in the recommendation copy and the demo narration — judges respond to language they recognise.
+
+| Smadex term | Where it appears | How we'll use it |
+|---|---|---|
+| **Creative Fatigue** | Smadex Creative Studio Guide ("proactively combating creative fatigue by refreshing assets") | Our binary fatigue label — already aligned. |
+| **Creative Insights** | Smadex creative analysis docs (MMP-integrated performance) | Header for the per-creative drill-down panel. |
+| **Creative Health** | Smadex studio tooling for flagging underperformers | The KPI we already named "creative-health KPI". Aligned. |
+| **Best-performing creative elements** | Smadex case studies | The per-attribute SHAP rationale on Q3a — phrase it as *"top-performing creative elements: [hook], [CTA], [color palette]"*. |
+| **Creative rotation** / **asset refresh** | Smadex creative-studio docs | Action verbs: use `Rotate` and `Refresh` from the canonical six. |
+| **Ad position** | Smadex slice-dimension language | Add as a future slice dimension once they expose it; for now we use country × OS. |
+| **Personalize content** based on real-time engagement | Smadex Creative Studio Guide | Frame the bandit recommendations as *"Smadex-style personalisation based on real-time engagement"*. |
+| **Seamless budget and creative management** | Smadex Creative Studio docs | Position our advisor as the same — *"surfaces budget and creative recommendations seamlessly in one queue"*. |
+| **All-in-one platform** | Smadex brand phrase | Don't echo this; it's their brand line. Use *"unified action queue"* instead. |
+
+**What Smadex does *not* publish**: explicit per-country / per-OS fatigue thresholds, recommendation-card screenshots, or algorithmic detail. Their public surface is marketing-level. **This is our gap to fill** — the actual quantitative slice work is the differentiator we bring.
 
 ## Engineering notes for the advisor build
 
+### Stack
 - **Don't introduce Spark / Dask.** 192k rows fits in pandas comfortably; the slice features for all 1,080 creatives compute in seconds.
-- **Cache aggregates in MongoDB Atlas** (already in the stack for the MLH prize). Schema sketch: one document per `creative_id` with nested `by_country` and `by_os` blocks plus a `slices: [...]` array.
+- **Wrap the rules + the Q3b bandit in one LLM tool** (Andrew's orchestrator). The marketer asks *"what should I do today?"* and gets the top 3 actions across all creatives with rationales.
 - **The advisor endpoint returns a ranked list of actions across the advertiser's portfolio**, not per-creative. Marketers want a daily action queue, not a forensic report. Sort by expected revenue impact descending.
-- **Wrap the rules + the Q3b bandit in one LLM tool** (Andrew's orchestrator) — the marketer asks *"what should I do today?"* and gets the top 3 actions across all creatives with rationales. Each action carries the underlying slice for drill-down.
 - **Don't surface ground-truth `creative_status` or `fatigue_day` in any rationale.** Validate against, never quote.
-- **Per-recommendation explainability**: each action ships with the trigger (e.g. *"BR drop_ratio = 0.32, creative drop_ratio = 0.81"*) so a sceptical user can audit. SHAP on the bandit / slice-level deterministic values on the rules.
+- **Per-recommendation explainability**: each action ships with the trigger (e.g. *"BR drop_ratio = 0.32, creative drop_ratio = 0.81"*) so a sceptical user can audit.
+
+### MongoDB Atlas schema (verified pattern, not TSC)
+
+**Use a regular collection with the manual bucket pattern**, not Atlas Time Series Collections — TSC is append-only and we need to update the pre-computed scores on every refresh.
+
+```jsonc
+// collection: creative_slice_cache
+{
+  "_id": "creative_500127:BR:android",         // composite PK = O(1) lookup
+  "creative_id": "creative_500127",
+  "country": "BR",
+  "os": "android",
+  "meta": {
+    "format": "playable",
+    "vertical": "gaming",
+    "duration_s": 30,
+    "embedding": [0.123, -0.045, ...]          // 384 or 512 dims; reserved for similarity
+  },
+  "daily_rollups": [                            // capped at 90 days, $slice on write
+    { "date": "2026-04-24", "impressions": 142000, "clicks": 2130,
+      "installs": 88, "spend_usd": 410.50, "ctr": 0.0150, "ipm": 0.619 }
+  ],
+  "agg_7d": {                                   // pre-computed; advisor reads only this
+    "ctr_baseline": 0.021, "ctr_decay_pct": -28.6,
+    "drop_ratio": 0.71, "lr_stat": 14.2,
+    "alert": "WARNING",                         // CRITICAL | WARNING | OPPORTUNITY | OK
+    "marginal_roas": 1.84
+  },
+  "last_updated": "2026-04-25T00:00:00Z"
+}
+```
+
+**Indexes:**
+```
+{ creative_id: 1, country: 1, os: 1, last_updated: -1 }   // PK-ish
+{ "agg_7d.alert": 1, "agg_7d.ctr_decay_pct": 1 }          // "show me all warnings, sorted"
+```
+
+The advisor endpoint reads only `agg_7d` per slice — no array scans, no aggregation pipeline. The `daily_rollups` array exists for drill-down/explainability when the user clicks into a recommendation card.
+
+### Vector search: skip Atlas Vector Search, use in-memory cosine
+
+For 1,080 creatives × 384-dim embeddings, the matrix is ~1.5 MB. `numpy.dot` on normalised vectors completes in <5 ms. Atlas Vector Search (HNSW ANN) is overkill below ~10,000 items — exact-NN cosine is equivalent in latency and avoids the 4–6h of index-creation / `$vectorSearch` pipeline setup.
+
+**What to do anyway:** populate `meta.embedding` in the schema above so the migration to Atlas Vector Search is zero-cost when the catalogue grows past 10k. Use `clip-ViT-B/32` for visual creatives or `paraphrase-multilingual-MiniLM-L12-v2` for metadata text (both via HuggingFace, both 384-dim).
+
+### MLH stack alignment
+
+We're opted into MongoDB Atlas + Gemma 4 for prizes. This schema + the rules-and-bandit advisor wraps both: Atlas hosts the slice cache and applied-recommendation history, Gemma 4 templates the marketer-voice rationale ("Pause in BR — CTR has dropped 67%...") from the deterministic trigger fields.
 
 ---
 
-*Generated 2026-04-25 from a direct EDA over `creative_summary.csv` (1,080 rows) + `creative_daily_country_os_stats.csv` (192k rows). Slice-advisor section added 2026-04-25 after Smadex feedback that the per-country/OS surface was the highest-EV unused component. Code lives in the chat history; rerun any time the dataset changes.*
+*Generated 2026-04-25 from a direct EDA over `creative_summary.csv` (1,080 rows) + `creative_daily_country_os_stats.csv` (192k rows). Slice-advisor section + industry anchors + verified MongoDB schema added 2026-04-25 after Smadex feedback that the per-country/OS surface was the highest-EV unused component. Industry anchors and Smadex vocabulary verified via Perplexity sweep (IAB, Liftoff, AppLovin, Moloco, RevenueCat, finsi, Y77). Code lives in the chat history; rerun any time the dataset changes.*

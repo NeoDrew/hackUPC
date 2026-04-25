@@ -213,12 +213,61 @@ def _tool_apply_variant(
     return queries.queue_variant(store, int(creative_id), rationale)
 
 
+def _tool_get_slice_recommendations(
+    store: Datastore,
+    advertiser_id: int | None = None,
+    severity: str | None = None,
+    top_n: int = 5,
+) -> dict[str, Any]:
+    """Read the pre-computed slice advisor queue. Returns the top N
+    recommendations across all advertisers (or the named one), filtered
+    by severity if given."""
+    if advertiser_id is not None:
+        flat = list(
+            store.recommendations_by_advertiser.get(int(advertiser_id), [])
+        )
+    else:
+        flat = [
+            r
+            for recs in store.recommendations_by_advertiser.values()
+            for r in recs
+        ]
+    cache = store.recommendation_cache
+    out: list[dict[str, Any]] = []
+    for r in flat:
+        if cache is not None and not cache.is_active(r.recommendation_id):
+            continue
+        if severity is not None and r.severity != severity:
+            continue
+        out.append(
+            {
+                "creative_id": r.creative_id,
+                "country": r.country,
+                "os": r.os,
+                "advertiser_id": r.advertiser_id,
+                "campaign_id": r.campaign_id,
+                "action_type": r.action_type,
+                "severity": r.severity,
+                "headline": r.headline,
+                "rationale": r.rationale,
+                "est_daily_impact_usd": round(r.est_daily_impact_usd, 2),
+            }
+        )
+    out.sort(key=lambda d: d["est_daily_impact_usd"], reverse=True)
+    return {
+        "recommendations": out[: max(1, int(top_n))],
+        "total_returned": len(out[: max(1, int(top_n))]),
+        "total_available": len(out),
+    }
+
+
 _TOOL_FUNCTIONS = {
     "get_creative_diagnosis": _tool_get_creative_diagnosis,
     "get_cohort_summary": _tool_get_cohort_summary,
     "list_top_creatives": _tool_list_top_creatives,
     "get_twin": _tool_get_twin,
     "apply_variant": _tool_apply_variant,
+    "get_slice_recommendations": _tool_get_slice_recommendations,
 }
 
 
@@ -305,6 +354,34 @@ _TOOL_SCHEMA: list[dict[str, Any]] = [
                 }
             },
             "required": ["creative_id"],
+        },
+    },
+    {
+        "name": "get_slice_recommendations",
+        "description": (
+            "Get the top N slice-level advisor recommendations across the "
+            "portfolio (or for one advertiser). These are deterministic "
+            "rules over per-(creative, country, OS) performance — pause/scale/"
+            "rotate/shift/refresh/archive actions with $/day impact estimates. "
+            "Use this when the user asks 'what should I do today?', 'where is "
+            "money being wasted?', or 'what should I scale?'."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "advertiser_id": {
+                    "type": "integer",
+                    "description": "Optional advertiser scope.",
+                },
+                "severity": {
+                    "type": "string",
+                    "description": "Optional filter: critical | warning | opportunity.",
+                },
+                "top_n": {
+                    "type": "integer",
+                    "description": "How many to return. Default 5, max 20.",
+                },
+            },
         },
     },
     {

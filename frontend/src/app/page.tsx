@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 
+import { AdvisorBanner } from "@/components/design/AdvisorBanner";
 import { AutoScaleBanner } from "@/components/design/AutoScaleBanner";
 import { CampaignGrid } from "@/components/design/CampaignGrid";
 import { CockpitHero } from "@/components/design/CockpitHero";
@@ -40,6 +41,9 @@ export default async function AdvertiserOverview(props: {
       </Suspense>
       <Suspense key={`kpis|${rangeKey}|${scopeKey}`} fallback={<KpiStripSkeleton />}>
         <KpiStrip start={start} end={end} advertiserId={advertiserId} />
+      </Suspense>
+      <Suspense key={`advisor|${scopeKey}`} fallback={null}>
+        <AdvisorBanner advertiserId={advertiserId} />
       </Suspense>
       <Suspense key={`autoscale|${rangeKey}|${scopeKey}`} fallback={null}>
         <AutoScaleBanner advertiserId={advertiserId} start={start} end={end} />

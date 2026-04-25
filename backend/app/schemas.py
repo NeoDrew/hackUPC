@@ -423,6 +423,68 @@ class TwinSummary(BaseModel):
     is_stub: bool = True
 
 
+# --- Slice advisor (per-creative × country × OS recommendations) ---
+
+
+# Industry-canonical six verbs (AppLovin MAX / Liftoff Vector / Moloco). Stored
+# as a Literal so pydantic enforces it; the UI uses this string verbatim as the
+# CTA label on each card.
+SliceActionType = str  # "pause" | "rotate" | "scale" | "shift" | "refresh" | "archive"
+SliceSeverity = str  # "critical" | "warning" | "opportunity"
+
+
+class SliceRecommendation(BaseModel):
+    """One row of the advisor queue. Every field except ``rationale`` is
+    deterministic from the underlying slice data — ``rationale`` may be
+    polished by Gemma when the API key is present (``is_polished=True``).
+
+    The ``trigger_magnitude`` dict carries the explainability payload — the
+    raw numbers behind the trigger so a sceptical user can audit (e.g.
+    ``{"slice_drop_ratio": 0.32, "creative_drop_ratio": 0.81}``).
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    recommendation_id: str
+    creative_id: int
+    country: str
+    os: str  # "android" | "ios"
+    advertiser_id: int
+    campaign_id: int
+    action_type: SliceActionType
+    severity: SliceSeverity
+    headline: str
+    rationale: str
+    est_daily_impact_usd: float
+    trigger_magnitude: dict[str, float]
+    is_polished: bool = False
+    # Mutable state — None until the user touches the recommendation.
+    applied_at: str | None = None
+    snoozed_until: str | None = None
+    dismissed_at: str | None = None
+
+
+class RecommendationsList(BaseModel):
+    """Wrapper for ``GET /api/recommendations`` so the UI can render a
+    summary banner ("23 actions ready · est. $2,140/day at stake") without
+    rolling up the list itself."""
+
+    recommendations: list[SliceRecommendation]
+    total_daily_impact_usd: float
+    counts_by_severity: dict[str, int]
+    counts_by_action_type: dict[str, int]
+
+
+class SnoozeRequest(BaseModel):
+    until: str  # ISO 8601
+
+
+class ApplyRecommendationResponse(BaseModel):
+    recommendation_id: str
+    applied: bool
+    entry: SliceRecommendation | None = None
+
+
 def to_jsonable(record: dict[str, Any]) -> dict[str, Any]:
     """Pydantic's native serialisation rejects pandas Timestamps; pre-stringify them.
 

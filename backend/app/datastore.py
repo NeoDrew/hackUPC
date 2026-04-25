@@ -57,6 +57,41 @@ class Datastore:
     # health composite.
     campaign_cohort_rank_pct: dict[int, float] = field(default_factory=dict)
 
+    # ── Slice advisor (per-creative × country × OS recommendations) ──
+    # Daily timeseries per (creative_id, country, os).
+    slice_timeseries: dict[
+        tuple[int, str, str], list[dict[str, Any]]
+    ] = field(default_factory=dict)
+    # Engineered features per slice (drop_ratio, lr_stat, ctr_cv, etc.)
+    slice_features: dict[tuple[int, str, str], dict[str, float]] = field(
+        default_factory=dict
+    )
+    # Cohort baselines at country grain ((vertical, format, country) →
+    # first-7d median + last-7d p25). Falls back to parent_cohort_baselines
+    # when sample size < 5.
+    cohort_baselines_by_country: dict[
+        tuple[str, str, str], dict[str, float]
+    ] = field(default_factory=dict)
+    parent_cohort_baselines: dict[
+        tuple[str, str], dict[str, float]
+    ] = field(default_factory=dict)
+    # Marginal-ROAS curve fit per slice (alpha, beta, marginal_roas).
+    marginal_roas_by_slice: dict[
+        tuple[int, str, str], dict[str, float]
+    ] = field(default_factory=dict)
+    # Per-creative geographic-shape rollup (concentration, top country,
+    # OS divergence). Keyed by creative_id.
+    creative_geo_shape: dict[int, dict[str, Any]] = field(default_factory=dict)
+    # Slice recommendations per advertiser, ranked by est_daily_impact desc.
+    # The advisor builds these once at startup; the routes/recommendations
+    # endpoint reads from this map and overlays the live cache state
+    # (applied/snoozed/dismissed) on the way out.
+    recommendations_by_advertiser: dict[int, list[Any]] = field(
+        default_factory=dict
+    )
+    # Mutable applied/snoozed/dismissed state. RecommendationCache instance.
+    recommendation_cache: Any = None
+
     def load(self) -> None:
         self.advertisers = pd.read_csv(DATASET_ROOT / "advertisers.csv")
         self.campaigns = pd.read_csv(
@@ -133,7 +168,77 @@ class Datastore:
         self._compute_creative_vectors()
         self._compute_portfolio_aggregates()
         self._compute_campaign_cohort_ranks()
+        self._compute_slice_advisor()
         self._verify_counts()
+
+    def _compute_slice_advisor(self) -> None:
+        """Build the per-(creative, country, OS) slice cache, run the 8
+        advisor rules, populate ``recommendations_by_advertiser``, and
+        polish copy with Gemma if the API key is configured.
+
+        Skipped silently if the daily DataFrame is empty (test harness)
+        or if any underlying compute raises — the cockpit and creative
+        detail surfaces don't depend on advisor output, so a bad rule
+        run shouldn't block startup.
+        """
+        try:
+            from .services import advisor, recommendation_copy, slice_cache
+            from .services.recommendation_cache import RecommendationCache
+
+            self.recommendation_cache = RecommendationCache()
+
+            self.slice_timeseries = slice_cache.compute_slice_timeseries(self.daily)
+            (
+                self.cohort_baselines_by_country,
+                self.parent_cohort_baselines,
+            ) = slice_cache.compute_country_cohort_baselines(
+                self.slice_timeseries, self.creative_detail
+            )
+            self.slice_features = slice_cache.compute_slice_features(
+                self.slice_timeseries,
+                self.creative_detail,
+                self.cohort_baselines_by_country,
+                self.parent_cohort_baselines,
+            )
+            self.marginal_roas_by_slice = slice_cache.compute_marginal_roas(
+                self.slice_timeseries
+            )
+            self.creative_geo_shape = slice_cache.compute_creative_geo_shape(
+                self.slice_features
+            )
+
+            # Run the 8 rules.
+            self.recommendations_by_advertiser = advisor.run_all(self)
+
+            # Render deterministic copy now (always works, no LLM dep).
+            all_recs = [
+                r
+                for recs in self.recommendations_by_advertiser.values()
+                for r in recs
+            ]
+            recommendation_copy.fill_copy(all_recs)
+
+            # Best-effort Gemma polish. We're called from the FastAPI
+            # lifespan, which already runs inside an event loop, so we
+            # detect that and detach the polish as a fire-and-forget
+            # background task. Recommendations may serve unpolished for
+            # the first few seconds — the deterministic templates are
+            # always fine on their own, polish is decoration.
+            if recommendation_copy.is_configured():
+                import asyncio
+
+                try:
+                    loop = asyncio.get_running_loop()
+                    loop.create_task(recommendation_copy.polish_batch(all_recs))
+                except RuntimeError:
+                    # No running loop — synchronous boot path (e.g. from
+                    # the smoke-test script). Run polish to completion.
+                    try:
+                        asyncio.run(recommendation_copy.polish_batch(all_recs))
+                    except Exception as e:  # noqa: BLE001
+                        log.warning("Gemma polish failed: %s", e)
+        except Exception as e:  # noqa: BLE001
+            log.warning("slice advisor build failed: %s", e)
 
     def _compute_campaign_cohort_ranks(self) -> None:
         from .services import campaign_health as _ch

@@ -174,3 +174,115 @@ export interface AppliedVariant {
   queued_at: string;
   eta_hours: number;
 }
+
+// ── Slice advisor ──────────────────────────────────────────────────
+//
+// Hand-written types — the openapi-typescript regen happens via a CI
+// step we may not run before the demo, so these mirror the backend
+// SliceRecommendation pydantic model directly. Update both together.
+
+export type SliceActionType =
+  | "pause"
+  | "rotate"
+  | "scale"
+  | "shift"
+  | "refresh"
+  | "archive";
+
+export type SliceSeverity = "critical" | "warning" | "opportunity";
+
+export interface SliceRecommendation {
+  recommendation_id: string;
+  creative_id: number;
+  country: string;
+  os: string; // "Android" | "iOS" | "*"
+  advertiser_id: number;
+  campaign_id: number;
+  action_type: SliceActionType;
+  severity: SliceSeverity;
+  headline: string;
+  rationale: string;
+  est_daily_impact_usd: number;
+  trigger_magnitude: Record<string, number>;
+  is_polished: boolean;
+  applied_at?: string | null;
+  snoozed_until?: string | null;
+  dismissed_at?: string | null;
+  // Extras for some action types — Pydantic extra="allow" passes these through.
+  cluster_name?: string;
+  decaying_countries_csv?: string;
+  sibling_creative_id?: number;
+  receiver_creative_id?: number;
+  receiver_country?: string;
+  receiver_os?: string;
+  shift_usd?: number;
+  peer_format?: string;
+  my_format?: string;
+}
+
+export interface RecommendationsList {
+  recommendations: SliceRecommendation[];
+  total_daily_impact_usd: number;
+  counts_by_severity: Record<string, number>;
+  counts_by_action_type: Record<string, number>;
+}
+
+export interface RecommendationsScope {
+  advertiser_id?: number;
+  campaign_id?: number;
+  severity?: SliceSeverity;
+  action_type?: SliceActionType;
+  include_inactive?: boolean;
+}
+
+type RecommendationActionResponse = {
+  recommendation_id: string;
+  applied: boolean;
+  entry: SliceRecommendation | null;
+};
+
+export const listRecommendations = (scope: RecommendationsScope = {}) =>
+  fetchJSON<RecommendationsList>(
+    `/api/recommendations${buildQuery(scope)}`,
+  );
+
+export const applyRecommendation = async (
+  recommendationId: string,
+): Promise<RecommendationActionResponse> => {
+  const res = await fetch(
+    `${BASE}/api/recommendations/${recommendationId}/apply`,
+    { method: "POST" },
+  );
+  if (!res.ok)
+    throw new Error(`POST apply ${recommendationId} → ${res.status}`);
+  return (await res.json()) as RecommendationActionResponse;
+};
+
+export const snoozeRecommendation = async (
+  recommendationId: string,
+  until: string,
+): Promise<RecommendationActionResponse> => {
+  const res = await fetch(
+    `${BASE}/api/recommendations/${recommendationId}/snooze`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ until }),
+    },
+  );
+  if (!res.ok)
+    throw new Error(`POST snooze ${recommendationId} → ${res.status}`);
+  return (await res.json()) as RecommendationActionResponse;
+};
+
+export const dismissRecommendation = async (
+  recommendationId: string,
+): Promise<RecommendationActionResponse> => {
+  const res = await fetch(
+    `${BASE}/api/recommendations/${recommendationId}/dismiss`,
+    { method: "POST" },
+  );
+  if (!res.ok)
+    throw new Error(`POST dismiss ${recommendationId} → ${res.status}`);
+  return (await res.json()) as RecommendationActionResponse;
+};

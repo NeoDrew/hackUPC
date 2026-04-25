@@ -9,7 +9,15 @@ from fastapi.staticfiles import StaticFiles
 
 from .config import ASSET_ROOT
 from .datastore import init_store
-from .routes import actions, advertisers, agent, campaigns, creatives, portfolio
+from .routes import (
+    actions,
+    advertisers,
+    agent,
+    campaigns,
+    creatives,
+    portfolio,
+    recommendations,
+)
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 
@@ -53,6 +61,7 @@ app.include_router(advertisers.router, prefix="/api", tags=["advertisers"])
 app.include_router(campaigns.router, prefix="/api", tags=["campaigns"])
 app.include_router(agent.router, prefix="/api", tags=["agent"])
 app.include_router(actions.router, prefix="/api", tags=["actions"])
+app.include_router(recommendations.router, prefix="/api", tags=["advisor"])
 
 
 @app.get("/healthz")

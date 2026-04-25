@@ -10,7 +10,14 @@ import { FatigueChart } from "@/components/design/FatigueChart";
 import { SaturationCard } from "@/components/design/SaturationCard";
 import { HealthBreakdownPanel } from "@/components/design/HealthBreakdownPanel";
 
-const VALID_FROM = new Set(["scale", "watch", "rescue", "cut", "explore"]);
+const VALID_FROM = new Set([
+  "scale",
+  "watch",
+  "rescue",
+  "cut",
+  "explore",
+  "advisor",
+]);
 
 export default async function CreativeDetailPage(
   props: PageProps<"/creatives/[creativeId]">,
@@ -24,12 +31,21 @@ export default async function CreativeDetailPage(
   const from = rawFrom && VALID_FROM.has(rawFrom) ? rawFrom : undefined;
   const start = typeof sp?.start === "string" ? sp.start : undefined;
   const end = typeof sp?.end === "string" ? sp.end : undefined;
+  // Slice context — when the user drilled in from an advisor card.
+  const sliceCountry = typeof sp?.country === "string" ? sp.country : undefined;
+  const sliceOs = typeof sp?.os === "string" ? sp.os : undefined;
   const rangeQs = new URLSearchParams();
   if (start) rangeQs.set("start", start);
   if (end) rangeQs.set("end", end);
   const rangeSuffix = rangeQs.toString();
   const backBase =
-    from === "explore" ? "/explore" : from ? `/?tab=${from}` : "/";
+    from === "advisor"
+      ? "/actions"
+      : from === "explore"
+      ? "/explore"
+      : from
+      ? `/?tab=${from}`
+      : "/";
   const backHref = rangeSuffix
     ? `${backBase}${backBase.includes("?") ? "&" : "?"}${rangeSuffix}`
     : backBase;
@@ -116,7 +132,17 @@ export default async function CreativeDetailPage(
       </div>
 
       <header className="col gap-2">
-        <span className="t-overline">Creative #{creative.creative_id}</span>
+        <span className="t-overline">
+          Creative #{creative.creative_id}
+          {sliceCountry || sliceOs ? (
+            <span className="slice-context-chip">
+              Filtered to {sliceCountry ?? ""}
+              {sliceOs && sliceOs !== "*"
+                ? ` · ${sliceOs}`
+                : ""}
+            </span>
+          ) : null}
+        </span>
         <h1 className="t-page" style={{ margin: 0 }}>
           {(data.headline as string) || `Creative ${creative.creative_id}`}
         </h1>

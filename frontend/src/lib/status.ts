@@ -80,6 +80,44 @@ export function bandToTone(band: string | null | undefined): string {
   return BAND_TO_TONE[band] ?? "stable";
 }
 
+// Slice-advisor severity → existing tone tokens.
+// critical (red) reuses the cut tone; warning (amber) reuses fatigued;
+// opportunity (green) reuses top — keeps the visual language consistent
+// with the rest of the cockpit (cf. globals.css colour tokens).
+export function severityToTone(
+  severity: string | null | undefined,
+): "cut" | "fatigued" | "top" | "stable" {
+  if (!severity) return "stable";
+  if (severity === "critical") return "cut";
+  if (severity === "warning") return "fatigued";
+  if (severity === "opportunity") return "top";
+  return "stable";
+}
+
+export function severityLabel(
+  severity: string | null | undefined,
+): string {
+  if (!severity) return "—";
+  if (severity === "critical") return "Critical";
+  if (severity === "warning") return "Warning";
+  if (severity === "opportunity") return "Opportunity";
+  return severity;
+}
+
+export function actionTypeLabel(actionType: string | null | undefined): string {
+  if (!actionType) return "Review";
+  // Capitalised industry-canonical verbs.
+  const m: Record<string, string> = {
+    pause: "Pause",
+    rotate: "Rotate",
+    scale: "Scale",
+    shift: "Shift",
+    refresh: "Refresh",
+    archive: "Archive",
+  };
+  return m[actionType] ?? actionType;
+}
+
 export function agreeWithLabel(band: string | null | undefined, status: string | null | undefined): boolean | null {
   if (!band || !status) return null;
   const expected: Record<string, string> = {
