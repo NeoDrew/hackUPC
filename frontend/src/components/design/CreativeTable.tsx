@@ -1,5 +1,26 @@
+import Link from "next/link";
+
 import type { CreativeRow as CreativeRowT } from "@/lib/api";
 import { CreativeRow } from "./CreativeRow";
+
+export interface SortState {
+  sort?: string;
+  desc?: boolean;
+  buildHref: (sort: string) => string;
+}
+
+const SORTABLE = [
+  { key: "ctr", label: "CTR" },
+  { key: "cvr", label: "CVR" },
+  { key: "roas", label: "ROAS" },
+  { key: "spend_usd", label: "Spend" },
+  { key: "days_active", label: "Days" },
+  { key: "health", label: "Health" },
+] as const;
+
+const SORT_LABEL_TO_KEY: Record<string, string> = Object.fromEntries(
+  SORTABLE.map((s) => [s.label, s.key]),
+);
 
 export function CreativeTable({
   rows,
@@ -7,12 +28,14 @@ export function CreativeTable({
   subcopy,
   from,
   footer,
+  sortState,
 }: {
   rows: CreativeRowT[];
   heading?: string;
   subcopy?: string;
   from?: string;
   footer?: React.ReactNode;
+  sortState?: SortState;
 }) {
   return (
     <section className="col gap-3">
@@ -28,13 +51,13 @@ export function CreativeTable({
         <div className="creative-thead">
           <span></span>
           <span>Creative</span>
-          <span className="num-cell">CTR</span>
-          <span className="num-cell">CVR</span>
-          <span className="num-cell">ROAS</span>
-          <span className="num-cell">Spend</span>
-          <span className="num-cell">Days</span>
+          <SortableHeader label="CTR" sortState={sortState} />
+          <SortableHeader label="CVR" sortState={sortState} />
+          <SortableHeader label="ROAS" sortState={sortState} />
+          <SortableHeader label="Spend" sortState={sortState} />
+          <SortableHeader label="Days" sortState={sortState} />
           <span className="num-cell">7d trend</span>
-          <span className="num-cell">Health</span>
+          <SortableHeader label="Health" sortState={sortState} />
         </div>
         {rows.length === 0 ? (
           <div style={{ padding: 32, textAlign: "center" }} className="t-body muted">
@@ -46,5 +69,30 @@ export function CreativeTable({
       </div>
       {footer}
     </section>
+  );
+}
+
+function SortableHeader({
+  label,
+  sortState,
+}: {
+  label: string;
+  sortState?: SortState;
+}) {
+  const key = SORT_LABEL_TO_KEY[label];
+  if (!sortState || !key) {
+    return <span className="num-cell">{label}</span>;
+  }
+  const active = sortState.sort === key;
+  const arrow = active ? (sortState.desc ? "▼" : "▲") : "";
+  return (
+    <Link
+      href={sortState.buildHref(key)}
+      className={`num-cell sortable-th${active ? " active" : ""}`}
+      prefetch={false}
+    >
+      {label}
+      {arrow ? <span className="sort-arrow">{arrow}</span> : null}
+    </Link>
   );
 }

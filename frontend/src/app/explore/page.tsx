@@ -21,6 +21,8 @@ const STATUSES: Array<{ value: string; label: string }> = [
 
 const PAGE_SIZE = 100;
 
+const SORTABLE = new Set(["ctr", "cvr", "roas", "spend_usd", "days_active", "health"]);
+
 interface ExploreSearchParams {
   vertical?: string;
   format?: string;
@@ -35,13 +37,15 @@ export default async function ExplorePage(props: {
 }) {
   const params = await props.searchParams;
   const limit = clampLimit(params.limit);
+  const sort = params.sort && SORTABLE.has(params.sort) ? params.sort : undefined;
+  const desc = params.desc !== "false";
 
   const listArgs = {
     vertical: params.vertical,
     format: params.format,
     status: params.status,
-    sort: params.sort,
-    desc: params.desc !== "false",
+    sort,
+    desc,
     limit,
   };
   const listing = await api.listCreatives(listArgs);
@@ -110,6 +114,25 @@ export default async function ExplorePage(props: {
       <CreativeTable
         rows={listing.rows}
         from="explore"
+        sortState={{
+          sort,
+          desc,
+          buildHref: (key: string) => {
+            const next: Record<string, string | undefined> = { ...params };
+            if (next.sort === key) {
+              next.desc = desc ? "false" : "true";
+            } else {
+              next.sort = key;
+              next.desc = "true";
+            }
+            delete next.limit; // restart pagination on re-sort
+            const qp = new URLSearchParams();
+            for (const [k, v] of Object.entries(next)) {
+              if (v !== undefined && v !== "") qp.set(k, v);
+            }
+            return `/explore${qp.toString() ? `?${qp.toString()}` : ""}`;
+          },
+        }}
         footer={
           shown < total ? (
             <div

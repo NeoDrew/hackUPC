@@ -30,23 +30,41 @@ const TAB_HEADINGS: Record<TabKey, { heading: string; subcopy: string }> = {
 interface CockpitSearchParams {
   tab?: string;
   limit?: string;
+  sort?: string;
+  desc?: string;
 }
 
 const PAGE_SIZE = 100;
+const SORTABLE = new Set(["ctr", "cvr", "roas", "spend_usd", "days_active", "health"]);
 
 export default async function Cockpit(props: {
   searchParams: Promise<CockpitSearchParams>;
 }) {
-  const { tab: rawTab, limit: rawLimit } = await props.searchParams;
-  const tab = normalizeTab(rawTab);
-  const limit = clampLimit(rawLimit);
+  const params = await props.searchParams;
+  const tab = normalizeTab(params.tab);
+  const limit = clampLimit(params.limit);
+  const sort = params.sort && SORTABLE.has(params.sort) ? params.sort : undefined;
+  const desc = params.desc !== "false";
   const [kpis, listing] = await Promise.all([
     api.portfolioKpis(),
-    api.listCreatives({ tab, limit }),
+    api.listCreatives({ tab, limit, sort, desc }),
   ]);
   const headings = TAB_HEADINGS[tab];
   const total = listing.total;
   const shown = listing.rows.length;
+  const buildSortHref = (key: string) => {
+    const next: Record<string, string> = { tab };
+    if (limit !== PAGE_SIZE) next.limit = String(limit);
+    next.sort = key;
+    if (sort === key) {
+      // Toggle direction if clicking the active column.
+      next.desc = desc ? "false" : "true";
+    } else {
+      next.desc = "true";
+    }
+    const qp = new URLSearchParams(next).toString();
+    return `/?${qp}`;
+  };
   return (
     <>
       <section className="kpi-strip">
@@ -65,6 +83,7 @@ export default async function Cockpit(props: {
         heading={headings.heading}
         subcopy={headings.subcopy}
         from={tab}
+        sortState={{ sort, desc, buildHref: buildSortHref }}
         footer={
           shown < total ? (
             <ShowMoreFooter
@@ -72,6 +91,8 @@ export default async function Cockpit(props: {
               shown={shown}
               total={total}
               currentLimit={limit}
+              sort={sort}
+              desc={desc}
             />
           ) : (
             <p className="t-micro muted" style={{ padding: "10px 16px" }}>
@@ -89,14 +110,23 @@ function ShowMoreFooter({
   shown,
   total,
   currentLimit,
+  sort,
+  desc,
 }: {
   tab: TabKey;
   shown: number;
   total: number;
   currentLimit: number;
+  sort?: string;
+  desc: boolean;
 }) {
   const next = Math.min(currentLimit + PAGE_SIZE, total);
-  const href = `/?tab=${tab}&limit=${next}`;
+  const params: Record<string, string> = { tab, limit: String(next) };
+  if (sort) {
+    params.sort = sort;
+    params.desc = desc ? "true" : "false";
+  }
+  const href = `/?${new URLSearchParams(params).toString()}`;
   return (
     <div
       className="row between center"
