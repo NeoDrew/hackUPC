@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 
 import { api } from "@/lib/api";
 import { BriefPanel, type BriefField } from "@/components/design/BriefPanel";
@@ -96,7 +97,7 @@ export default async function VariantPage(
         <div className="col gap-1">
           <div className="row center gap-3">
             <Link href={`/creatives/${id}/twin`} className="btn dense">
-              ← Back to twin
+              <ArrowLeft size={14} strokeWidth={1.75} aria-hidden /> Back to twin
             </Link>
             <span className="filter-chip mono">V-{id.toString().padStart(6, "0")}-001</span>
             <PreviewChip />

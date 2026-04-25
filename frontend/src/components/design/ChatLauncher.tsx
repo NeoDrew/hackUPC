@@ -2,6 +2,16 @@
 
 import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  ChevronDown,
+  Loader2,
+  Maximize2,
+  Mic,
+  Minimize2,
+  PanelRight,
+  Square,
+  X,
+} from "lucide-react";
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8001";
 
@@ -201,11 +211,11 @@ export function ChatLauncher() {
       <button
         type="button"
         className="chat-launcher"
-        aria-label="Ask Smadex Copilot"
+        aria-label="Open assistant"
         onClick={beginOpen}
       >
-        <span className="chat-launcher-glyph">✦</span>
-        <span className="chat-launcher-label">Ask Copilot</span>
+        <PanelRight size={14} strokeWidth={1.75} aria-hidden />
+        <span className="chat-launcher-label">Open assistant</span>
       </button>
     );
   }
@@ -214,33 +224,32 @@ export function ChatLauncher() {
     <section
       className="chat-panel"
       role="dialog"
-      aria-label="Smadex Copilot chat"
+      aria-label="Assistant"
       data-state={panelState}
       data-expanded={expanded ? "true" : undefined}
     >
       <header className="chat-panel-head">
         <span className="chat-panel-title">
-          <span className="chat-launcher-glyph small">✦</span>
-          Smadex Copilot
+          Assistant
           <span className="chat-panel-sub">Gemini 2.5 Flash · grounded on portfolio data</span>
         </span>
         <div className="chat-panel-actions">
           <button
             type="button"
             className="chat-panel-icon"
-            aria-label={expanded ? "Collapse chat" : "Expand chat"}
+            aria-label={expanded ? "Collapse" : "Expand"}
             title={expanded ? "Collapse" : "Expand"}
             onClick={() => setExpanded((v) => !v)}
           >
-            {expanded ? "⤓" : "⤒"}
+            {expanded ? <Minimize2 size={14} strokeWidth={1.75} aria-hidden /> : <Maximize2 size={14} strokeWidth={1.75} aria-hidden />}
           </button>
           <button
             type="button"
             className="chat-panel-icon chat-panel-close"
-            aria-label="Close chat"
+            aria-label="Close"
             onClick={beginClose}
           >
-            ×
+            <X size={16} strokeWidth={1.75} aria-hidden />
           </button>
         </div>
       </header>
@@ -291,7 +300,11 @@ export function ChatLauncher() {
             onClick={() => (dictation.listening ? dictation.stop() : dictation.start())}
             disabled={streaming}
           >
-            {dictation.listening ? "■" : "🎙"}
+            {dictation.listening ? (
+              <Square size={12} strokeWidth={2} fill="currentColor" aria-hidden />
+            ) : (
+              <Mic size={14} strokeWidth={1.75} aria-hidden />
+            )}
           </button>
         ) : null}
         <button
@@ -299,7 +312,7 @@ export function ChatLauncher() {
           className="chat-send"
           disabled={streaming || !draft.trim()}
         >
-          {streaming ? "…" : "Send"}
+          {streaming ? <Loader2 size={14} strokeWidth={2} className="chat-send-spin" aria-hidden /> : "Send"}
         </button>
       </form>
     </section>
@@ -340,7 +353,7 @@ function ToolCallChip({ call }: { call: ToolCall }) {
         <span className="chat-tool-name">{call.name}</span>
         {argSummary ? <span className="chat-tool-args">{argSummary}</span> : null}
         <span className="chat-tool-state" aria-hidden>
-          {hasResult ? "▾" : "…"}
+          {hasResult ? <ChevronDown size={12} strokeWidth={1.75} /> : "…"}
         </span>
       </summary>
       {hasResult ? (

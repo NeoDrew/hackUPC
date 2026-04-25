@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 
 import { api } from "@/lib/api";
 import { creativeImageUrl } from "@/lib/assetUrl";
@@ -49,11 +50,11 @@ export default async function CreativeDetailPage(
     <section className="col gap-5" style={{ paddingTop: 16, maxWidth: 1040, margin: "0 auto" }}>
       <div className="row center between" style={{ position: "sticky", top: 0, zIndex: 5, background: "var(--bg-0)", padding: "8px 0" }}>
         <Link href={backHref} className="btn dense">
-          ← Back
+          <ArrowLeft size={14} strokeWidth={1.75} aria-hidden /> Back
         </Link>
         {status === "fatigued" && (
-          <Link href={`/creatives/${id}/twin${twinSuffix}`} className="btn dense primary">
-            Why is this losing?
+          <Link href={`/creatives/${id}/twin${twinSuffix}`} className="btn dense">
+            Explain decline
           </Link>
         )}
       </div>

@@ -22,7 +22,7 @@ const robotoMono = Roboto_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Smadex Creative Twin Copilot",
+  title: "Smadex · Creative cockpit",
   description: "Creative intelligence cockpit for mobile advertising",
 };
 

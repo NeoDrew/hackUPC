@@ -7,7 +7,7 @@ export function TopBar() {
       <div className="brand">
         <span className="mark">S</span>
         <span>Smadex</span>
-        <span className="crumb">/ Creative Twin Copilot</span>
+        <span className="crumb">/ Creative cockpit</span>
       </div>
       <SearchInput />
       <div className="right">

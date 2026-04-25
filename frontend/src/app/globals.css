@@ -277,16 +277,17 @@ a:focus-visible {
   color: var(--t-1);
 }
 .topbar .brand .mark {
-  width: 22px;
-  height: 22px;
-  border-radius: 6px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: var(--t-1);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
-  font-size: 11px;
+  color: var(--bg-1);
+  font-size: 10px;
   font-weight: 700;
+  letter-spacing: -0.02em;
 }
 .topbar .crumb {
   color: var(--t-3);
@@ -411,7 +412,7 @@ a:focus-visible {
   justify-content: center;
   font-size: 11px;
   font-weight: 600;
-  color: var(--accent);
+  color: var(--t-1);
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -449,15 +450,15 @@ a:focus-visible {
 .tab .count {
   font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
   padding: 1px 6px;
   border-radius: 4px;
   background: var(--bg-3);
-  color: var(--t-2);
+  color: var(--t-3);
 }
 .tab.active .count {
-  background: var(--accent-soft);
-  color: var(--accent);
+  background: var(--bg-3);
+  color: var(--t-1);
 }
 .tab .urgent-dot {
   width: 5px;
@@ -482,13 +483,12 @@ a:focus-visible {
 .kpi-tile {
   background: var(--bg-1);
   border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 16px 18px;
-  box-shadow: var(--shadow-1);
+  border-radius: 8px;
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  min-height: 110px;
+  gap: 4px;
+  min-height: 88px;
 }
 .kpi-tile .kpi-label {
   font-size: 10px;
@@ -499,8 +499,8 @@ a:focus-visible {
 }
 .kpi-tile .kpi-value {
   font-family: var(--font-mono);
-  font-size: 36px;
-  line-height: 38px;
+  font-size: 28px;
+  line-height: 32px;
   font-weight: 600;
   letter-spacing: -0.02em;
   color: var(--t-1);
@@ -508,7 +508,7 @@ a:focus-visible {
 .kpi-tile .kpi-delta {
   font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
 }
 .kpi-tile .kpi-delta.pos {
   color: var(--status-top);
@@ -518,6 +518,7 @@ a:focus-visible {
 }
 .kpi-tile.urgent {
   border-color: var(--status-fatigued);
+  background: var(--bg-1);
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -587,8 +588,8 @@ a:focus-visible {
   background: var(--bg-1);
   border: 1px solid var(--line);
   color: var(--t-2);
-  border-radius: 8px;
-  padding: 6px 10px;
+  border-radius: 6px;
+  padding: 4px 8px;
   font-size: 12px;
   font-weight: 500;
   white-space: nowrap;
@@ -624,7 +625,7 @@ a:focus-visible {
 .creative-table {
   background: var(--bg-1);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 8px;
   overflow: hidden;
 }
 .creative-thead {
@@ -681,6 +682,9 @@ a:focus-visible {
 }
 .creative-row:hover {
   background: var(--bg-2);
+}
+.creative-row:hover .sparkline path[stroke] {
+  stroke: var(--accent);
 }
 .creative-row:last-child {
   border-bottom: none;
@@ -943,9 +947,9 @@ a:focus-visible {
 .pattern-card .prevalence {
   font-size: 10px;
   color: var(--t-3);
-  background: var(--bg-3);
+  background: var(--bg-2);
   padding: 2px 7px;
-  border-radius: 999px;
+  border-radius: 4px;
   border: 1px solid var(--line);
   width: max-content;
 }
@@ -1035,11 +1039,11 @@ a:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: var(--bg-3);
+  background: var(--bg-2);
   color: var(--t-3);
   border: 1px dashed var(--line-strong);
-  border-radius: 999px;
-  padding: 2px 10px;
+  border-radius: 4px;
+  padding: 2px 8px;
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
@@ -1179,21 +1183,29 @@ a:focus-visible {
 .btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  border-radius: 8px;
+  gap: 6px;
+  padding: 0 12px;
+  height: 36px;
+  border-radius: 6px;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   border: 1px solid var(--line);
   background: var(--bg-1);
   color: var(--t-1);
 }
+.btn svg {
+  color: var(--t-2);
+}
 .btn:hover {
-  border-color: var(--t-4);
+  border-color: var(--line-strong);
+  background: var(--bg-2);
 }
 .btn.primary {
   background: var(--accent);
   border-color: var(--accent);
+  color: #fff;
+}
+.btn.primary svg {
   color: #fff;
 }
 .btn.primary:hover {
@@ -1201,8 +1213,11 @@ a:focus-visible {
   border-color: var(--accent-hover);
 }
 .btn.dense {
-  padding: 5px 10px;
+  height: 28px;
+  padding: 0 10px;
   font-size: 12px;
+  font-weight: 500;
+  gap: 5px;
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -1467,68 +1482,56 @@ a:focus-visible {
    ────────────────────────────────────────────────────────────── */
 .chat-launcher {
   position: fixed;
-  left: 50%;
-  bottom: 28px;
-  transform: translateX(-50%);
+  right: 24px;
+  bottom: 24px;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 14px 22px 14px 18px;
-  border-radius: 999px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  box-shadow:
-    0 12px 32px rgba(126, 44, 140, 0.32),
-    0 4px 12px rgba(18, 16, 24, 0.18);
-  font-size: 14px;
-  font-weight: 600;
+  gap: 8px;
+  padding: 0 12px;
+  height: 32px;
+  border-radius: 6px;
+  background: var(--bg-1);
+  color: var(--t-1);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-1);
+  font-size: 13px;
+  font-weight: 500;
   letter-spacing: -0.005em;
   z-index: 80;
   cursor: pointer;
   transition:
-    transform var(--t-fast) var(--ease-out),
+    border-color var(--t-fast) var(--ease-out),
     box-shadow var(--t-fast) var(--ease-out);
-  animation: launcherIn 220ms var(--ease-out) both;
+  animation: launcherIn 180ms var(--ease-out) both;
+}
+.chat-launcher svg {
+  color: var(--t-2);
 }
 .chat-launcher:hover {
-  transform: translateX(-50%) translateY(-2px);
-  box-shadow:
-    0 18px 44px rgba(126, 44, 140, 0.42),
-    0 4px 12px rgba(18, 16, 24, 0.22);
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-2);
 }
 @keyframes launcherIn {
   from {
-    transform: translateX(-50%) translateY(20px) scale(0.6);
+    transform: translateY(8px);
     opacity: 0;
   }
   to {
-    transform: translateX(-50%) translateY(0) scale(1);
+    transform: translateY(0);
     opacity: 1;
   }
-}
-.chat-launcher-glyph {
-  font-size: 18px;
-  line-height: 1;
-}
-.chat-launcher-glyph.small {
-  font-size: 13px;
 }
 
 .chat-panel {
   position: fixed;
-  left: 50%;
-  bottom: 16px;
-  transform: translateX(-50%);
-  width: 70vw;
-  height: 15vh;
-  min-height: 220px;
+  right: 24px;
+  bottom: 24px;
+  width: min(440px, calc(100vw - 48px));
+  height: 460px;
   background: var(--bg-1);
   border: 1px solid var(--line);
-  border-radius: 14px;
-  box-shadow:
-    0 24px 60px rgba(18, 16, 24, 0.22),
-    0 4px 14px rgba(18, 16, 24, 0.1);
+  border-radius: 8px;
+  box-shadow: var(--shadow-pop);
   display: flex;
   flex-direction: column;
   z-index: 80;
@@ -1536,8 +1539,8 @@ a:focus-visible {
   /* Smooth height when toggling expanded mode. */
   transition:
     height var(--t-drawer) var(--ease-out),
-    min-height var(--t-drawer) var(--ease-out);
-  transform-origin: bottom center;
+    width var(--t-drawer) var(--ease-out);
+  transform-origin: bottom right;
   will-change: transform, opacity;
 }
 .chat-panel[data-state="open"] {
@@ -1553,31 +1556,22 @@ a:focus-visible {
 }
 @keyframes chatPanelIn {
   from {
-    transform: translateX(-50%) translateY(60px) scale(0.4);
+    transform: translateY(8px);
     opacity: 0;
-    border-radius: 999px;
-  }
-  60% {
-    transform: translateX(-50%) translateY(8px) scale(0.95);
-    opacity: 1;
-    border-radius: 24px;
   }
   to {
-    transform: translateX(-50%) translateY(0) scale(1);
+    transform: translateY(0);
     opacity: 1;
-    border-radius: 14px;
   }
 }
 @keyframes chatPanelOut {
   from {
-    transform: translateX(-50%) translateY(0) scale(1);
+    transform: translateY(0);
     opacity: 1;
-    border-radius: 14px;
   }
   to {
-    transform: translateX(-50%) translateY(60px) scale(0.4);
+    transform: translateY(8px);
     opacity: 0;
-    border-radius: 999px;
   }
 }
 
@@ -1597,9 +1591,6 @@ a:focus-visible {
   font-weight: 600;
   color: var(--t-1);
 }
-.chat-panel-title .chat-launcher-glyph {
-  color: var(--accent);
-}
 .chat-panel-sub {
   font-size: 10px;
   font-weight: 500;
@@ -1616,25 +1607,19 @@ a:focus-visible {
   width: 28px;
   height: 28px;
   border-radius: 6px;
-  border: 1px solid var(--line);
-  background: var(--bg-2);
+  border: 1px solid transparent;
+  background: transparent;
   color: var(--t-2);
-  font-size: 14px;
-  line-height: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   transition:
-    border-color var(--t-fast) var(--ease-out),
-    color var(--t-fast) var(--ease-out),
-    background var(--t-fast) var(--ease-out);
+    background var(--t-fast) var(--ease-out),
+    color var(--t-fast) var(--ease-out);
 }
 .chat-panel-icon:hover {
-  border-color: var(--t-4);
+  background: var(--bg-2);
   color: var(--t-1);
-}
-.chat-panel-close {
-  font-size: 18px;
 }
 
 .chat-panel-body {
@@ -1663,14 +1648,15 @@ a:focus-visible {
   background: var(--bg-1);
   border: 1px solid var(--line);
   color: var(--t-1);
-  border-radius: 999px;
-  padding: 5px 12px;
+  border-radius: 6px;
+  padding: 6px 10px;
   font-size: 12px;
   font-weight: 500;
+  text-align: left;
 }
 .chat-suggestion:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--line-strong);
+  background: var(--bg-2);
 }
 
 .chat-msg {
@@ -1688,10 +1674,11 @@ a:focus-visible {
   align-items: flex-end;
 }
 .chat-msg-user p {
-  background: var(--accent);
-  color: #fff;
-  padding: 6px 12px;
-  border-radius: 12px 12px 4px 12px;
+  background: var(--bg-1);
+  color: var(--t-1);
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
   max-width: 78%;
 }
 .chat-msg-assistant p {
@@ -1817,9 +1804,11 @@ a:focus-visible {
   flex: 1;
   background: var(--bg-2);
   border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 8px 12px;
+  border-radius: 6px;
+  padding: 0 12px;
+  height: 36px;
   font: inherit;
+  font-size: 13px;
   color: var(--t-1);
 }
 .chat-panel-input input:focus {
@@ -1835,8 +1824,7 @@ a:focus-visible {
   background: var(--bg-2);
   color: var(--t-2);
   border: 1px solid var(--line);
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: 6px;
   cursor: pointer;
   transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
 }
@@ -1863,10 +1851,14 @@ a:focus-visible {
   background: var(--accent);
   color: #fff;
   border: 1px solid var(--accent);
-  border-radius: 8px;
-  padding: 0 16px;
-  font-weight: 600;
+  border-radius: 6px;
+  padding: 0 14px;
+  height: 36px;
+  font-weight: 500;
   font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .chat-send:hover {
   background: var(--accent-hover);
@@ -1875,6 +1867,12 @@ a:focus-visible {
 .chat-send:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+.chat-send-spin {
+  animation: chat-send-spin 800ms linear infinite;
+}
+@keyframes chat-send-spin {
+  to { transform: rotate(360deg); }
 }
 
 /* Skeleton (used by CreativeTableSkeleton during Suspense fallback) */
