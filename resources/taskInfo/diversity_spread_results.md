@@ -1,6 +1,17 @@
-# Diversity & spread hypothesis tests — results
+# Hypothesis tests — results
 
-Two cheap aggregations from `join_aggregate_opportunities.md` run end-to-end. Both targeted the proposed `D` (diversity) term in the per-campaign health formula in `data_findings.md`. Bottom-line: **partial confirmation — the term should ship, but with format-conditioning and a different attribute than I originally proposed.**
+Four aggregations from `join_aggregate_opportunities.md` run end-to-end. Mixed verdicts: two ship as-is, one ships with caveats, one does not ship.
+
+## Verdict summary
+
+| # | Test | Verdict | Strongest finding |
+|---|---|---|---|
+| 3 | Diversity → fatigue | **Ships with caveats** | Colour concentration only, video formats only — 1.4× signal not the 2× hypothesised |
+| 6 | Within-campaign best-vs-worst spread | **Ships** | Independent of #3; new `P_spread` term in formula |
+| 1 | Per-creative × country geo-variance | **Doesn't ship** | Variance is too small in this dataset (median 9% CTR spread); only 4/199 fatigued creatives have a real "split call" |
+| 7 | Spend-share vs performance-share alignment | **Ships — strongest of the four** | $1.95M of $32M (6.1%) portfolio-wide is misallocated. Top campaign: $42k out of $293k. |
+
+The first two hypotheses targeted the proposed `D` (diversity) term in the per-campaign health formula in `data_findings.md`. The last two are independent product surfaces.
 
 ---
 
@@ -151,6 +162,147 @@ H_campaign = 0.30·P + 0.20·T + 0.15·F + 0.10·E + 0.10·D + 0.10·P_spread + 
 ```
 
 The original 0.15·E became 0.10·E + 0.05 going to `P_spread`, since spread is the more actionable signal.
+
+---
+
+## #1 — Per-creative × country geo-variance
+
+**Hypothesis (from join doc):** *"Creative is fatigued globally — but in BR it's still beating cohort. Kill it in 8 countries, keep running in 2."*
+
+**Verdict: doesn't ship in this dataset.** The signal is too weak to justify a UI surface. CV across countries is tiny.
+
+### Per-creative country count
+
+| Stat | Countries per creative |
+|---|---:|
+| min | 2 |
+| median | 3 |
+| max | 4 |
+
+Each creative only runs in 2-4 countries (driven by `campaigns.countries` targeting), so the "kill in 8, keep in 2" framing was already wrong scale.
+
+### Variance distribution (1,080 creatives, ≥500 impressions per country)
+
+| Stat | CTR coefficient of variation | CTR max/min ratio | ROAS max/min ratio |
+|---|---:|---:|---:|
+| median | 0.048 | 1.09 | 1.55 |
+| 75th %ile | 0.067 | 1.13 | 2.07 |
+| max | 0.293 | 1.78 | 5.74 |
+
+- **CTR is essentially flat across countries**: 95% of creatives have ratio < 1.2.
+- **ROAS variance is real but mild**: 55% median spread, with ~30% of creatives showing 2-3× variance.
+- **No format or status pattern** — fatigued and stable creatives have the same ctr_cv (~0.05).
+
+### Fatigued creatives with a "split call" pattern
+
+For each fatigued creative, check whether at least one country is still profitable (ROAS ≥ 1.5) AND at least one is unprofitable (ROAS < 1.0). That's where the geo-split recommendation makes sense.
+
+| Stat | Count | % of fatigued |
+|---|---:|---:|
+| Fatigued creatives | 199 | 100% |
+| Best country ROAS ≥ 1.5 | 176 | 88% |
+| Worst country ROAS < 1.0 | 13 | 6.5% |
+| **Both (genuine split call)** | **4** | **2.0%** |
+
+**Only 4 fatigued creatives** would benefit from a geo-split recommendation in this dataset. All four are gaming creatives where BR wins (ROAS 1.6–2.1×) and JP loses (~0.98×).
+
+### Decision
+
+**Don't ship a per-country panel.** Synthetic data here doesn't have the country variance the original hypothesis assumed. The signal would be much stronger on real ad-exchange data — flag as "future work, not for the demo".
+
+**Demo soundbite (narrow but defensible):** *"For four gaming creatives in this portfolio, Smadex catches a geo-split: BR is still profitable, JP is losing money. The recommendation is to relaunch BR-only, not refresh the creative."* Use only if there's airtime; cut otherwise.
+
+---
+
+## #7 — Spend-share vs performance-share alignment
+
+**Hypothesis (from join doc):** *"You're underfunding your winner by $X/day — shift it from the bottom 3 creatives."*
+
+**Verdict: ships, strongest of the four hypotheses.** Real signal across the entire portfolio with a concrete dollar headline.
+
+### Method
+
+For each campaign with 6 creatives, compare each creative's `revenue_share` (its slice of the campaign's total revenue) against its `spend_share` (its slice of total spend). Misallocation = `Σ max(0, revenue_share − spend_share)` per campaign — the dollars that *would* move if you reallocated to perfect alignment.
+
+### Per-campaign misallocation distribution (180 campaigns)
+
+| Stat | $ misallocated | % of campaign spend |
+|---|---:|---:|
+| min | $2.5k | 2% |
+| median | $9.4k | 6% |
+| 75th %ile | $13.9k | 7% |
+| max | **$42.2k** | 15% |
+
+**Every single campaign has misallocation.** The synthetic generator doesn't allocate spend perfectly with revenue across creatives — there's always some "underfunded winner" pattern.
+
+### Portfolio total
+
+| Metric | Value |
+|---|---:|
+| Total spend (180 campaigns) | $32.0M |
+| Total revenue-aligned misallocation | **$1.95M** |
+| % of total spend misallocated | **6.1%** |
+
+### Top 5 most-misallocated campaigns (best demo candidates)
+
+| campaign_id | vertical | format | spend | misalloc $ | winner creative | winner rev/spend share | loser rev/spend share |
+|---:|---|---|---:|---:|---:|---|---|
+| **20106** | food_delivery | native | $293k | **$42.2k** | #500639 | 21.9% rev / 13.5% spend | #500638: 13.5% rev / 22.6% spend |
+| 20088 | food_delivery | banner | $351k | $29.5k | #500529 | 23.2% / 16.6% | #500528: 18.3% / 22.6% |
+| 20122 | fintech | interstitial | $175k | $25.7k | #500733 | 21.1% / 14.1% | #500732: 18.9% / 30.1% |
+| 20037 | ecommerce | banner | $284k | $25.5k | #500226 | 20.9% / 16.4% | #500227: 15.8% / 20.7% |
+| 20076 | food_delivery | interstitial | $188k | $24.8k | #500459 | 17.0% / 11.9% | #500456: 19.0% / 26.6% |
+
+### Demo soundbite
+
+> *"Across this portfolio of 180 campaigns and \$32 million in spend, **\$1.95 million is misallocated — 6% of every dollar going to creatives that earn less than their share**. Take campaign 20106: food delivery, \$293k spent, but the winner gets 22% of revenue with only 13.5% of the budget. The fix isn't a new creative — it's redirecting \$42k from the loser. One click."*
+
+### Hero campaign for the demo
+
+**Campaign 20106 (food_delivery native).** Cleanest story:
+- Total spend: $293k
+- Winner creative #500639: 22% of revenue, only 13.5% of spend
+- Loser creative #500638: 22.6% of spend, only 13.5% of revenue
+- Fix: shift $42k. Same total budget, +revenue, +ROAS.
+
+### Recommendation for product
+
+**Build a "spend reallocation" surface** on the campaign detail page (or as a queue card on the Action page):
+- Endpoint: `GET /api/campaigns/{id}/spend-alignment` returning per-creative spend-share / revenue-share / proposed-shift
+- UI: a one-row inbox card *"Reallocate $42k in campaign 20106 — same budget, projected +X% ROAS"* with a single `Apply` button
+- Backend mock: queue the reallocation like the existing `apply_variant` pattern (process-lifetime, undo)
+
+This is the most direct demo of "decision-first product" — no creative changes, no twin diff, just budget reallocation that any marketer can authorise with one click.
+
+---
+
+## What changed in the proposed campaign-health formula
+
+| Term | Originally proposed | After this analysis |
+|---|---|---|
+| `D` (diversity) | Herfindahl over (theme, hook, colour) | Herfindahl over **colour only**, applied **only in video formats** |
+| (new) `P_spread` | not in original formula | Add: rel_spread between best and worst creative — independent of `D` |
+| (new) `M` (misallocation) | not in original formula | **Strong addition**: `1 − misalloc_pct` — campaigns with aligned spend get rewarded |
+| Other terms (P, T, F, E, C) | unchanged | unchanged |
+
+Updated weight proposal (now seven terms — accommodate `M` by trimming everywhere):
+
+```
+H_campaign = 0.25·P + 0.20·T + 0.15·F + 0.10·E + 0.10·M + 0.10·D + 0.05·P_spread + 0.05·C
+```
+
+`M` (misallocation health) takes 0.10 because it's actionable for every campaign and gives a defensible dollar figure. `P_spread` keeps a small weight (0.05) since it's largely subsumed by `M` (a misaligned campaign typically has high spread between winner and loser too).
+
+---
+
+## Demo-shipping summary across all four
+
+| # | Findings ship in demo? | Required code work | Priority |
+|---|---|---|---|
+| 7 | Yes — strongest soundbite ($1.95M / 6.1% headline) | New endpoint + UI card | **Highest** |
+| 6 | Yes — supports campaign-health formula | Math change in health calc | Medium |
+| 3 | Caveated — colour×video soundbite only | Math change in health calc | Medium |
+| 1 | No — soundbite optional, no UI | None | Low |
 
 ---
 
