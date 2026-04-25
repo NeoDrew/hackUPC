@@ -9,6 +9,7 @@ import { PerformanceGrid } from "@/components/design/PerformanceGrid";
 import { FatigueChart } from "@/components/design/FatigueChart";
 import { SaturationCard } from "@/components/design/SaturationCard";
 import { HealthBreakdownCard } from "@/components/design/HealthBreakdownCard";
+import { HealthBreakdownDropdown } from "@/components/design/HealthBreakdownDropdown";
 
 const VALID_FROM = new Set(["scale", "watch", "rescue", "cut", "explore"]);
 
@@ -149,6 +150,12 @@ export default async function CreativeDetailPage(
           <PerformanceGrid creative={creative} />
         </div>
       </div>
+
+      <HealthBreakdownDropdown
+        breakdown={data.health_breakdown as HealthBreakdown | null}
+        daysActive={(data.total_days_active as number | null) ?? undefined}
+        alwaysOpen
+      />
 
       <HealthBreakdownCard
         breakdown={data.health_breakdown as HealthBreakdown | null | undefined}

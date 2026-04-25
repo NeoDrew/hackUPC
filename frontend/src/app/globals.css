@@ -1198,6 +1198,153 @@ a:focus-visible {
   display: block;
 }
 
+/* HealthBreakdownDropdown — chips + narrative + "How is this calculated?".
+   Used inline below an expanded creative row AND always-open on the
+   creative detail page. Pill chips reuse rounded-full text-xs vibe with
+   green/amber/red tone variants tied to the existing status tokens. */
+.health-dropdown {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--bg-2);
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+}
+.health-dropdown.always-open {
+  background: var(--bg-1);
+  border: 1px solid var(--line);
+  padding: 16px 18px;
+}
+.health-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.health-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  border: 1px solid transparent;
+  transition: opacity var(--t-fast) var(--ease-out);
+  cursor: default;
+}
+.health-chip-label {
+  font-weight: 500;
+}
+.health-chip-value {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.health-chip.tone-good {
+  background: var(--status-top-soft);
+  border-color: rgba(23, 124, 99, 0.30);
+  color: var(--status-top);
+}
+.health-chip.tone-warn {
+  background: var(--status-fatigued-soft);
+  border-color: rgba(165, 106, 0, 0.30);
+  color: var(--status-fatigued);
+}
+.health-chip.tone-bad {
+  background: var(--status-cut-soft);
+  border-color: rgba(181, 71, 92, 0.30);
+  color: var(--status-cut);
+}
+.health-chip.dim {
+  opacity: 0.5;
+}
+.health-narrative {
+  margin: 0;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--t-1);
+}
+.health-howto-toggle {
+  align-self: flex-start;
+  background: transparent;
+  border: 0;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--accent-line);
+  text-underline-offset: 3px;
+}
+.health-howto-toggle:hover {
+  color: var(--accent-hover);
+}
+.health-howto-list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--t-2);
+}
+.health-howto-list strong {
+  color: var(--t-1);
+  font-weight: 600;
+}
+
+/* Inline expansion below a CreativeRow — smooth height via grid-template
+   rows trick (0fr → 1fr animates to content height cleanly). */
+.creative-row-expander {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition:
+    grid-template-rows var(--t-base) var(--ease-out),
+    opacity var(--t-base) var(--ease-out);
+  opacity: 0;
+}
+.creative-row-expander.open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+.creative-row-expander > div {
+  overflow: hidden;
+  min-height: 0;
+}
+.creative-row-expander-inner {
+  padding: 8px 16px 14px;
+}
+.creative-row-expand-btn {
+  background: transparent;
+  border: 0;
+  color: var(--t-3);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition:
+    color var(--t-fast) var(--ease-out),
+    background var(--t-fast) var(--ease-out);
+}
+.creative-row-expand-btn:hover {
+  color: var(--t-1);
+  background: var(--bg-2);
+}
+.creative-row-expand-btn[aria-expanded="true"] {
+  color: var(--accent);
+}
+.creative-row-expand-icon {
+  display: inline-block;
+  transition: transform var(--t-fast) var(--ease-out);
+}
+.creative-row-expand-btn[aria-expanded="true"] .creative-row-expand-icon {
+  transform: rotate(180deg);
+}
+
 /* "Generating analysis with Gemma 4…" banner shown on the twin loading
    skeleton. Communicates that the latency is the LLM doing work. */
 .generating-banner {
