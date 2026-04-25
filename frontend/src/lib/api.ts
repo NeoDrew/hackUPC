@@ -16,6 +16,8 @@ export type Campaign = components["schemas"]["Campaign"];
 export type CreativeListItem = components["schemas"]["CreativeListItem"];
 export type CreativeDetail = components["schemas"]["CreativeDetail"];
 export type Quadrant = components["schemas"]["Quadrant"];
+export type Saturation = components["schemas"]["Saturation"];
+export type CreativeListResponse = components["schemas"]["CreativeListResponse"];
 export type CreativeTimeseries = components["schemas"]["CreativeTimeseries"];
 export type TimeseriesPoint = components["schemas"]["TimeseriesPoint"];
 export type CreativeRow = components["schemas"]["CreativeRow"];
@@ -29,10 +31,8 @@ type AdvertisersResponse =
   paths["/api/advertisers"]["get"]["responses"]["200"]["content"]["application/json"];
 type CampaignsResponse =
   paths["/api/advertisers/{advertiser_id}/campaigns"]["get"]["responses"]["200"]["content"]["application/json"];
-type CreativeListResponse =
+type CampaignCreativesResponse =
   paths["/api/campaigns/{campaign_id}/creatives"]["get"]["responses"]["200"]["content"]["application/json"];
-type CreativeRowsResponse =
-  paths["/api/creatives"]["get"]["responses"]["200"]["content"]["application/json"];
 
 export interface ListCreativesArgs {
   tab?: string;
@@ -62,13 +62,13 @@ export const api = {
     fetchJSON<CampaignsResponse>(`/api/advertisers/${advertiserId}/campaigns`),
   getCampaign: (id: number) => fetchJSON<Campaign>(`/api/campaigns/${id}`),
   listCreativesForCampaign: (campaignId: number) =>
-    fetchJSON<CreativeListResponse>(`/api/campaigns/${campaignId}/creatives`),
+    fetchJSON<CampaignCreativesResponse>(`/api/campaigns/${campaignId}/creatives`),
 
   // Cockpit / portfolio.
   portfolioKpis: () => fetchJSON<PortfolioKPIs>("/api/portfolio/kpis"),
   tabCounts: () => fetchJSON<TabCounts>("/api/portfolio/tab-counts"),
   listCreatives: (args: ListCreativesArgs = {}) =>
-    fetchJSON<CreativeRowsResponse>(
+    fetchJSON<CreativeListResponse>(
       `/api/creatives${buildQuery(args as Record<string, string | number | boolean | undefined>)}`,
     ),
 

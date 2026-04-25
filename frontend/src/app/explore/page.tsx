@@ -19,18 +19,22 @@ const STATUSES: Array<{ value: string; label: string }> = [
   { value: "underperformer", label: "Cut" },
 ];
 
+const PAGE_SIZE = 100;
+
 interface ExploreSearchParams {
   vertical?: string;
   format?: string;
   status?: string;
   sort?: string;
   desc?: string;
+  limit?: string;
 }
 
 export default async function ExplorePage(props: {
   searchParams: Promise<ExploreSearchParams>;
 }) {
   const params = await props.searchParams;
+  const limit = clampLimit(params.limit);
 
   const listArgs = {
     vertical: params.vertical,
@@ -38,13 +42,18 @@ export default async function ExplorePage(props: {
     status: params.status,
     sort: params.sort,
     desc: params.desc !== "false",
+    limit,
   };
-  const rows = await api.listCreatives(listArgs);
+  const listing = await api.listCreatives(listArgs);
+  const total = listing.total;
+  const shown = listing.rows.length;
 
   const buildHref = (paramKey: string, value: string | undefined) => {
     const next: Record<string, string | undefined> = { ...params };
     if (value === undefined) delete next[paramKey];
     else next[paramKey] = value;
+    // Reset pagination when filters change.
+    delete next.limit;
     const qp = new URLSearchParams();
     for (const [k, v] of Object.entries(next)) {
       if (v !== undefined && v !== "") qp.set(k, v);
@@ -53,12 +62,22 @@ export default async function ExplorePage(props: {
     return `/explore${s ? `?${s}` : ""}`;
   };
 
+  const showMoreHref = (() => {
+    const next: Record<string, string | undefined> = { ...params };
+    next.limit = String(Math.min(limit + PAGE_SIZE, total));
+    const qp = new URLSearchParams();
+    for (const [k, v] of Object.entries(next)) {
+      if (v !== undefined && v !== "") qp.set(k, v);
+    }
+    return `/explore?${qp.toString()}`;
+  })();
+
   return (
     <section className="col gap-4" style={{ paddingTop: 16 }}>
       <header className="col gap-1">
         <h1 className="t-page">Explore</h1>
         <p className="t-body muted">
-          Cross-slice all {rows.length} active creatives by vertical, format, and status.
+          Cross-slice {shown} of {total} active creatives by vertical, format, and status.
         </p>
       </header>
 
@@ -86,9 +105,37 @@ export default async function ExplorePage(props: {
         />
       </div>
 
-      <AggregatesStrip rows={rows} />
+      <AggregatesStrip rows={listing.rows} />
 
-      <CreativeTable rows={rows} />
+      <CreativeTable
+        rows={listing.rows}
+        from="explore"
+        footer={
+          shown < total ? (
+            <div
+              className="row between center"
+              style={{ padding: "10px 16px", borderTop: "1px solid var(--line-soft)" }}
+            >
+              <span className="t-micro muted">
+                Showing {shown} of {total}
+              </span>
+              <a className="btn dense" href={showMoreHref}>
+                Show {Math.min(PAGE_SIZE, total - shown)} more
+              </a>
+            </div>
+          ) : (
+            <p className="t-micro muted" style={{ padding: "10px 16px" }}>
+              Showing all {total} matching creatives.
+            </p>
+          )
+        }
+      />
     </section>
   );
+}
+
+function clampLimit(raw: string | undefined): number {
+  const n = raw ? Number(raw) : PAGE_SIZE;
+  if (!Number.isFinite(n) || n < 1) return PAGE_SIZE;
+  return Math.min(2000, Math.max(PAGE_SIZE, n));
 }

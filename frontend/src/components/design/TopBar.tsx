@@ -1,7 +1,3 @@
-import Link from "next/link";
-
-import { DEMO_CREATIVE_ID } from "@/lib/demo";
-
 export function TopBar() {
   return (
     <header className="topbar">
@@ -20,9 +16,6 @@ export function TopBar() {
           <span className="muted">Period</span>
           <strong>Last 75 days</strong>
         </span>
-        <Link href={`/creatives/${DEMO_CREATIVE_ID}`} className="btn dense primary">
-          Run demo
-        </Link>
         <span className="avatar" title="Maya Tanaka">MT</span>
       </div>
     </header>

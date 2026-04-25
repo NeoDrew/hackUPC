@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from .config import ASSET_ROOT, CORS_ORIGINS
+from .config import ASSET_ROOT
 from .datastore import init_store
 from .routes import advertisers, campaigns, creatives, portfolio
 
@@ -24,7 +24,7 @@ app = FastAPI(title="Smadex Creative Intelligence", version="0.1.0", lifespan=li
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=CORS_ORIGINS,
+    allow_origin_regex=r"http://(localhost|127\.0\.0\.1):\d+",
     allow_methods=["GET"],
     allow_headers=["*"],
 )

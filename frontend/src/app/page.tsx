@@ -29,18 +29,24 @@ const TAB_HEADINGS: Record<TabKey, { heading: string; subcopy: string }> = {
 
 interface CockpitSearchParams {
   tab?: string;
+  limit?: string;
 }
+
+const PAGE_SIZE = 100;
 
 export default async function Cockpit(props: {
   searchParams: Promise<CockpitSearchParams>;
 }) {
-  const { tab: rawTab } = await props.searchParams;
+  const { tab: rawTab, limit: rawLimit } = await props.searchParams;
   const tab = normalizeTab(rawTab);
-  const [kpis, rows] = await Promise.all([
+  const limit = clampLimit(rawLimit);
+  const [kpis, listing] = await Promise.all([
     api.portfolioKpis(),
-    api.listCreatives({ tab }),
+    api.listCreatives({ tab, limit }),
   ]);
   const headings = TAB_HEADINGS[tab];
+  const total = listing.total;
+  const shown = listing.rows.length;
   return (
     <>
       <section className="kpi-strip">
@@ -54,9 +60,62 @@ export default async function Cockpit(props: {
           urgent
         />
       </section>
-      <CreativeTable rows={rows} heading={headings.heading} subcopy={headings.subcopy} />
+      <CreativeTable
+        rows={listing.rows}
+        heading={headings.heading}
+        subcopy={headings.subcopy}
+        from={tab}
+        footer={
+          shown < total ? (
+            <ShowMoreFooter
+              tab={tab}
+              shown={shown}
+              total={total}
+              currentLimit={limit}
+            />
+          ) : (
+            <p className="t-micro muted" style={{ padding: "10px 16px" }}>
+              Showing all {total} creatives in this view.
+            </p>
+          )
+        }
+      />
     </>
   );
+}
+
+function ShowMoreFooter({
+  tab,
+  shown,
+  total,
+  currentLimit,
+}: {
+  tab: TabKey;
+  shown: number;
+  total: number;
+  currentLimit: number;
+}) {
+  const next = Math.min(currentLimit + PAGE_SIZE, total);
+  const href = `/?tab=${tab}&limit=${next}`;
+  return (
+    <div
+      className="row between center"
+      style={{ padding: "10px 16px", borderTop: "1px solid var(--line-soft)" }}
+    >
+      <span className="t-micro muted">
+        Showing {shown} of {total}
+      </span>
+      <a className="btn dense" href={href}>
+        Show {Math.min(PAGE_SIZE, total - shown)} more
+      </a>
+    </div>
+  );
+}
+
+function clampLimit(raw: string | undefined): number {
+  const n = raw ? Number(raw) : PAGE_SIZE;
+  if (!Number.isFinite(n) || n < 1) return PAGE_SIZE;
+  return Math.min(2000, Math.max(PAGE_SIZE, n));
 }
 
 function normalizeTab(value: string | undefined): TabKey {

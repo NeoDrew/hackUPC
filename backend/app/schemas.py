@@ -54,6 +54,30 @@ class Quadrant(BaseModel):
     cohort_size: int
 
 
+class SaturationTriple(BaseModel):
+    theme: str | None
+    hook_type: str | None
+    dominant_color: str | None
+
+
+class Saturation(BaseModel):
+    """Portfolio-saturation signal: how many creatives in the same advertiser
+    portfolio share this attribute combo. Triple = (theme, hook_type,
+    dominant_color); falls back to (theme, hook_type) if the triple cohort is
+    too sparse — see ``used_triple``.
+    """
+
+    triple: SaturationTriple
+    used_triple: bool
+    cohort_advertiser_size: int
+    cohort_global_size: int
+    cohort_avg_ctr: float
+    cohort_avg_cvr: float
+    this_ctr: float
+    this_cvr: float
+    recommend_consolidate_to: int | None = None
+
+
 class CreativeListItem(BaseModel):
     creative_id: int
     campaign_id: int
@@ -80,6 +104,9 @@ class CreativeDetail(BaseModel):
     campaign_id: int
     asset_file: str
     quadrant: Quadrant | None = None
+    saturation: Saturation | None = None
+    health: int | None = None
+    status_band: str | None = None
 
 
 class TimeseriesPoint(BaseModel):
@@ -124,6 +151,7 @@ class CreativeRow(BaseModel):
     vertical: str
     format: str
     status: str | None
+    status_band: str | None
     ctr: float
     cvr: float
     roas: float
@@ -137,6 +165,17 @@ class CreativeRow(BaseModel):
     sparkline: list[float]
     fatigue_day: int | None = None
     asset_file: str
+
+
+class CreativeListResponse(BaseModel):
+    """Paginated wrapper for ``/api/creatives``. Total reflects the count
+    *after filters but before limit*, so callers can render a
+    "showing X of Y" footer.
+    """
+
+    rows: list[CreativeRow]
+    total: int
+    limit: int | None = None
 
 
 # --- Twin (stub) ---

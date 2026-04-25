@@ -11,6 +11,7 @@ from typing import Any
 
 import pandas as pd
 
+from ..agents import vision_insight as vision_insight_agent
 from ..datastore import Datastore
 from ..schemas import to_jsonable
 
@@ -123,16 +124,19 @@ def list_creatives_flat(
     sort: str | None = None,
     desc: bool = True,
     limit: int | None = None,
-) -> list[dict[str, Any]]:
-    """Flat creative list. ``tab`` is the URL-friendly key (scale/watch/rescue/cut);
-    ``status`` lets callers pass the raw label directly. Pass neither for the full
-    portfolio (used by /explore)."""
+) -> dict[str, Any]:
+    """Flat creative list, wrapped with pre-pagination ``total``.
+
+    ``tab`` filters by our computed ``status_band`` (scale/watch/rescue/cut).
+    ``explore`` (or no tab) returns the whole portfolio. ``status`` filters by
+    the dataset's raw ``creative_status`` label — used only by debug paths.
+    """
     rows = list(store.flat_row_by_creative.values())
 
     if tab and tab != "explore":
         target = _STATUS_TAB_MAP.get(tab)
         if target is None:
-            return []
+            return {"rows": [], "total": 0, "limit": limit}
         rows = [r for r in rows if r["status"] == target]
     elif status:
         rows = [r for r in rows if r["status"] == status]
@@ -147,9 +151,10 @@ def list_creatives_flat(
     else:
         rows.sort(key=lambda r: r.get("health") or 0, reverse=True)
 
+    total = len(rows)
     if limit is not None:
         rows = rows[:limit]
-    return rows
+    return {"rows": rows, "total": total, "limit": limit}
 
 
 # --- Twin stub ---
@@ -215,7 +220,7 @@ _TWIN_FIELDS: list[str] = [
 ]
 
 
-def get_twin_stub(store: Datastore, creative_id: int) -> dict[str, Any] | None:
+async def get_twin_stub(store: Datastore, creative_id: int) -> dict[str, Any] | None:
     """Pick the cohort-leader twin within (vertical, format) — the highest
     perf_score creative tagged top_performer. Compute attribute diffs vs the
     source creative. Vision insight body picked from a template keyed on the
@@ -265,19 +270,32 @@ def get_twin_stub(store: Datastore, creative_id: int) -> dict[str, Any] | None:
                 largest_template_magnitude = magnitude
                 largest_field = field_name
 
+    segment = {"vertical": source["vertical"], "format": source["format"]}
     template = _VISION_TEMPLATES.get(largest_field, _VISION_TEMPLATES["default"])
+    template_insight = {
+        "headline": template["headline"],
+        "body": template["body"],
+        "confidence": 0.74,
+    }
+
+    # Try Gemma; on success the response is non-stub (UI hides [preview] chip).
+    llm_insight = await vision_insight_agent.generate_insight(
+        source=source,
+        winner=winner,
+        diffs=diffs,
+        segment=segment,
+    )
+    insight = llm_insight or template_insight
+    is_stub = llm_insight is None
+
     return {
         "fatigued_id": creative_id,
         "winner_id": winner_id,
         "similarity": 0.81,
-        "segment": {"vertical": source["vertical"], "format": source["format"]},
+        "segment": segment,
         "diffs": diffs,
-        "vision_insight": {
-            "headline": template["headline"],
-            "body": template["body"],
-            "confidence": 0.74,
-        },
-        "is_stub": True,
+        "vision_insight": insight,
+        "is_stub": is_stub,
     }
 
 

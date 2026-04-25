@@ -390,12 +390,12 @@ a:focus-visible {
   background: var(--bg-1);
   border: 1px solid var(--line);
   border-radius: 10px;
-  padding: 14px 16px;
+  padding: 16px 18px;
   box-shadow: var(--shadow-1);
   display: flex;
   flex-direction: column;
   gap: 6px;
-  min-height: 86px;
+  min-height: 110px;
 }
 .kpi-tile .kpi-label {
   font-size: 10px;
@@ -406,9 +406,10 @@ a:focus-visible {
 }
 .kpi-tile .kpi-value {
   font-family: var(--font-mono);
-  font-size: 24px;
+  font-size: 36px;
+  line-height: 38px;
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
   color: var(--t-1);
 }
 .kpi-tile .kpi-delta {
@@ -840,6 +841,76 @@ a:focus-visible {
   font-size: 12px;
   color: var(--t-3);
   line-height: 1.4;
+}
+
+/* Saturation diagnostic card on the detail page */
+[data-card="saturation"] {
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  border-radius: 10px;
+  padding: 14px 18px;
+  background: var(--bg-1);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+[data-card="saturation"][data-tone="warn"] { border-left-color: var(--status-fatigued); }
+[data-card="saturation"][data-tone="neutral"] { border-left-color: var(--accent); }
+[data-card="saturation"][data-tone="muted"] { border-left-color: var(--line-strong); }
+[data-card="saturation"] header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  position: static;
+}
+[data-card="saturation"] [data-pill] {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+[data-card="saturation"] header small {
+  font-size: 12px;
+  color: var(--t-3);
+}
+[data-card="saturation"] dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 24px;
+  margin: 0;
+}
+[data-card="saturation"] dl > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+[data-card="saturation"] dt {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--t-3);
+  font-weight: 600;
+}
+[data-card="saturation"] dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+}
+[data-card="saturation"] footer {
+  font-size: 12px;
+  color: var(--t-2);
+  line-height: 1.45;
 }
 
 .preview-chip {

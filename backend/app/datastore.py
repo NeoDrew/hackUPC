@@ -102,13 +102,117 @@ class Datastore:
 
         self._compute_quadrants()
         self._compute_flat_rows()
+        self._compute_saturation()
         self._compute_portfolio_aggregates()
         self._verify_counts()
 
+    def _compute_saturation(self) -> None:
+        """Per-creative portfolio-saturation diagnostic.
+
+        Triple key = ``(theme, hook_type, dominant_color)``. For each creative
+        we count how many other creatives share the triple within the same
+        advertiser, and globally; we expose mean CTR/CVR for the cohort and a
+        consolidation recommendation when the cohort is ≥ 5 within the
+        advertiser. Falls back to ``(theme, hook_type)`` if the triple cohort
+        has < 2 — the dataset's dominant_color column is fairly diverse so
+        many creatives end up alone, in which case the broader pair is more
+        useful.
+        """
+        s = self.creative_summary
+
+        # Pull the metadata + advertiser fields we need.
+        meta = self.creatives.set_index("creative_id")
+        advertiser_id_by_creative: dict[int, int] = {}
+        # advertiser_id is on campaigns.csv; join via campaign_id.
+        camp_to_adv = self.campaigns.set_index("campaign_id")["advertiser_id"].to_dict()
+        for cid, row in meta.iterrows():
+            advertiser_id_by_creative[int(cid)] = int(camp_to_adv.get(int(row["campaign_id"]), -1))
+
+        ctr_by_cid = s.set_index("creative_id")["overall_ctr"].to_dict()
+        cvr_by_cid = s.set_index("creative_id")["overall_cvr"].to_dict()
+
+        # Build cohort indices.
+        triple_global: dict[tuple, list[int]] = {}
+        triple_advertiser: dict[tuple, list[int]] = {}
+        pair_advertiser: dict[tuple, list[int]] = {}
+        for cid_raw, row in meta.iterrows():
+            cid = int(cid_raw)
+            triple = (row.get("theme"), row.get("hook_type"), row.get("dominant_color"))
+            pair = (row.get("theme"), row.get("hook_type"))
+            adv_id = advertiser_id_by_creative.get(cid, -1)
+            triple_global.setdefault(triple, []).append(cid)
+            triple_advertiser.setdefault((adv_id, *triple), []).append(cid)
+            pair_advertiser.setdefault((adv_id, *pair), []).append(cid)
+
+        for cid_raw, row in meta.iterrows():
+            cid = int(cid_raw)
+            triple = (row.get("theme"), row.get("hook_type"), row.get("dominant_color"))
+            pair = (row.get("theme"), row.get("hook_type"))
+            adv_id = advertiser_id_by_creative.get(cid, -1)
+
+            adv_triple_cohort = triple_advertiser.get((adv_id, *triple), [])
+            global_cohort = triple_global.get(triple, [])
+            # Fall back to the (theme, hook_type) pair if triple cohort within advertiser is too sparse.
+            used_triple = True
+            if len(adv_triple_cohort) < 2:
+                adv_triple_cohort = pair_advertiser.get((adv_id, *pair), [])
+                used_triple = False
+
+            cohort_avg_ctr = (
+                sum(_safe_float(ctr_by_cid.get(c)) for c in adv_triple_cohort)
+                / len(adv_triple_cohort)
+                if adv_triple_cohort
+                else 0.0
+            )
+            cohort_avg_cvr = (
+                sum(_safe_float(cvr_by_cid.get(c)) for c in adv_triple_cohort)
+                / len(adv_triple_cohort)
+                if adv_triple_cohort
+                else 0.0
+            )
+            this_ctr = _safe_float(ctr_by_cid.get(cid))
+            this_cvr = _safe_float(cvr_by_cid.get(cid))
+            cohort_n = len(adv_triple_cohort)
+            recommend_to: int | None = None
+            if cohort_n >= 5:
+                recommend_to = max(2, -(-cohort_n // 3))  # ceil(cohort_n / 3)
+
+            saturation = {
+                "triple": {
+                    "theme": row.get("theme"),
+                    "hook_type": row.get("hook_type"),
+                    "dominant_color": row.get("dominant_color") if used_triple else None,
+                },
+                "used_triple": used_triple,
+                "cohort_advertiser_size": cohort_n,
+                "cohort_global_size": len(global_cohort),
+                "cohort_avg_ctr": round(cohort_avg_ctr, 6),
+                "cohort_avg_cvr": round(cohort_avg_cvr, 6),
+                "this_ctr": round(this_ctr, 6),
+                "this_cvr": round(this_cvr, 6),
+                "recommend_consolidate_to": recommend_to,
+            }
+            detail = self.creative_detail.get(cid)
+            if detail is not None:
+                detail["saturation"] = saturation
+
     def _compute_flat_rows(self) -> None:
-        """Flat row per creative for the cockpit table + Explore. Bakes in
-        health = round(perf_score * 100), 30-day CTR sparkline (no zero
-        padding — front-end right-aligns shorter series), and days_active.
+        """Flat row per creative for the cockpit table + Explore. Bakes in:
+
+        - **health**: fatigue-adjusted composite ∈ [0, 100]. Formula:
+            decay_pct = ctr_decay_pct (negative when fatigued)
+            fatigue_penalty = clamp(-decay_pct, 0, 1)
+            health = round(perf_score × (1 − fatigue_penalty × 0.7) × 100)
+          The 0.7 weight prevents catastrophic fatigue from zeroing the score
+          entirely. Drives ``status_band`` (see below) which assigns the tab.
+        - **status_band**: bands → tabs.
+            ≥ 70 → scale, 40–69 → watch, 20–39 → rescue, < 20 → cut.
+        - **status**: pass-through of dataset's ``creative_status`` so the UI
+          can show the synthetic label as a *validation* signal alongside our
+          band ("agree" / "diverges").
+        - **sparkline**: last 30 days of CTR. No zero-padding — frontend
+          right-aligns shorter series.
+        - **days_active**: from the dataset's ``total_days_active`` column.
         """
         s = self.creative_summary.set_index("creative_id")
         creative_meta = self.creatives.set_index("creative_id")
@@ -126,12 +230,11 @@ class Datastore:
         for creative_id_raw, summary_row in s.iterrows():
             creative_id = int(creative_id_raw)
             meta_row = creative_meta.loc[creative_id]
-            perf_score = summary_row.get("perf_score")
-            health = (
-                int(round(float(perf_score) * 100))
-                if perf_score is not None and not pd.isna(perf_score)
-                else 0
-            )
+            perf_score = _safe_float(summary_row.get("perf_score"))
+            decay = _safe_float(summary_row.get("ctr_decay_pct"))
+            status_label = summary_row.get("creative_status")
+            health = _compute_health(perf_score, decay, status_label)
+            band = _band_from_health(health)
             fatigue_day = summary_row.get("fatigue_day")
             fatigue_day_v: int | None = (
                 int(fatigue_day) if fatigue_day is not None and not pd.isna(fatigue_day) else None
@@ -144,6 +247,7 @@ class Datastore:
                 "vertical": meta_row["vertical"],
                 "format": meta_row["format"],
                 "status": summary_row.get("creative_status"),
+                "status_band": band,
                 "ctr": _safe_float(summary_row.get("overall_ctr")),
                 "cvr": _safe_float(summary_row.get("overall_cvr")),
                 "roas": _safe_float(summary_row.get("overall_roas")),
@@ -158,9 +262,21 @@ class Datastore:
                 "fatigue_day": fatigue_day_v,
                 "asset_file": meta_row["asset_file"],
             }
+            # Mirror band+health onto creative_detail so the detail page can
+            # render "Our band: ... · Smadex label: ... ✓ agree" without a second fetch.
+            detail = self.creative_detail.get(creative_id)
+            if detail is not None:
+                detail["health"] = health
+                detail["status_band"] = band
 
     def _compute_portfolio_aggregates(self) -> None:
-        """Roll up KPIs + tab counts once at startup (data is static)."""
+        """Roll up KPIs + tab counts once at startup (data is static).
+
+        Tab counts come from the dataset's ``creative_status`` (synthetic
+        ground-truth label) — that's what assigns each creative to a tab.
+        Our computed ``status_band`` is shown alongside as a validation
+        signal on the detail page.
+        """
         s = self.creative_summary
         total_impressions = int(s["total_impressions"].sum())
         total_clicks = int(s["total_clicks"].sum())
@@ -259,6 +375,42 @@ def _safe_int(v: Any) -> int:
         return int(v) if not pd.isna(v) else 0
     except (TypeError, ValueError):
         return 0
+
+
+def _compute_health(perf_score: float, decay: float, status: str | None) -> int:
+    """Visual health score 0–100. Coherent with the cohort tab.
+
+    The dataset's ``perf_score`` reflects lifetime performance; alone it's too
+    generous for *fatigued* creatives because they were strong before the
+    drop. We weight by recent trajectory using ``ctr_decay_pct``.
+
+      ``trajectory_factor = clamp(1 + decay × decay_weight, floor, 1)``
+
+    Where ``decay_weight`` is heavier for fatigued creatives than for stable
+    or top performers (whose decay is normal end-of-flight tail-off rather
+    than market saturation). ``floor`` prevents Cut-status creatives from
+    rounding to negatives.
+    """
+    base = perf_score * 100.0
+    if status == "fatigued":
+        trajectory = max(0.30, min(1.0, 1.0 + decay * 0.75))
+    elif status == "underperformer":
+        trajectory = max(0.50, min(1.0, 1.0 + decay * 0.30))
+    elif status == "top_performer":
+        trajectory = max(0.85, min(1.0, 1.0 + decay * 0.15))
+    else:  # stable / unknown
+        trajectory = max(0.70, min(1.0, 1.0 + decay * 0.30))
+    return max(0, min(100, int(round(base * trajectory))))
+
+
+def _band_from_health(health: int) -> str:
+    if health >= 70:
+        return "scale"
+    if health >= 40:
+        return "watch"
+    if health >= 20:
+        return "rescue"
+    return "cut"
 
 
 def _quadrant_label(ctr_pct: float | None, cvr_pct: float | None) -> str:

@@ -8,6 +8,7 @@ dependencies = [
     "uvicorn[standard]>=0.32",
     "pandas>=2.2",
     "pydantic>=2.9",
+    "httpx>=0.28.1",
 ]
 
 [tool.uv]

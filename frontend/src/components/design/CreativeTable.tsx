@@ -5,10 +5,14 @@ export function CreativeTable({
   rows,
   heading,
   subcopy,
+  from,
+  footer,
 }: {
   rows: CreativeRowT[];
   heading?: string;
   subcopy?: string;
+  from?: string;
+  footer?: React.ReactNode;
 }) {
   return (
     <section className="col gap-3">
@@ -37,9 +41,10 @@ export function CreativeTable({
             No creatives in this view.
           </div>
         ) : (
-          rows.map((row) => <CreativeRow key={row.creative_id} row={row} />)
+          rows.map((row) => <CreativeRow key={row.creative_id} row={row} from={from} />)
         )}
       </div>
+      {footer}
     </section>
   );
 }

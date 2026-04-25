@@ -54,3 +54,41 @@ export function statusToTone(status: string | null | undefined): string {
   if (status in STATUS_TONE) return STATUS_TONE[status as CreativeStatus];
   return "stable";
 }
+
+// Health band → verb mapping (mirrors STATUS_TO_VERB, keyed by band).
+export const BAND_TO_VERB: Record<string, string> = {
+  scale: "Scale",
+  watch: "Watch",
+  rescue: "Rescue",
+  cut: "Cut",
+};
+
+export const BAND_TO_TONE: Record<string, string> = {
+  scale: "top",
+  watch: "stable",
+  rescue: "fatigued",
+  cut: "cut",
+};
+
+export function bandToVerb(band: string | null | undefined): string {
+  if (!band) return "—";
+  return BAND_TO_VERB[band] ?? band;
+}
+
+export function bandToTone(band: string | null | undefined): string {
+  if (!band) return "stable";
+  return BAND_TO_TONE[band] ?? "stable";
+}
+
+export function agreeWithLabel(band: string | null | undefined, status: string | null | undefined): boolean | null {
+  if (!band || !status) return null;
+  const expected: Record<string, string> = {
+    top_performer: "scale",
+    stable: "watch",
+    fatigued: "rescue",
+    underperformer: "cut",
+  };
+  const want = expected[status];
+  if (!want) return null;
+  return band === want;
+}

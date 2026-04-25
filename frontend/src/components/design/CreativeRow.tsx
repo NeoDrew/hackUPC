@@ -6,9 +6,12 @@ import { formatCount, formatCurrency, formatDays, formatPct, formatRoas } from "
 import { Sparkline } from "./Sparkline";
 import { HealthRing } from "./HealthRing";
 
-export function CreativeRow({ row }: { row: CreativeRowT }) {
+export function CreativeRow({ row, from }: { row: CreativeRowT; from?: string }) {
+  const href = from
+    ? `/creatives/${row.creative_id}?from=${encodeURIComponent(from)}`
+    : `/creatives/${row.creative_id}`;
   return (
-    <Link href={`/creatives/${row.creative_id}`} className="creative-row" prefetch={false}>
+    <Link href={href} className="creative-row" prefetch={false}>
       <div className="thumb">
         <img src={creativeImageUrl(row.creative_id)} alt="" loading="lazy" />
       </div>

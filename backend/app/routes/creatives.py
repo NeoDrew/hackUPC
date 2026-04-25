@@ -3,13 +3,13 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Query
 
 from ..datastore import get_store
-from ..schemas import CreativeDetail, CreativeRow, CreativeTimeseries, TwinSummary
+from ..schemas import CreativeDetail, CreativeListResponse, CreativeTimeseries, TwinSummary
 from ..services import queries
 
 router = APIRouter()
 
 
-@router.get("/creatives", response_model=list[CreativeRow])
+@router.get("/creatives", response_model=CreativeListResponse)
 def list_creatives_flat(
     tab: str | None = Query(default=None, description="scale|watch|rescue|cut|explore"),
     status: str | None = Query(default=None),
@@ -17,8 +17,8 @@ def list_creatives_flat(
     format: str | None = Query(default=None),
     sort: str | None = Query(default=None),
     desc: bool = Query(default=True),
-    limit: int | None = Query(default=None, ge=1, le=2000),
-) -> list[dict]:
+    limit: int | None = Query(default=100, ge=1, le=2000),
+) -> dict:
     return queries.list_creatives_flat(
         get_store(),
         tab=tab,
@@ -54,8 +54,8 @@ def get_timeseries(creative_id: int) -> dict:
     "/creatives/{creative_id}/twin",
     response_model=TwinSummary,
 )
-def get_twin(creative_id: int) -> dict:
-    twin = queries.get_twin_stub(get_store(), creative_id)
+async def get_twin(creative_id: int) -> dict:
+    twin = await queries.get_twin_stub(get_store(), creative_id)
     if twin is None:
         raise HTTPException(
             status_code=404, detail="no cohort-leader twin found"

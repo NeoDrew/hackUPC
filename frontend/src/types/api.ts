@@ -280,6 +280,11 @@ export interface components {
             /** Asset File */
             asset_file: string;
             quadrant?: components["schemas"]["Quadrant"] | null;
+            saturation?: components["schemas"]["Saturation"] | null;
+            /** Health */
+            health?: number | null;
+            /** Status Band */
+            status_band?: string | null;
         } & {
             [key: string]: unknown;
         };
@@ -302,6 +307,20 @@ export interface components {
             /** Asset File */
             asset_file: string;
         };
+        /**
+         * CreativeListResponse
+         * @description Paginated wrapper for ``/api/creatives``. Total reflects the count
+         *     *after filters but before limit*, so callers can render a
+         *     "showing X of Y" footer.
+         */
+        CreativeListResponse: {
+            /** Rows */
+            rows: components["schemas"]["CreativeRow"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit?: number | null;
+        };
         /** CreativeRow */
         CreativeRow: {
             /** Creative Id */
@@ -318,6 +337,8 @@ export interface components {
             format: string;
             /** Status */
             status: string | null;
+            /** Status Band */
+            status_band: string | null;
             /** Ctr */
             ctr: number;
             /** Cvr */
@@ -389,6 +410,41 @@ export interface components {
             cohort_keys: components["schemas"]["CohortKeys"];
             /** Cohort Size */
             cohort_size: number;
+        };
+        /**
+         * Saturation
+         * @description Portfolio-saturation signal: how many creatives in the same advertiser
+         *     portfolio share this attribute combo. Triple = (theme, hook_type,
+         *     dominant_color); falls back to (theme, hook_type) if the triple cohort is
+         *     too sparse — see ``used_triple``.
+         */
+        Saturation: {
+            triple: components["schemas"]["SaturationTriple"];
+            /** Used Triple */
+            used_triple: boolean;
+            /** Cohort Advertiser Size */
+            cohort_advertiser_size: number;
+            /** Cohort Global Size */
+            cohort_global_size: number;
+            /** Cohort Avg Ctr */
+            cohort_avg_ctr: number;
+            /** Cohort Avg Cvr */
+            cohort_avg_cvr: number;
+            /** This Ctr */
+            this_ctr: number;
+            /** This Cvr */
+            this_cvr: number;
+            /** Recommend Consolidate To */
+            recommend_consolidate_to?: number | null;
+        };
+        /** SaturationTriple */
+        SaturationTriple: {
+            /** Theme */
+            theme: string | null;
+            /** Hook Type */
+            hook_type: string | null;
+            /** Dominant Color */
+            dominant_color: string | null;
         };
         /** TabCounts */
         TabCounts: {
@@ -551,7 +607,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreativeRow"][];
+                    "application/json": components["schemas"]["CreativeListResponse"];
                 };
             };
             /** @description Validation Error */

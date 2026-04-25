@@ -16,7 +16,7 @@ export function TabBar({ counts }: { counts: TabCounts }) {
       {TABS.map((tab) => {
         const href = tab.utility ? "/explore" : `/?tab=${tab.key}`;
         const count = counts[tab.key as keyof TabCounts] ?? 0;
-        const isActive = tab.key === activeTab;
+        const isActive = activeTab !== null && tab.key === activeTab;
         return (
           <Link
             key={tab.key}
@@ -33,8 +33,13 @@ export function TabBar({ counts }: { counts: TabCounts }) {
   );
 }
 
-function resolveActiveTab(pathname: string, tabParam: string | null): TabKey {
+function resolveActiveTab(pathname: string, tabParam: string | null): TabKey | null {
   if (pathname.startsWith("/explore")) return "explore";
+  // No tab is active when drilled into a creative — keeps the bar's underline
+  // off so the user knows they're outside the cohort browser.
+  if (pathname.startsWith("/creatives/") || pathname.startsWith("/debug/")) {
+    return null;
+  }
   const requested = tabParam as TabKey | null;
   if (requested && ["scale", "watch", "rescue", "cut"].includes(requested)) {
     return requested;

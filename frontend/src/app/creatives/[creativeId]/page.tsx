@@ -5,9 +5,13 @@ import { api } from "@/lib/api";
 import { creativeImageUrl } from "@/lib/assetUrl";
 import { HealthRing } from "@/components/design/HealthRing";
 import { StatusPill } from "@/components/design/StatusPill";
+import { BandPill } from "@/components/design/BandPill";
 import { MetadataPills } from "@/components/design/MetadataPills";
 import { PerformanceGrid } from "@/components/design/PerformanceGrid";
 import { FatigueChart } from "@/components/design/FatigueChart";
+import { SaturationCard } from "@/components/design/SaturationCard";
+
+const VALID_FROM = new Set(["scale", "watch", "rescue", "cut", "explore"]);
 
 export default async function CreativeDetailPage(
   props: PageProps<"/creatives/[creativeId]">,
@@ -16,6 +20,12 @@ export default async function CreativeDetailPage(
   const id = Number(creativeId);
   if (!Number.isFinite(id)) notFound();
 
+  const sp = await props.searchParams;
+  const rawFrom = typeof sp?.from === "string" ? sp.from : undefined;
+  const from = rawFrom && VALID_FROM.has(rawFrom) ? rawFrom : undefined;
+  const backHref =
+    from === "explore" ? "/explore" : from ? `/?tab=${from}` : "/";
+
   let creative;
   try {
     creative = await api.getCreative(id);
@@ -23,35 +33,39 @@ export default async function CreativeDetailPage(
     notFound();
   }
   const data = creative as unknown as Record<string, number | string | null | undefined>;
-  const health = (data.perf_score as number | null) ? Math.round(((data.perf_score as number) ?? 0) * 100) : 0;
+  const health = (creative.health as number | null) ?? 0;
   const status = (data.creative_status as string | null) ?? null;
+  const band = (creative.status_band as string | null) ?? null;
   const fatigueDay = (data.fatigue_day as number | null) ?? null;
 
   return (
-    <section className="col gap-5" style={{ paddingTop: 20, maxWidth: 960, margin: "0 auto" }}>
-      <header className="row center gap-3" style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
-        <div className="col gap-1">
-          <span className="t-overline">Creative #{creative.creative_id}</span>
-          <div className="row center gap-3">
-            <h1 className="t-page" style={{ margin: 0 }}>
-              {(data.headline as string) || `Creative ${creative.creative_id}`}
-            </h1>
-            <StatusPill status={status} />
-          </div>
-          <div className="t-body muted">
-            {String(data.advertiser_name ?? "")} · {String(data.vertical ?? "")} ·{" "}
-            {String(data.format ?? "")} · {String(data.language ?? "")}
-          </div>
-        </div>
-        <div className="row center gap-2">
-          <Link href="/" className="btn dense">
-            ← Back
+    <section className="col gap-5" style={{ paddingTop: 16, maxWidth: 1040, margin: "0 auto" }}>
+      <div className="row center between" style={{ position: "sticky", top: 0, zIndex: 5, background: "var(--bg-0)", padding: "8px 0" }}>
+        <Link href={backHref} className="btn dense">
+          ← Back
+        </Link>
+        {status === "fatigued" && (
+          <Link href={`/creatives/${id}/twin`} className="btn dense primary">
+            Why is this losing?
           </Link>
-          {status === "fatigued" && (
-            <Link href={`/creatives/${id}/twin`} className="btn dense primary">
-              Why is this losing?
-            </Link>
-          )}
+        )}
+      </div>
+
+      <header className="col gap-2">
+        <span className="t-overline">Creative #{creative.creative_id}</span>
+        <h1 className="t-page" style={{ margin: 0 }}>
+          {(data.headline as string) || `Creative ${creative.creative_id}`}
+        </h1>
+        <div className="row center gap-2" style={{ flexWrap: "wrap" }}>
+          <BandPill band={band} health={health} />
+          <StatusPill status={status} dense />
+          <span className="t-micro muted">
+            {bandVsLabel(band, status)}
+          </span>
+        </div>
+        <div className="t-body muted">
+          {String(data.advertiser_name ?? "")} · {String(data.vertical ?? "")} ·{" "}
+          {String(data.format ?? "")} · {String(data.language ?? "")}
         </div>
       </header>
 
@@ -147,10 +161,27 @@ export default async function CreativeDetailPage(
         <h3 className="t-section">Creative attributes</h3>
         <MetadataPills creative={creative} />
       </section>
+
+      {creative.saturation ? <SaturationCard saturation={creative.saturation} /> : null}
     </section>
   );
 }
 
 function cohortBarWidth(pct: number): number {
   return Math.max(5, Math.min(100, pct));
+}
+
+function bandVsLabel(band: string | null, status: string | null): string {
+  if (!band || !status) return "";
+  const expected: Record<string, string> = {
+    top_performer: "scale",
+    stable: "watch",
+    fatigued: "rescue",
+    underperformer: "cut",
+  };
+  const expectedBand = expected[status];
+  if (!expectedBand) return "";
+  return band === expectedBand
+    ? "✓ our trajectory band agrees with Smadex's label"
+    : "✗ diverges from Smadex's label — talking point";
 }
