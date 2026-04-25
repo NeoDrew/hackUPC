@@ -554,13 +554,35 @@ class Datastore:
                 if fatigue_day is not None and not pd.isna(fatigue_day)
                 else None
             )
+            campaign_id = int(meta_row["campaign_id"])
+            campaign_row = (
+                self.campaigns.loc[
+                    self.campaigns["campaign_id"] == campaign_id
+                ].iloc[0]
+                if (self.campaigns["campaign_id"] == campaign_id).any()
+                else None
+            )
+            country_list = (
+                [c.strip() for c in (campaign_row.get("country_list") or []) if c]
+                if campaign_row is not None
+                else []
+            )
+            target_os = (
+                str(campaign_row.get("target_os")) if campaign_row is not None else ""
+            )
             self.flat_row_by_creative[creative_id] = {
                 "creative_id": creative_id,
-                "campaign_id": int(meta_row["campaign_id"]),
+                "campaign_id": campaign_id,
                 "advertiser_name": meta_row["advertiser_name"],
                 "headline": meta_row.get("headline") or "",
                 "vertical": meta_row["vertical"],
                 "format": meta_row["format"],
+                # Creative-level attributes used as Explore filters.
+                "theme": meta_row.get("theme"),
+                "hook_type": meta_row.get("hook_type"),
+                # Campaign-level delivery context.
+                "countries": country_list,
+                "target_os": target_os,
                 "status": summary_row.get("creative_status"),
                 "status_band": band,
                 "ctr": _safe_float(summary_row.get("overall_ctr")),

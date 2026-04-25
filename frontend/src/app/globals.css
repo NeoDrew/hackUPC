@@ -736,6 +736,54 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   color: var(--accent);
   font-weight: 600;
 }
+
+/* Explore filter bar — three semantic groups (Cohort / Creative /
+   Delivery) each with its own row of dropdown pills. */
+.explore-filters {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 18px;
+  padding: 14px 16px;
+  background: var(--bg-1);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  position: relative;
+}
+.explore-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.explore-filter-group-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--t-3);
+  text-transform: uppercase;
+}
+.explore-filter-group-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.explore-filters-reset {
+  margin-left: auto;
+  align-self: flex-end;
+  background: transparent;
+  border: 0;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 8px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--accent-line);
+  text-underline-offset: 3px;
+}
+.explore-filters-reset:hover {
+  color: var(--accent-hover);
+}
 .filter-add {
   display: inline-flex;
   align-items: center;

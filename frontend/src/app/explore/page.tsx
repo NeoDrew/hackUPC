@@ -4,23 +4,7 @@ import { api } from "@/lib/api";
 import { AggregatesStrip } from "@/components/design/AggregatesStrip";
 import { CreativeTable } from "@/components/design/CreativeTable";
 import { CreativeTableSkeleton } from "@/components/design/CreativeTableSkeleton";
-import { FilterChipGroup } from "@/components/design/FilterChipGroup";
-
-const VERTICALS = [
-  "ecommerce",
-  "entertainment",
-  "fintech",
-  "food_delivery",
-  "gaming",
-  "travel",
-];
-const FORMATS = ["banner", "interstitial", "native", "playable", "rewarded_video"];
-const STATUSES: Array<{ value: string; label: string }> = [
-  { value: "top_performer", label: "Scale" },
-  { value: "stable", label: "Watch" },
-  { value: "fatigued", label: "Rescue" },
-  { value: "underperformer", label: "Cut" },
-];
+import { ExploreFilters } from "@/components/design/ExploreFilters";
 
 const PAGE_SIZE = 100;
 
@@ -29,6 +13,11 @@ const SORTABLE = new Set(["ctr", "cvr", "roas", "spend_usd", "days_active", "hea
 interface ExploreSearchParams {
   vertical?: string;
   format?: string;
+  theme?: string;
+  hook_type?: string;
+  country?: string;
+  os?: string;
+  band?: string;
   status?: string;
   sort?: string;
   desc?: string;
@@ -45,53 +34,31 @@ export default async function ExplorePage(props: {
   const sort = params.sort && SORTABLE.has(params.sort) ? params.sort : undefined;
   const desc = params.desc !== "false";
 
-  const buildHref = (paramKey: string, value: string | undefined) => {
-    const next: Record<string, string | undefined> = { ...params };
-    if (value === undefined) delete next[paramKey];
-    else next[paramKey] = value;
-    delete next.limit;
-    const qp = new URLSearchParams();
-    for (const [k, v] of Object.entries(next)) {
-      if (v !== undefined && v !== "") qp.set(k, v);
-    }
-    const s = qp.toString();
-    return `/explore${s ? `?${s}` : ""}`;
-  };
-
-  const suspenseKey = `${params.vertical ?? ""}|${params.format ?? ""}|${params.status ?? ""}|${sort ?? ""}|${desc ? "d" : "a"}|${limit}|${params.start ?? ""}|${params.end ?? ""}`;
+  const suspenseKey = [
+    params.vertical ?? "",
+    params.format ?? "",
+    params.theme ?? "",
+    params.hook_type ?? "",
+    params.country ?? "",
+    params.os ?? "",
+    params.band ?? "",
+    sort ?? "",
+    desc ? "d" : "a",
+    limit,
+    params.start ?? "",
+    params.end ?? "",
+  ].join("|");
 
   return (
     <section className="col gap-4" style={{ paddingTop: 16 }}>
       <header className="col gap-1">
         <h1 className="t-page">Explore</h1>
         <p className="t-body muted">
-          Cross-slice creatives by vertical, format, and status.
+          Cross-slice creatives by cohort, creative attributes, and delivery context.
         </p>
       </header>
 
-      <div className="col gap-4">
-        <FilterChipGroup
-          label="Vertical"
-          paramKey="vertical"
-          options={VERTICALS.map((v) => ({ value: v, label: v }))}
-          currentValue={params.vertical}
-          buildHref={buildHref}
-        />
-        <FilterChipGroup
-          label="Format"
-          paramKey="format"
-          options={FORMATS.map((v) => ({ value: v, label: v.replace("_", " ") }))}
-          currentValue={params.format}
-          buildHref={buildHref}
-        />
-        <FilterChipGroup
-          label="Status"
-          paramKey="status"
-          options={STATUSES}
-          currentValue={params.status}
-          buildHref={buildHref}
-        />
-      </div>
+      <ExploreFilters />
 
       <Suspense
         key={suspenseKey}
@@ -139,7 +106,11 @@ async function ExploreTable({
   const listing = await api.listCreatives({
     vertical: params.vertical,
     format: params.format,
-    status: params.status,
+    theme: params.theme,
+    hook_type: params.hook_type,
+    country: params.country,
+    os: params.os,
+    band: params.band,
     sort,
     desc,
     limit,

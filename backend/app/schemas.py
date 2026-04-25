@@ -204,6 +204,10 @@ class CreativeRow(BaseModel):
     headline: str
     vertical: str
     format: str
+    theme: str | None = None
+    hook_type: str | None = None
+    countries: list[str] = []
+    target_os: str | None = None
     status: str | None
     status_band: str | None
     ctr: float

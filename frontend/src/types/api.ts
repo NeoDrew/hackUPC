@@ -523,6 +523,17 @@ export interface components {
             vertical: string;
             /** Format */
             format: string;
+            /** Theme */
+            theme?: string | null;
+            /** Hook Type */
+            hook_type?: string | null;
+            /**
+             * Countries
+             * @default []
+             */
+            countries: string[];
+            /** Target Os */
+            target_os?: string | null;
             /** Status */
             status: string | null;
             /** Status Band */
@@ -1063,6 +1074,14 @@ export interface operations {
                 status?: string | null;
                 vertical?: string | null;
                 format?: string | null;
+                theme?: string | null;
+                hook_type?: string | null;
+                /** @description ISO country code, e.g. US, GB, DE */
+                country?: string | null;
+                /** @description Android, iOS, or Both */
+                os?: string | null;
+                /** @description scale|watch|rescue|cut */
+                band?: string | null;
                 sort?: string | null;
                 desc?: boolean;
                 limit?: number | null;

@@ -46,8 +46,13 @@ type CampaignCreativesResponse =
 export interface ListCreativesArgs {
   tab?: string;
   status?: string;
+  band?: string;
   vertical?: string;
   format?: string;
+  theme?: string;
+  hook_type?: string;
+  country?: string;
+  os?: string;
   sort?: string;
   desc?: boolean;
   limit?: number;

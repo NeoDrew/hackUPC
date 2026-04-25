@@ -531,6 +531,11 @@ def list_creatives_flat(
     status: str | None = None,
     vertical: str | None = None,
     format: str | None = None,
+    theme: str | None = None,
+    hook_type: str | None = None,
+    country: str | None = None,
+    os: str | None = None,
+    band: str | None = None,
     sort: str | None = None,
     desc: bool = True,
     limit: int | None = None,
@@ -546,11 +551,15 @@ def list_creatives_flat(
     """
     if windowed.is_full_range(store, start, end):
         rows = list(store.flat_row_by_creative.values())
-        windowed_mode = False
     else:
         s, e = windowed.normalize_window(store, start, end)
         rows = list(windowed.compute_window(store, s, e)["rows_by_cid"].values())
-        windowed_mode = True
+        # Windowed flat rows don't carry the new metadata fields; stitch
+        # them in from the lifetime store so the Explore filters still work.
+        for r in rows:
+            base = store.flat_row_by_creative.get(int(r["creative_id"]), {})
+            for key in ("theme", "hook_type", "countries", "target_os"):
+                r.setdefault(key, base.get(key))
 
     if tab and tab != "explore":
         if tab not in _STATUS_BANDS:
@@ -559,6 +568,8 @@ def list_creatives_flat(
         # status_band — the lifetime band is set by the Q1 health score,
         # so it's the same axis in both modes.
         rows = [r for r in rows if r.get("status_band") == tab]
+    elif band and band in _STATUS_BANDS:
+        rows = [r for r in rows if r.get("status_band") == band]
     elif status:
         rows = [r for r in rows if r["status"] == status]
 
@@ -566,6 +577,24 @@ def list_creatives_flat(
         rows = [r for r in rows if r["vertical"] == vertical]
     if format:
         rows = [r for r in rows if r["format"] == format]
+    if theme:
+        rows = [r for r in rows if (r.get("theme") or "") == theme]
+    if hook_type:
+        rows = [r for r in rows if (r.get("hook_type") or "") == hook_type]
+    if country:
+        # campaigns.csv stores each campaign's country list. A creative
+        # matches if its campaign included the requested country.
+        c = country.upper()
+        rows = [r for r in rows if c in [x.upper() for x in (r.get("countries") or [])]]
+    if os:
+        # target_os is "Android", "iOS", or "Both". Selecting iOS should
+        # include "Both" since a Both campaign also runs on iOS.
+        want = os.lower()
+        rows = [
+            r
+            for r in rows
+            if (r.get("target_os") or "").lower() in (want, "both")
+        ]
 
     if sort and sort in _ROW_SORTABLE:
         rows.sort(key=lambda r: r.get(sort) or 0, reverse=desc)
