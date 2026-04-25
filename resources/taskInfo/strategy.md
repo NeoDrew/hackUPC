@@ -129,24 +129,26 @@ Single-page web app, tab layout, one polished demo flow.
 
 | Phase | Hours | Owner | Deliverable |
 |---|---|---|---|
-| **Bootstrap** | 0–2 | all | Repo scaffold (FastAPI + Next.js + Mongo). `.env`. Dataset loaded into pandas, sanity counts match `dataset_notes.md`. |
-| **Q1 E2E** | 2–8 | Andrew lead, Aditya data | Beta-binomial shrinkage ranking + cohort adjustment + raw/shrunk/cohort toggle in the UI. Validation against `perf_score`. |
-| **Q2a Fatigue** | 6–12 | Aditya | Daily-level decay fit + significance test + confusion matrix vs `creative_status`. Frequency-response curve. |
-| **Q2b Visual** | 8–16 | Krish | CLIP embed pipeline (caches to Mongo), HDBSCAN + UMAP over attributes and images, blended clustering. Cluster-performance panel. |
-| **Q3a Explain** | 14–20 | Andrew | LightGBM fit, SHAP per creative, waterfall component. |
-| **Q3b Recommend** | 18–26 | Andrew | Attribute cube, Thompson/UCB ranker, peer benchmark, diversity penalty, recommendation UI. |
-| **Rationales** | 24–28 | Andrew | Gemma 4 templating over recommendation payloads. |
-| **Polish** | 26–30 | all | Filter bar, demo scenarios, error/loading/empty states. Mongo+GoDaddy+Vercel deploy. |
-| **Rehearsal** | 30–34 | Aditya lead | Script 3-min pitch. Two full dry-runs with timer. Recorded GIF fallbacks for each demo moment. |
-| **Buffer + submit** | 34–36 | all | Devpost submission by Sunday 08:00 latest — leaves 75 min of cushion. |
+| **Skeleton** | 0–3 | Andrew (backend) + Krish (frontend) | Data browser: FastAPI loads 7 CSVs + serves hierarchy + time-series endpoints + static PNG mount. Next.js app shows advertiser → campaign → creative → detail with time-series chart. No analysis, no agents, no styling. (See `~/.claude/plans/curious-skipping-hinton.md`.) |
+| **Q1 Ranking** | 3–8 | Krish | Beta-binomial shrinkage ranking + cohort adjustment + raw/shrunk/cohort toggle. Validation against `perf_score`. Andrew wires the route + panel. |
+| **Q2a Fatigue** | 6–12 | Krish | Daily-level decay fit + significance test + confusion matrix vs `creative_status`. Frequency-response curve. Andrew wires the route + panel. |
+| **Q2b Similarity** | 8–16 | Krish | CLIP embed pipeline, HDBSCAN + UMAP over attributes and images, blended clustering. Cluster-performance panel. Andrew wires the route + scatter component. |
+| **Q3a Explain** | 14–20 | Krish | LightGBM fit, SHAP per creative, waterfall component. Andrew wires the route + panel. |
+| **Q3b Recommend** | 18–22 | Krish | Attribute cube, Thompson bandit, peer benchmark, diversity penalty. Andrew wires the route + UI. |
+| **Orchestrator** | 22–26 | Andrew | LLM agent + tool surface wrapping every Phase-2 route. Chat UI with inline tool-call cards. |
+| **Actions** | 26–28 | Andrew | In-memory `ActionLog` + pause/scale/budget endpoints as agent write-tools + "Actions taken" right-rail. |
+| **Mongo + Rationales** | 28–30 | Andrew | Mongo persistence of CLIP/SHAP/bandit. One-shot Gemma precompute of per-creative rationales. |
+| **Deploy** | 30–32 | Andrew | Vercel + Render + GoDaddy. Pre-warm. |
+| **Rehearsal** | 32–34 | Aditya lead | Two timed dry-runs. GIF fallbacks of every demo beat. Devs fix only what Aditya flags. |
+| **Submit** | 34–36 | Aditya + devs | Devpost submission by Sunday 08:00. |
 
 **Hard checkpoint at hour 8:** Q1 must be end-to-end in the UI. If not, cut Q2b visual clustering first (keep attribute clustering), then Q3a SHAP second.
 
 ## Roles
 
-- **Andrew — ad-tech domain lead + primary ML builder.** Owns Q1 stats, Q3 explainability + bandit, DSP-accurate vocabulary for the demo. Writes the backend scoring service.
-- **Krish — pipeline + CV + frontend velocity.** Owns Q2b visual clustering (CLIP/HDBSCAN/UMAP), scatter-plot component, infrastructure glue (Mongo, Vercel, deploy).
-- **Aditya — data + demo + pitch.** Owns dataset ingestion/prep, Q2a temporal fatigue, and the 3-minute pitch. Front-and-centre at both judging rooms.
+- **Andrew — backend + LLM orchestrator + deploy + ad-tech framing.** Owns all backend scaffolding (FastAPI, data loading, routes, pydantic schemas), the single LLM orchestrator with tool calls, action endpoints (pause/scale/budget), the frontend panels surfacing Krish's math, deploy (Vercel + Render + GoDaddy), and DSP-accurate vocabulary in the pitch.
+- **Krish — all mathematical / ML modules (no LLM work).** Owns Q1 Bayesian shrinkage + cohort-adjusted ranking, Q2a creative stagnation / fatigue detection, Q2b CLIP + HDBSCAN + UMAP similarity clustering, Q3a LightGBM + SHAP, Q3b Thompson-sampling bandit. Also builds the minimal frontend panels that surface each module's output.
+- **Aditya — no dev work; demo ownership.** Writes and rehearses the 3-minute pitch in parallel with dev work, runs the verification checklist on every Phase-1 and Phase-2 module the devs complete, curates demo-worthy creative / advertiser IDs, prepares GIF fallbacks for each demo beat, leads the two Sunday dry-runs, carries the pitch at both expo tables (A3 HackUPC + A4 Smadex). Drives the Devpost submission form at the end.
 
 ## Demo script (3 min, no slides, same script for HackUPC + Smadex)
 

@@ -1,0 +1,319 @@
+"""Pure-function lookups over the in-memory Datastore.
+
+These functions return JSON-serialisable dicts that pydantic schemas in
+`app.schemas` validate. No FastAPI imports here — keeps the analysis layer
+testable in isolation.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+import pandas as pd
+
+from ..datastore import Datastore
+from ..schemas import to_jsonable
+
+
+def list_advertisers(store: Datastore) -> list[dict[str, Any]]:
+    return store.advertisers.to_dict("records")
+
+
+def get_advertiser(store: Datastore, advertiser_id: int) -> dict[str, Any] | None:
+    rows = store.advertisers[store.advertisers["advertiser_id"] == advertiser_id]
+    if rows.empty:
+        return None
+    return rows.iloc[0].to_dict()
+
+
+def list_campaigns_for_advertiser(
+    store: Datastore, advertiser_id: int
+) -> list[dict[str, Any]]:
+    rows = store.campaigns[store.campaigns["advertiser_id"] == advertiser_id]
+    return [_campaign_record(row) for _, row in rows.iterrows()]
+
+
+def get_campaign(store: Datastore, campaign_id: int) -> dict[str, Any] | None:
+    rows = store.campaigns[store.campaigns["campaign_id"] == campaign_id]
+    if rows.empty:
+        return None
+    return _campaign_record(rows.iloc[0])
+
+
+def list_creatives_for_campaign(
+    store: Datastore, campaign_id: int
+) -> list[dict[str, Any]]:
+    rows = store.creatives[store.creatives["campaign_id"] == campaign_id]
+    summary = store.creative_summary.set_index("creative_id")["creative_status"].to_dict()
+    out: list[dict[str, Any]] = []
+    for _, row in rows.iterrows():
+        creative_id = int(row["creative_id"])
+        out.append(
+            {
+                "creative_id": creative_id,
+                "campaign_id": int(row["campaign_id"]),
+                "advertiser_name": row["advertiser_name"],
+                "vertical": row["vertical"],
+                "format": row["format"],
+                "theme": row["theme"],
+                "creative_status": summary.get(creative_id),
+                "asset_file": row["asset_file"],
+            }
+        )
+    return out
+
+
+def get_creative_detail(
+    store: Datastore, creative_id: int
+) -> dict[str, Any] | None:
+    record = store.creative_detail.get(creative_id)
+    if record is None:
+        return None
+    return to_jsonable(record)
+
+
+def get_creative_timeseries(
+    store: Datastore, creative_id: int
+) -> dict[str, Any] | None:
+    points = store.timeseries_by_creative.get(creative_id)
+    if points is None:
+        return None
+    return {"creative_id": creative_id, "points": points}
+
+
+# --- Cockpit / portfolio queries ---
+
+
+_STATUS_TAB_MAP: dict[str, str] = {
+    "scale": "top_performer",
+    "watch": "stable",
+    "rescue": "fatigued",
+    "cut": "underperformer",
+}
+
+_ROW_SORTABLE = {
+    "ctr",
+    "cvr",
+    "roas",
+    "spend_usd",
+    "revenue_usd",
+    "impressions",
+    "clicks",
+    "conversions",
+    "health",
+    "days_active",
+}
+
+
+def portfolio_kpis(store: Datastore) -> dict[str, Any]:
+    return store.portfolio_kpis
+
+
+def tab_counts(store: Datastore) -> dict[str, int]:
+    return store.tab_counts
+
+
+def list_creatives_flat(
+    store: Datastore,
+    *,
+    tab: str | None = None,
+    status: str | None = None,
+    vertical: str | None = None,
+    format: str | None = None,
+    sort: str | None = None,
+    desc: bool = True,
+    limit: int | None = None,
+) -> list[dict[str, Any]]:
+    """Flat creative list. ``tab`` is the URL-friendly key (scale/watch/rescue/cut);
+    ``status`` lets callers pass the raw label directly. Pass neither for the full
+    portfolio (used by /explore)."""
+    rows = list(store.flat_row_by_creative.values())
+
+    if tab and tab != "explore":
+        target = _STATUS_TAB_MAP.get(tab)
+        if target is None:
+            return []
+        rows = [r for r in rows if r["status"] == target]
+    elif status:
+        rows = [r for r in rows if r["status"] == status]
+
+    if vertical:
+        rows = [r for r in rows if r["vertical"] == vertical]
+    if format:
+        rows = [r for r in rows if r["format"] == format]
+
+    if sort and sort in _ROW_SORTABLE:
+        rows.sort(key=lambda r: r.get(sort) or 0, reverse=desc)
+    else:
+        rows.sort(key=lambda r: r.get("health") or 0, reverse=True)
+
+    if limit is not None:
+        rows = rows[:limit]
+    return rows
+
+
+# --- Twin stub ---
+
+
+_VISION_TEMPLATES: dict[str, dict[str, str]] = {
+    "text_density": {
+        "headline": "Twin runs leaner copy",
+        "body": (
+            "Your fatigued creative carries roughly twice the on-screen text. "
+            "The cohort leader keeps text density low and lets the product hero "
+            "carry the message; the audience reads it in under a second."
+        ),
+    },
+    "clutter_score": {
+        "headline": "Twin reduces visual clutter",
+        "body": (
+            "The winner sits on a cleaner background with one clear focal point. "
+            "Lower clutter correlates with higher CTR in this cohort: the eye "
+            "lands on the offer instead of having to scan."
+        ),
+    },
+    "has_discount_badge": {
+        "headline": "Twin leans on a price proof",
+        "body": (
+            "The winner shows a discount badge prominently; your fatigued "
+            "creative does not. In this cohort the winning attribute combo "
+            "average 1.6× the conversion rate of equivalents without it."
+        ),
+    },
+    "novelty_score": {
+        "headline": "Twin feels less repetitive",
+        "body": (
+            "The winner's novelty score sits well above average for its cohort. "
+            "Your fatigued creative is one of several near-duplicates in the "
+            "portfolio — audience saturation is suppressing CTR."
+        ),
+    },
+    "default": {
+        "headline": "Twin is winning on attribute fit",
+        "body": (
+            "The winning creative in this cohort outperforms on the dominant "
+            "attributes for its vertical and format. The diffs below show "
+            "where to focus the next test."
+        ),
+    },
+}
+
+
+_TWIN_FIELDS: list[str] = [
+    "theme",
+    "hook_type",
+    "cta_text",
+    "dominant_color",
+    "emotional_tone",
+    "duration_sec",
+    "text_density",
+    "clutter_score",
+    "novelty_score",
+    "has_discount_badge",
+    "has_ugc_style",
+    "faces_count",
+]
+
+
+def get_twin_stub(store: Datastore, creative_id: int) -> dict[str, Any] | None:
+    """Pick the cohort-leader twin within (vertical, format) — the highest
+    perf_score creative tagged top_performer. Compute attribute diffs vs the
+    source creative. Vision insight body picked from a template keyed on the
+    largest-magnitude diff. Marked is_stub=True for the UI to display a
+    [preview] chip until Q2b CLIP+HDBSCAN clustering ships."""
+    source = store.creative_detail.get(creative_id)
+    if source is None:
+        return None
+
+    summary = store.creative_summary
+    cohort = summary[
+        (summary["vertical"] == source["vertical"])
+        & (summary["format"] == source["format"])
+        & (summary["creative_status"] == "top_performer")
+        & (summary["creative_id"] != creative_id)
+    ]
+    if cohort.empty:
+        # Fall back to any top performer in the same vertical.
+        cohort = summary[
+            (summary["vertical"] == source["vertical"])
+            & (summary["creative_status"] == "top_performer")
+            & (summary["creative_id"] != creative_id)
+        ]
+    if cohort.empty:
+        return None
+
+    winner_row = cohort.sort_values("perf_score", ascending=False).iloc[0]
+    winner_id = int(winner_row["creative_id"])
+    winner = store.creative_detail.get(winner_id)
+    if winner is None:
+        return None
+
+    diffs: list[dict[str, Any]] = []
+    largest_field = "default"
+    largest_template_magnitude = 0.0
+    for field_name in _TWIN_FIELDS:
+        sv = source.get(field_name)
+        wv = winner.get(field_name)
+        if sv == wv:
+            continue
+        diffs.append(_diff_row(field_name, sv, wv))
+        # Only score template-eligible fields against each other so 0–1 scores
+        # are not dominated by raw counts.
+        if field_name in _VISION_TEMPLATES:
+            magnitude = _diff_magnitude(field_name, sv, wv)
+            if magnitude > largest_template_magnitude:
+                largest_template_magnitude = magnitude
+                largest_field = field_name
+
+    template = _VISION_TEMPLATES.get(largest_field, _VISION_TEMPLATES["default"])
+    return {
+        "fatigued_id": creative_id,
+        "winner_id": winner_id,
+        "similarity": 0.81,
+        "segment": {"vertical": source["vertical"], "format": source["format"]},
+        "diffs": diffs,
+        "vision_insight": {
+            "headline": template["headline"],
+            "body": template["body"],
+            "confidence": 0.74,
+        },
+        "is_stub": True,
+    }
+
+
+def _diff_row(field_name: str, sv: Any, wv: Any) -> dict[str, Any]:
+    direction = "neu"
+    impact = "low"
+    if isinstance(sv, (int, float)) and isinstance(wv, (int, float)):
+        delta = (wv - sv) if sv is not None and wv is not None else 0
+        if delta > 0:
+            direction = "pos"
+        elif delta < 0:
+            direction = "neg"
+        magnitude = abs(delta) / (abs(sv) + 1e-6) if sv else abs(delta)
+        if magnitude > 0.5:
+            impact = "high"
+        elif magnitude > 0.15:
+            impact = "medium"
+    elif isinstance(wv, str) and isinstance(sv, str):
+        impact = "medium"
+    return {
+        "field": field_name,
+        "source_value": sv,
+        "twin_value": wv,
+        "direction": direction,
+        "impact": impact,
+    }
+
+
+def _diff_magnitude(field_name: str, sv: Any, wv: Any) -> float:
+    if isinstance(sv, (int, float)) and isinstance(wv, (int, float)):
+        return abs((wv or 0) - (sv or 0))
+    if sv != wv:
+        return 1.0
+    return 0.0
+
+
+def _campaign_record(row: pd.Series) -> dict[str, Any]:
+    record = row.to_dict()
+    return to_jsonable(record)

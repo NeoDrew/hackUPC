@@ -1,0 +1,351 @@
+/* Smadex Creative Twin Copilot — styles for Streamlit
+   Inject via: st.markdown(f"<style>{Path('smadex.css').read_text()}</style>", unsafe_allow_html=True)
+*/
+
+/* ──────────────────────────────────────────────────────────────
+   Design tokens
+   ────────────────────────────────────────────────────────────── */
+:root {
+  /* Surfaces */
+  --bg-0: #F7F7FA;
+  --bg-1: #FFFFFF;
+  --bg-2: #F2EFF6;
+  --bg-3: #ECE9F1;
+  --bg-4: #E3DFE8;
+
+  /* Lines + text */
+  --line: #E3DFE8;
+  --line-soft: #EEEAF2;
+  --ring-track: #ECE9F1;
+  --t-1: #15131A;
+  --t-2: #4A4553;
+  --t-3: #8A8496;
+  --t-4: #B6B1C1;
+
+  /* Accent (restrained — used only on active tab, primary CTA, focus/selected) */
+  --accent:       #7E2C8C;
+  --accent-2:     #9C3FB0;
+  --accent-soft:  #F3E8F7;
+  --accent-line:  #E1CCE8;
+
+  /* Status */
+  --status-top:         #177C63;
+  --status-top-soft:    #E6F4EF;
+  --status-stable:      #6B4FB8;
+  --status-stable-soft: #EFEBF8;
+  --status-fatigued:    #C26A1E;
+  --status-fatigued-soft:#FAEEDE;
+  --status-cut:         #B5475C;
+  --status-cut-soft:    #F7E4E8;
+
+  /* Health bands */
+  --health-high-b: #177C63;   /* 70–100 */
+  --health-mid-a:  #7E2C8C;   /* 40–69 */
+  --health-low-a:  #B5475C;   /* 0–39 */
+
+  /* Shadow */
+  --shadow-1:      0 1px 2px rgba(20,19,26,0.04);
+  --shadow-card:   0 1px 3px rgba(20,19,26,0.05), 0 1px 2px rgba(20,19,26,0.04);
+  --shadow-drawer: -16px 0 48px rgba(20,19,26,0.14);
+
+  /* Motion */
+  --t-fast: 120ms;
+  --t-tab:  180ms;
+  --t-drawer: 260ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* Type */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Roboto Mono', ui-monospace, Menlo, monospace;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Streamlit resets — make the page look like a product, not a form
+   ────────────────────────────────────────────────────────────── */
+html, body, [class*="css"] {
+  font-family: var(--font-sans);
+  color: var(--t-1);
+  background: var(--bg-0);
+}
+.stApp { background: var(--bg-0); }
+#MainMenu, footer, header[data-testid="stHeader"] { visibility: hidden; height: 0; }
+.block-container { padding-top: 1rem; padding-left: 2rem; padding-right: 2rem; max-width: 1400px; }
+
+/* ──────────────────────────────────────────────────────────────
+   Typography utilities
+   ────────────────────────────────────────────────────────────── */
+.t-page     { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; color: var(--t-1); }
+.t-section  { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.25; color: var(--t-1); }
+.t-body     { font-size: 13px; font-weight: 400; line-height: 1.5; color: var(--t-2); }
+.t-td       { font-size: 13px; font-weight: 500; line-height: 1.35; color: var(--t-1); }
+.t-micro    { font-size: 11px; font-weight: 500; line-height: 1.4; color: var(--t-3); }
+.t-overline { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--t-3); }
+.label-xs   { font-size: 10px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--t-3); }
+
+.num, .mono, .tnum { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* ──────────────────────────────────────────────────────────────
+   Flex helpers
+   ────────────────────────────────────────────────────────────── */
+.row { display: flex; }
+.col { display: flex; flex-direction: column; }
+.row.center { align-items: center; }
+.row.between { justify-content: space-between; }
+.gap-1 { gap: 4px; } .gap-2 { gap: 8px; } .gap-3 { gap: 12px; } .gap-4 { gap: 16px; }
+
+/* ──────────────────────────────────────────────────────────────
+   KPI tile (cockpit header)
+   ────────────────────────────────────────────────────────────── */
+.kpi-tile {
+  background: var(--bg-1);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px 16px;
+  box-shadow: var(--shadow-1);
+}
+.kpi-tile .kpi-label   { font-size: 10px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--t-3); }
+.kpi-tile .kpi-value   { font-family: var(--font-mono); font-size: 26px; font-weight: 600; margin-top: 6px; letter-spacing: -0.01em; color: var(--t-1); }
+.kpi-tile .kpi-delta   { font-family: var(--font-mono); font-size: 11px; font-weight: 600; margin-top: 2px; }
+.kpi-tile .kpi-delta.pos { color: var(--status-top); }
+.kpi-tile .kpi-delta.neg { color: var(--status-cut); }
+
+/* Urgent KPI (attention count) gets a soft amber border */
+.kpi-tile.urgent { border-color: var(--status-fatigued); background: linear-gradient(180deg, var(--status-fatigued-soft), var(--bg-1) 60%); }
+
+/* ──────────────────────────────────────────────────────────────
+   Tabs (Scale / Watch / Rescue / Cut / Explore)
+   ────────────────────────────────────────────────────────────── */
+.tabbar { display: flex; gap: 4px; border-bottom: 1px solid var(--line); padding: 0 32px; }
+.tab {
+  background: transparent; border: none;
+  border-bottom: 2px solid transparent;
+  padding: 14px 16px 12px;
+  color: var(--t-2);
+  display: inline-flex; align-items: center; gap: 8px;
+  font: inherit; font-size: 13px; font-weight: 500; letter-spacing: -0.005em;
+  cursor: pointer;
+  transition: color var(--t-tab) var(--ease-out), border-color var(--t-tab) var(--ease-out);
+}
+.tab:hover { color: var(--t-1); }
+.tab.active { color: var(--t-1); font-weight: 600; border-bottom-color: var(--accent); }
+.tab .dot { width: 6px; height: 6px; border-radius: 999px; }
+.tab .count { font-family: var(--font-mono); font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 4px; background: var(--bg-4); color: var(--t-2); }
+.tab.active .count { background: var(--bg-3); color: var(--accent); }
+.tab .urgent-dot { width: 5px; height: 5px; border-radius: 999px; margin-left: -2px; }
+
+/* ──────────────────────────────────────────────────────────────
+   Status pill (4 statuses)
+   ────────────────────────────────────────────────────────────── */
+.status-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px; border-radius: 4px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.02em;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+.status-pill.dense { padding: 2px 8px; }
+.status-pill .seed { width: 6px; height: 6px; border-radius: 999px; }
+
+.status-pill.top      { color: var(--status-top);      background: var(--status-top-soft);      border-color: color-mix(in srgb, var(--status-top) 20%, transparent); }
+.status-pill.top .seed{ background: var(--status-top); }
+.status-pill.stable   { color: var(--status-stable);   background: var(--status-stable-soft);   border-color: color-mix(in srgb, var(--status-stable) 20%, transparent); }
+.status-pill.stable .seed{ background: var(--status-stable); }
+.status-pill.fatigued { color: var(--status-fatigued); background: var(--status-fatigued-soft); border-color: color-mix(in srgb, var(--status-fatigued) 20%, transparent); }
+.status-pill.fatigued .seed{ background: var(--status-fatigued); }
+.status-pill.cut      { color: var(--status-cut);      background: var(--status-cut-soft);      border-color: color-mix(in srgb, var(--status-cut) 20%, transparent); }
+.status-pill.cut .seed{ background: var(--status-cut); }
+
+/* ──────────────────────────────────────────────────────────────
+   Filter chips + sort chips (period dropdown, sort-by, filters)
+   ────────────────────────────────────────────────────────────── */
+.filter-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--bg-1); border: 1px solid var(--line);
+  color: var(--t-2); border-radius: 8px;
+  padding: 6px 10px;
+  font-family: inherit; font-size: 12px; font-weight: 500;
+  cursor: pointer; white-space: nowrap;
+  transition: border-color var(--t-fast) var(--ease-out), background var(--t-fast) var(--ease-out);
+}
+.filter-chip:hover { border-color: var(--t-4); }
+.filter-chip.active {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+  color: var(--accent);
+}
+.filter-chip .label { color: var(--t-3); font-size: 11px; }
+.filter-chip .value { color: var(--t-1); font-weight: 600; }
+.filter-chip.active .value { color: var(--accent); }
+
+/* ──────────────────────────────────────────────────────────────
+   Buttons
+   ────────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 9px 16px; border-radius: 8px;
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  border: 1px solid var(--line);
+  background: var(--bg-1); color: var(--t-1);
+  cursor: pointer; transition: all var(--t-fast) ease;
+}
+.btn.dense { padding: 6px 12px; }
+.btn:hover { border-color: var(--t-4); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.primary:hover { background: var(--accent-2); border-color: var(--accent-2); }
+.btn.danger  { background: transparent; border-color: var(--status-cut); color: var(--status-cut); }
+
+/* Streamlit button override — use for primary CTAs */
+.stButton > button[kind="primary"] {
+  background: var(--accent); border-color: var(--accent); color: #fff;
+  border-radius: 8px; font-weight: 600;
+}
+.stButton > button[kind="primary"]:hover { background: var(--accent-2); border-color: var(--accent-2); }
+
+/* ──────────────────────────────────────────────────────────────
+   Creative row (cockpit action tabs + explore)
+   ────────────────────────────────────────────────────────────── */
+.creative-row {
+  display: grid;
+  grid-template-columns: 88px 2fr 76px 76px 76px 76px 80px 92px 110px;
+  align-items: center;
+  gap: 0;
+  padding: 0 16px;
+  min-height: 80px;
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--bg-1);
+  cursor: pointer;
+  transition: background var(--t-fast) var(--ease-out);
+}
+.creative-row:hover { background: var(--bg-2); }
+.creative-row .thumb {
+  width: 64px; height: 64px;
+  border-radius: 6px; overflow: hidden;
+  border: 1px solid var(--line); background: var(--bg-2);
+}
+.creative-row .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.creative-row .headline { font-size: 13px; font-weight: 500; color: var(--t-1); }
+.creative-row .meta { font-size: 11px; color: var(--t-3); }
+.creative-row .num-cell { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 12px; text-align: right; }
+
+/* Row density variants */
+.creative-row.compact  { min-height: 64px; }
+.creative-row.relaxed  { min-height: 96px; }
+
+/* ──────────────────────────────────────────────────────────────
+   Table header
+   ────────────────────────────────────────────────────────────── */
+.creative-thead {
+  display: grid;
+  grid-template-columns: 88px 2fr 76px 76px 76px 76px 80px 92px 110px;
+  padding: 10px 16px; gap: 0;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--t-3);
+  background: var(--bg-1);
+  border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; z-index: 2;
+}
+.creative-thead .num-cell { text-align: right; }
+
+/* ──────────────────────────────────────────────────────────────
+   Drawer (detail overlay)
+   ────────────────────────────────────────────────────────────── */
+.drawer-scrim {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(15, 23, 42, 0.35);
+  display: flex; justify-content: flex-end;
+  animation: fadeIn 180ms var(--ease-out) both;
+}
+.drawer-panel {
+  width: 560px; max-width: 100%; height: 100vh;
+  background: var(--bg-1);
+  border-left: 1px solid var(--line);
+  box-shadow: var(--shadow-drawer);
+  overflow-y: auto;
+  animation: drawerIn var(--t-drawer) var(--ease-out) both;
+}
+
+/* Score bar inside drawer */
+.score-bar { flex: 1; height: 4px; background: var(--ring-track); border-radius: 999px; overflow: hidden; }
+.score-bar > div { height: 100%; border-radius: 999px; transition: width 700ms var(--ease-out); }
+
+/* ──────────────────────────────────────────────────────────────
+   Twin view accents
+   ────────────────────────────────────────────────────────────── */
+.vision-insight {
+  background: var(--bg-1);
+  border: 1px solid var(--accent-line);
+  border-left: 3px solid var(--accent);
+  border-radius: 10px;
+  padding: 20px;
+}
+.vision-insight .badge {
+  background: var(--accent-soft); color: var(--accent);
+  padding: 2px 6px; border-radius: 4px;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+}
+
+/* Diff chips */
+.chip-pos { background: var(--status-top-soft);   color: var(--status-top);   border: 1px solid color-mix(in srgb, var(--status-top) 20%, transparent);   padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; font-family: var(--font-mono); }
+.chip-neg { background: var(--status-cut-soft);   color: var(--status-cut);   border: 1px solid color-mix(in srgb, var(--status-cut) 20%, transparent);   padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; font-family: var(--font-mono); }
+
+/* Impact bars */
+.impact-bars { display: inline-flex; gap: 2px; }
+.impact-bars i { width: 4px; height: 12px; border-radius: 2px; background: var(--bg-3); display: block; }
+.impact-bars.high i:nth-child(-n+3) { background: var(--status-cut); }
+.impact-bars.medium i:nth-child(-n+2) { background: var(--status-fatigued); }
+.impact-bars.low i:first-child { background: var(--t-3); }
+
+/* ──────────────────────────────────────────────────────────────
+   Pattern card (winning patterns grid)
+   ────────────────────────────────────────────────────────────── */
+.pattern-card {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px;
+}
+.pattern-card .lift { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 18px; font-weight: 600; color: var(--status-top); letter-spacing: -0.01em; }
+.pattern-card .prevalence { font-size: 10px; color: var(--t-3); background: var(--bg-3); padding: 2px 7px; border-radius: 999px; border: 1px solid var(--line); }
+.pattern-card .trait { font-size: 13px; font-weight: 600; margin-top: 6px; color: var(--t-1); }
+.pattern-card .what  { font-size: 12px; color: var(--t-3); line-height: 1.4; margin-top: 4px; }
+
+/* ──────────────────────────────────────────────────────────────
+   Skeleton / shimmer (loading states)
+   ────────────────────────────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(90deg, var(--line-soft) 0%, var(--bg-3) 50%, var(--line-soft) 100%);
+  background-size: 400px 100%;
+  animation: shimmer 1500ms linear infinite;
+  border-radius: 4px;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Keyframes
+   ────────────────────────────────────────────────────────────── */
+@keyframes shimmer { 0% { background-position: -200px 0; } 100% { background-position: 200px 0; } }
+@keyframes blink   { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+@keyframes pulse   { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+@keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeUp  { from { transform: translateY(6px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes drawerIn{ from { transform: translateX(24px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes ringFill { from { stroke-dashoffset: var(--ring-circumference); } to { stroke-dashoffset: var(--ring-target); } }
+
+.fade-up { animation: fadeUp 300ms var(--ease-out) both; }
+
+/* ──────────────────────────────────────────────────────────────
+   Helpers for inline SVG components
+   ────────────────────────────────────────────────────────────── */
+.health-ring { position: relative; display: inline-block; }
+.health-ring svg { transform: rotate(-90deg); }
+.health-ring .val { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.health-ring .val .n { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-weight: 700; color: var(--t-1); line-height: 1; }
+.health-ring .val .l { font-size: 11px; font-weight: 500; color: var(--t-3); margin-top: 3px; }
+
+.sparkline { display: block; }
+
+/* Color tokens for inline SVGs (use via stroke="var(--…)") */
+.stroke-top      { stroke: var(--status-top); }
+.stroke-fatigued { stroke: var(--status-fatigued); }
+.stroke-cut      { stroke: var(--status-cut); }
+.fill-top-soft      { fill: var(--status-top-soft); }
+.fill-fatigued-soft { fill: var(--status-fatigued-soft); }

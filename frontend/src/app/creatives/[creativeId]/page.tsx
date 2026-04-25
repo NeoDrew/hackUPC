@@ -1,0 +1,156 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+
+import { api } from "@/lib/api";
+import { creativeImageUrl } from "@/lib/assetUrl";
+import { HealthRing } from "@/components/design/HealthRing";
+import { StatusPill } from "@/components/design/StatusPill";
+import { MetadataPills } from "@/components/design/MetadataPills";
+import { PerformanceGrid } from "@/components/design/PerformanceGrid";
+import { FatigueChart } from "@/components/design/FatigueChart";
+
+export default async function CreativeDetailPage(
+  props: PageProps<"/creatives/[creativeId]">,
+) {
+  const { creativeId } = await props.params;
+  const id = Number(creativeId);
+  if (!Number.isFinite(id)) notFound();
+
+  let creative;
+  try {
+    creative = await api.getCreative(id);
+  } catch {
+    notFound();
+  }
+  const data = creative as unknown as Record<string, number | string | null | undefined>;
+  const health = (data.perf_score as number | null) ? Math.round(((data.perf_score as number) ?? 0) * 100) : 0;
+  const status = (data.creative_status as string | null) ?? null;
+  const fatigueDay = (data.fatigue_day as number | null) ?? null;
+
+  return (
+    <section className="col gap-5" style={{ paddingTop: 20, maxWidth: 960, margin: "0 auto" }}>
+      <header className="row center gap-3" style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
+        <div className="col gap-1">
+          <span className="t-overline">Creative #{creative.creative_id}</span>
+          <div className="row center gap-3">
+            <h1 className="t-page" style={{ margin: 0 }}>
+              {(data.headline as string) || `Creative ${creative.creative_id}`}
+            </h1>
+            <StatusPill status={status} />
+          </div>
+          <div className="t-body muted">
+            {String(data.advertiser_name ?? "")} · {String(data.vertical ?? "")} ·{" "}
+            {String(data.format ?? "")} · {String(data.language ?? "")}
+          </div>
+        </div>
+        <div className="row center gap-2">
+          <Link href="/" className="btn dense">
+            ← Back
+          </Link>
+          {status === "fatigued" && (
+            <Link href={`/creatives/${id}/twin`} className="btn dense primary">
+              Why is this losing?
+            </Link>
+          )}
+        </div>
+      </header>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "220px 1fr",
+          gap: 24,
+          alignItems: "start",
+          background: "var(--bg-1)",
+          border: "1px solid var(--line)",
+          borderRadius: 14,
+          padding: 20,
+          boxShadow: "var(--shadow-1)",
+        }}
+      >
+        <img
+          src={creativeImageUrl(creative.creative_id)}
+          alt={`creative ${creative.creative_id}`}
+          style={{
+            width: 220,
+            height: 220,
+            objectFit: "cover",
+            borderRadius: 10,
+            background: "var(--bg-2)",
+            border: "1px solid var(--line)",
+          }}
+        />
+        <div className="col gap-4">
+          <div className="row center gap-4">
+            <HealthRing value={health} size={120} />
+            <div className="col gap-2" style={{ flex: 1 }}>
+              <div className="col gap-1">
+                <span className="t-micro">CTR vs cohort</span>
+                <div className="score-bar">
+                  <div
+                    style={{
+                      width: `${cohortBarWidth((creative.quadrant?.ctr_percentile ?? 0) * 100)}%`,
+                      background: "var(--accent)",
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="col gap-1">
+                <span className="t-micro">CVR vs cohort</span>
+                <div className="score-bar">
+                  <div
+                    style={{
+                      width: `${cohortBarWidth((creative.quadrant?.cvr_percentile ?? 0) * 100)}%`,
+                      background: "var(--status-top)",
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="col gap-1">
+                <span className="t-micro">Health band</span>
+                <div className="score-bar">
+                  <div
+                    style={{
+                      width: `${Math.max(5, health)}%`,
+                      background: "var(--health-mid-a)",
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          <PerformanceGrid creative={creative} />
+        </div>
+      </div>
+
+      {status === "fatigued" && (
+        <section
+          className="col gap-2"
+          style={{
+            background: "var(--bg-1)",
+            border: "1px solid var(--line)",
+            borderRadius: 12,
+            padding: 16,
+          }}
+        >
+          <header className="row center between">
+            <h3 className="t-section">Daily CTR — fatigue signature</h3>
+            <span className="t-micro">
+              Launched day 0 · fatigue flagged day {fatigueDay ?? "—"}
+            </span>
+          </header>
+          <FatigueChart creativeId={id} fatigueDay={fatigueDay} />
+        </section>
+      )}
+
+      <section className="col gap-2">
+        <h3 className="t-section">Creative attributes</h3>
+        <MetadataPills creative={creative} />
+      </section>
+    </section>
+  );
+}
+
+function cohortBarWidth(pct: number): number {
+  return Math.max(5, Math.min(100, pct));
+}

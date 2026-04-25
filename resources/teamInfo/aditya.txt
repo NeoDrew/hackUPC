@@ -24,3 +24,5 @@ Past experience (the big one):
 - Assistant Youth Worker, Derry City & Strabane District Council (Jul 2023).
 
 Strengths: data analytics (BigQuery / SQL / reporting), process & documentation, stakeholder / commercial communication, teaching / explaining (500+ tutoring hours = strong demoing). Runs Basanite as CEO so comfortable with product/strategy. Less of an AI/ML builder profile than the other two — his edge is data, business framing, and polished delivery.
+
+Role on this hackathon (HackUPC 2026, Smadex challenge): **no dev work**. Owns the 3-minute pitch for both judging tables (HackUPC A3 + Smadex A4), writes and rehearses the demo script in parallel with dev work, runs the verification checklist on modules the devs complete, curates demo-worthy creative / advertiser IDs, prepares GIF fallbacks for each demo beat, drives the Devpost submission form. Krish owns all math/ML; Andrew owns backend + LLM + deploy.

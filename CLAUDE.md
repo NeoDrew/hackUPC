@@ -27,9 +27,9 @@ One file per teammate with LinkedIn URL + background summary. Keep in sync if re
 
 ## Team
 
-- **Andrew Robertson** (Manchester CS, final year) — **ad-tech domain lead + primary ML builder**. 4 months SWE at The Trade Desk (a top-tier DSP) gives him real intuition for creative metrics, cohort adjustment, frequency capping, A/B testing. Co-founder of Basanite (AI interviewer). Owns Q1 (Bayesian ranking), Q3 (SHAP explainability + Thompson-sampling bandit), and the DSP-accurate pitch vocabulary.
-- **Aditya Shah** (Manchester CS, final year) — **data + demo**. CEO of Basanite. 13-month BigQuery/data-analytics placement at Virgin Media O2. 500+ hours of STEM tutoring → the team's demo driver. Owns dataset ingestion, temporal fatigue analysis (Q2a), and the 3-minute judging pitch.
-- **Krish Mathur** (Southampton CS, first year) — **CV + pipeline + frontend velocity**. ICHack26 winner, MedTech hackathon winner. Strong Flask/Python/CV/Azure. Owns Q2b visual clustering (CLIP → HDBSCAN → UMAP) and infra glue.
+- **Andrew Robertson** (Manchester CS, final year) — **backend + LLM orchestrator + deploy + ad-tech framing**. 4 months SWE at The Trade Desk (a top-tier DSP) gives him real intuition for creative metrics, cohort adjustment, frequency capping, A/B testing. Co-founder of Basanite. Owns backend scaffolding, the single LLM orchestrator with tool calls, action endpoints (pause/scale/budget), supporting frontend panels, deploy, and the ad-tech vocabulary in the pitch.
+- **Krish Mathur** (Southampton CS, first year) — **all mathematical/ML modules (non-LLM)**. ICHack26 winner, MedTech hackathon winner. Strong Python/CV/algorithms. Owns Q1 Bayesian ranking, Q2a fatigue / creative stagnation, Q2b CLIP + HDBSCAN + UMAP, Q3a LightGBM + SHAP, Q3b Thompson bandit. Also builds the frontend panels that surface his outputs.
+- **Aditya Shah** (Manchester CS, final year) — **no dev work; demo ownership**. CEO of Basanite. 13-month BigQuery placement at Virgin Media O2; 500+ hours STEM tutoring — strongest communicator on the team. Owns the 3-minute pitch, walks judges through the app at both expo tables (A3 + A4), runs the verification checklist on dev output, prepares GIF fallbacks.
 
 ## The plan in one paragraph
 
