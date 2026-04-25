@@ -9,6 +9,10 @@ dependencies = [
     "pandas>=2.2",
     "pydantic>=2.9",
     "httpx>=0.28.1",
+    "numpy>=2.0",
+    "scipy>=1.13",
+    "scikit-learn>=1.5",
+    "ruptures>=1.1",
 ]
 
 [tool.uv]

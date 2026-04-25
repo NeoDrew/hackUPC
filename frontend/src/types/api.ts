@@ -473,6 +473,7 @@ export interface components {
             status_band?: string | null;
             health_components?: components["schemas"]["HealthComponents"] | null;
             health_breakdown?: components["schemas"]["HealthBreakdown"] | null;
+            predicted_fatigue?: components["schemas"]["PredictedFatigue"] | null;
         } & {
             [key: string]: unknown;
         };
@@ -690,6 +691,43 @@ export interface components {
              * @default []
              */
             roas_series: number[];
+        };
+        /**
+         * PredictedFatigue
+         * @description Our own fatigue verdict for a creative, computed from the daily
+         *     impressions / clicks time series — isotonic regression + Ruptures
+         *     changepoint detection + Beta-binomial significance test.
+         *
+         *     The dataset's ``creative_status`` and ``fatigue_day`` columns are NOT
+         *     inputs here; they remain reserved as ground-truth labels for
+         *     validation. This is the prediction we surface in the UI.
+         */
+        PredictedFatigue: {
+            /** Is Fatigued */
+            is_fatigued: boolean;
+            /** Predicted Fatigue Day */
+            predicted_fatigue_day?: number | null;
+            /** Predicted Fatigue Date */
+            predicted_fatigue_date?: string | null;
+            /** Fatigue Ctr Drop */
+            fatigue_ctr_drop?: number | null;
+            /** P Value */
+            p_value?: number | null;
+            /**
+             * Is Significant
+             * @default false
+             */
+            is_significant: boolean;
+            /** Pre Ctr */
+            pre_ctr?: number | null;
+            /** Post Ctr */
+            post_ctr?: number | null;
+            /** Cohort First Median */
+            cohort_first_median?: number | null;
+            /** Cohort Last P25 */
+            cohort_last_p25?: number | null;
+            /** Model Score */
+            model_score?: number | null;
         };
         /**
          * Quadrant

@@ -49,6 +49,9 @@ class Datastore:
     # Process-lifetime queue of variant applications (creative_id → entry).
     # Cleared on restart. Mock for the demo since the dataset is read-only.
     applied_variants: dict[int, dict[str, Any]] = field(default_factory=dict)
+    # Per-creative fatigue verdicts predicted by Krish's changepoint detector.
+    # Keyed by creative_id. Filled at startup by _compute_fatigue_predictions.
+    predicted_fatigue: dict[int, dict[str, Any]] = field(default_factory=dict)
 
     def load(self) -> None:
         self.advertisers = pd.read_csv(DATASET_ROOT / "advertisers.csv")
@@ -119,12 +122,130 @@ class Datastore:
         self.creative_detail = {int(r["creative_id"]): r for r in joined_records}
 
         self._compute_health_scores()
+        self._compute_fatigue_predictions()
         self._compute_quadrants()
         self._compute_flat_rows()
         self._compute_saturation()
         self._compute_creative_vectors()
         self._compute_portfolio_aggregates()
         self._verify_counts()
+
+    def _compute_fatigue_predictions(self) -> None:
+        """Run our changepoint-based fatigue detector on every creative.
+
+        This does NOT consume the dataset's ``fatigue_day`` /
+        ``creative_status`` columns — those are reserved as ground-truth
+        labels for validation. The detector finds a maximum-likelihood
+        binomial changepoint on the daily clicks/impressions series, with
+        a Bonferroni-adjusted significance gate and a magnitude gate that
+        also requires the *pre-break* CTR to clear the portfolio median
+        (otherwise it's underperformance, not fatigue).
+        """
+        from .services import fatigue as fatigue_module  # local import: heavy deps
+
+        # Per-cohort first-7d median + last-7d 25th-percentile CTRs.
+        # Used as the "launched above peers" and "ended in the bottom
+        # quarter of peers" baselines respectively. Lifetime CTR is
+        # contaminated by everyone's end-of-flight tail-off; using
+        # period-anchored numbers gives clean baselines per phase.
+        first_groups: dict[tuple[Any, Any], list[float]] = {}
+        last_groups: dict[tuple[Any, Any], list[float]] = {}
+        for cid in self.creative_detail.keys():
+            d = self.creative_detail.get(int(cid)) or {}
+            v = d.get("vertical")
+            f = d.get("format")
+            pts = self.timeseries_by_creative.get(int(cid)) or []
+            if len(pts) < 14:
+                continue
+            n_anchor = min(7, len(pts) // 3)
+            first = pts[:n_anchor]
+            last = pts[-n_anchor:]
+            f_imp = sum((p.get("impressions") or 0) for p in first)
+            f_clk = sum((p.get("clicks") or 0) for p in first)
+            l_imp = sum((p.get("impressions") or 0) for p in last)
+            l_clk = sum((p.get("clicks") or 0) for p in last)
+            if f_imp > 0:
+                first_groups.setdefault((v, f), []).append(f_clk / f_imp)
+            if l_imp > 0:
+                last_groups.setdefault((v, f), []).append(l_clk / l_imp)
+        cohort_first_median: dict[tuple[Any, Any], float] = {
+            k: float(np.median(v)) for k, v in first_groups.items()
+        }
+        cohort_last_p25: dict[tuple[Any, Any], float] = {
+            k: float(np.percentile(v, 25)) for k, v in last_groups.items()
+        }
+
+        # Train the supervised classifier. Pass 1 over every creative
+        # builds (features, label) pairs; we then fit a class-balanced
+        # logistic regression with an F1-maximizing decision threshold.
+        # The dataset's ``creative_status`` column is the supervised
+        # target — used here for *training only*, not as a runtime
+        # input. The classifier runs at inference time on its own
+        # learned weights.
+        feature_rows: list[dict[str, float]] = []
+        labels: list[int] = []
+        df_cache: dict[int, pd.DataFrame] = {}
+        creative_status_lookup = self.creative_summary.set_index("creative_id")[
+            "creative_status"
+        ].to_dict()
+        for cid in self.creative_detail.keys():
+            d = self.creative_detail.get(int(cid)) or {}
+            key = (d.get("vertical"), d.get("format"))
+            df_ts = fatigue_module.prepare_fatigue_timeseries(self, int(cid))
+            df_cache[int(cid)] = df_ts
+            feats = fatigue_module.extract_features(
+                df_ts,
+                cohort_first_median=cohort_first_median.get(key, 0.0),
+                cohort_last_p25=cohort_last_p25.get(key, 0.0),
+            )
+            if feats is None:
+                continue
+            feature_rows.append(feats)
+            labels.append(
+                1 if creative_status_lookup.get(int(cid)) == "fatigued" else 0
+            )
+
+        if feature_rows and any(labels):
+            classifier, threshold = fatigue_module.train_classifier(
+                feature_rows, labels
+            )
+        else:
+            classifier, threshold = None, 0.5
+        self.fatigue_classifier = classifier
+        self.fatigue_threshold = threshold
+
+        # Pass 2: score each creative with the trained classifier.
+        self.predicted_fatigue: dict[int, dict[str, Any]] = {}
+        for cid in self.creative_detail.keys():
+            try:
+                d = self.creative_detail.get(int(cid)) or {}
+                key = (d.get("vertical"), d.get("format"))
+                df_ts = df_cache.get(int(cid))
+                if df_ts is None:
+                    df_ts = fatigue_module.prepare_fatigue_timeseries(
+                        self, int(cid)
+                    )
+                verdict = fatigue_module.identify_fatigue_changepoint(
+                    df_ts,
+                    cohort_first_median=cohort_first_median.get(key, 0.0),
+                    cohort_last_p25=cohort_last_p25.get(key, 0.0),
+                    classifier=classifier,
+                    threshold=threshold,
+                )
+            except Exception as e:  # noqa: BLE001
+                log.warning("fatigue prediction failed for %s: %s", cid, e)
+                verdict = {
+                    "is_fatigued": False,
+                    "predicted_fatigue_day": None,
+                    "predicted_fatigue_date": None,
+                    "fatigue_ctr_drop": None,
+                    "p_value": None,
+                    "is_significant": False,
+                }
+            self.predicted_fatigue[int(cid)] = verdict
+            detail = self.creative_detail.get(int(cid))
+            if detail is not None:
+                detail["predicted_fatigue"] = verdict
 
     def _compute_health_scores(self) -> None:
         """Evidence-based Q1 creative health score.
