@@ -78,7 +78,7 @@ export default async function CreativeDetailPage(
               href={`/creatives/${id}/variant${twinSuffix}`}
               className="btn primary"
             >
-              Recreate →
+              Improve →
             </Link>
           </div>
         ) : (
@@ -87,7 +87,7 @@ export default async function CreativeDetailPage(
             className="t-micro"
             style={{ color: "var(--accent)" }}
           >
-            Generate variant →
+            Improve →
           </Link>
         )}
       </div>

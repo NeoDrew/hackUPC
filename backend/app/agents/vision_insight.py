@@ -74,6 +74,11 @@ _SYSTEM_PROMPT = (
     "   grounds for failure.\n"
     "4. Pick exactly ONE lever from the diffs list. Don't list multiple "
     "   changes — the marketer asked what's the *one* thing to try.\n"
+    "5. duration_sec = 0 means the format is a STATIC banner / image — "
+    "   it has no playback timeline. NEVER describe duration_sec=0 as "
+    "   'instantaneous', 'zero seconds', or 'never shows'. If the diff "
+    "   is between a static banner and a video, talk about format "
+    "   (static vs animated) rather than seconds.\n"
     "\n"
     "Output JSON ONLY, no prose, no code fences. Schema:\n"
     "  {\"headline\": string (<= 8 words),\n"
@@ -83,7 +88,7 @@ _SYSTEM_PROMPT = (
 
 # Bump this when the prompt or payload shape changes so previously-cached
 # fabrications don't keep showing up after a deploy.
-_CACHE_VERSION = "v3-plain-english"
+_CACHE_VERSION = "v4-humanized-diffs"
 
 # Belt-and-braces: even with the prompt forbidding column names, Gemma
 # occasionally leaks one. Run the body through these substitutions before
@@ -168,7 +173,7 @@ async def generate_insight(
         "segment": segment,
         "source_metrics": _metrics(source),
         "winner_metrics": _metrics(winner),
-        "diffs": diffs,
+        "diffs": [_humanize_diff(d) for d in diffs],
         "diff_field_names_present": sorted({d.get("field") for d in diffs if d.get("field")}),
     }
     # Gemma doesn't support `systemInstruction` or `responseMimeType` on
@@ -260,6 +265,32 @@ def _coerce_confidence(v: Any) -> float:
     except (TypeError, ValueError):
         return 0.7
     return max(0.0, min(1.0, f))
+
+
+def _humanize_diff(diff: dict[str, Any]) -> dict[str, Any]:
+    """Translate a single diff to LLM-friendly form. Currently:
+    - duration_sec=0 → "static (banner / image — no playback timeline)"
+      so the model doesn't read it as "0 seconds long".
+    - boolean True/False on has_* flags → "yes" / "no" so the model
+      doesn't read raw booleans.
+    The diff dict that the UI uses keeps the raw values; this is only
+    what we hand to the LLM.
+    """
+    field = diff.get("field")
+    out = dict(diff)
+    if field == "duration_sec":
+        for key in ("source_value", "twin_value"):
+            v = out.get(key)
+            if v == 0 or v == 0.0 or v is None:
+                out[key] = "static (banner / image — no playback timeline)"
+            elif isinstance(v, (int, float)):
+                out[key] = f"{int(v)}s video"
+    elif field and field.startswith("has_"):
+        for key in ("source_value", "twin_value"):
+            v = out.get(key)
+            if isinstance(v, bool):
+                out[key] = "yes" if v else "no"
+    return out
 
 
 def _metrics(creative: dict[str, Any]) -> dict[str, Any]:

@@ -38,6 +38,8 @@ interface CockpitSearchParams {
   desc?: string;
   start?: string;
   end?: string;
+  vertical?: string;
+  format?: string;
 }
 
 const PAGE_SIZE = 100;
@@ -53,9 +55,11 @@ export default async function Cockpit(props: {
   const desc = params.desc !== "false";
   const start = params.start;
   const end = params.end;
+  const vertical = params.vertical;
+  const format = params.format;
   const headings = TAB_HEADINGS[tab];
   const rangeKey = `${start ?? ""}|${end ?? ""}`;
-  const tableKey = `${tab}|${sort ?? ""}|${desc ? "d" : "a"}|${limit}|${rangeKey}`;
+  const tableKey = `${tab}|${sort ?? ""}|${desc ? "d" : "a"}|${limit}|${rangeKey}|${vertical ?? ""}|${format ?? ""}`;
   return (
     <>
       <Suspense key={`hero|${rangeKey}`} fallback={null}>
@@ -73,7 +77,16 @@ export default async function Cockpit(props: {
           />
         }
       >
-        <CockpitTable tab={tab} limit={limit} sort={sort} desc={desc} start={start} end={end} />
+        <CockpitTable
+          tab={tab}
+          limit={limit}
+          sort={sort}
+          desc={desc}
+          start={start}
+          end={end}
+          vertical={vertical}
+          format={format}
+        />
       </Suspense>
     </>
   );
@@ -125,6 +138,8 @@ async function CockpitTable({
   desc,
   start,
   end,
+  vertical,
+  format,
 }: {
   tab: TabKey;
   limit: number;
@@ -132,8 +147,19 @@ async function CockpitTable({
   desc: boolean;
   start?: string;
   end?: string;
+  vertical?: string;
+  format?: string;
 }) {
-  const listing = await api.listCreatives({ tab, limit, sort, desc, start, end });
+  const listing = await api.listCreatives({
+    tab,
+    limit,
+    sort,
+    desc,
+    start,
+    end,
+    vertical,
+    format,
+  });
   const headings = TAB_HEADINGS[tab];
   const total = listing.total;
   const shown = listing.rows.length;

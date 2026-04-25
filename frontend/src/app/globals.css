@@ -675,10 +675,66 @@ a:focus-visible {
   height: 14px;
   border-radius: 3px;
   color: var(--t-3);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
 }
 .filter-pill-x:hover {
   background: var(--bg-3);
   color: var(--t-1);
+}
+
+/* Pill rendered as a <button> when it opens a dropdown. */
+button.filter-pill {
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+}
+button.filter-pill[aria-expanded="true"] {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+button.filter-pill[aria-expanded="true"] .filter-pill-key,
+button.filter-pill[aria-expanded="true"] .filter-pill-val {
+  color: var(--accent);
+}
+
+/* Dropdown menu anchored to a filter pill. */
+.filter-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 60;
+  min-width: 160px;
+  background: var(--bg-1);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow-pop);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  animation: fadeUp 120ms var(--ease-out) both;
+}
+.filter-dropdown-item {
+  text-align: left;
+  background: transparent;
+  border: 0;
+  color: var(--t-1);
+  padding: 6px 8px;
+  font-size: 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  text-transform: capitalize;
+}
+.filter-dropdown-item:hover {
+  background: var(--bg-2);
+}
+.filter-dropdown-item.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
 }
 .filter-add {
   display: inline-flex;
