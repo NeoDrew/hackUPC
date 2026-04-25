@@ -23,7 +23,6 @@ export function TabBar({ counts }: { counts: TabCounts }) {
             href={href}
             className={`tab${isActive ? " active" : ""}${tab.utility ? " utility" : ""}`}
           >
-            {tab.urgent && !isActive && <span className="urgent-dot" />}
             <span>{tab.label}</span>
             <span className="count">{count}</span>
           </Link>

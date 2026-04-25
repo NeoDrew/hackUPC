@@ -12,7 +12,10 @@ export function TwinPanel({
   role: "yours" | "twin";
 }) {
   const data = creative as unknown as Record<string, number | string | null | undefined>;
-  const health = data.perf_score ? Math.round((data.perf_score as number) * 100) : 0;
+  // Read the fatigue-adjusted health the backend already computed; do NOT
+  // recompute from perf_score (that's the lifetime score and would show a
+  // fatigued creative as 84 instead of its trajectory-aware ~25).
+  const health = (creative.health as number | null) ?? 0;
   const status = (data.creative_status as string | null) ?? null;
   return (
     <div
