@@ -43,6 +43,9 @@ class Datastore:
     health_by_creative: dict[int, dict[str, Any]] = field(default_factory=dict)
     # Startup checks for score stability, distribution, and synthetic-label sanity.
     health_diagnostics: dict[str, Any] = field(default_factory=dict)
+    # L2-normalised attribute feature vectors for cosine-similarity twin lookup.
+    creative_vectors: dict[int, np.ndarray] = field(default_factory=dict)
+    creative_vector_dims: int = 0
 
     def load(self) -> None:
         self.advertisers = pd.read_csv(DATASET_ROOT / "advertisers.csv")
@@ -343,6 +346,77 @@ class Datastore:
                 detail["health_breakdown"] = payload
 
         self.health_diagnostics = _health_diagnostics(s)
+
+    def _compute_creative_vectors(self) -> None:
+        """Build a per-creative attribute feature vector for cosine-similarity
+        twin lookup. Concatenates one-hot categorical attributes with
+        normalised numeric scores and binary flags. Each vector is L2-
+        normalised so cosine similarity is just a dot product at lookup time.
+        """
+        df = self.creatives.copy()
+
+        cat_cols = [
+            "theme",
+            "hook_type",
+            "dominant_color",
+            "emotional_tone",
+            "cta_text",
+            "language",
+        ]
+        cat_part = pd.get_dummies(
+            df[cat_cols].astype(str).fillna("__missing__"),
+            dtype=float,
+        )
+
+        num_cols = [
+            "text_density",
+            "clutter_score",
+            "novelty_score",
+            "brand_visibility_score",
+            "motion_score",
+            "readability_score",
+        ]
+        num_part = df[num_cols].fillna(0.0).clip(0.0, 1.0).to_numpy(dtype=float)
+
+        count_cols = {
+            "duration_sec": 30.0,
+            "faces_count": 3.0,
+            "product_count": 3.0,
+            "copy_length_chars": 60.0,
+        }
+        count_blocks = []
+        for col, cap in count_cols.items():
+            v = df[col].fillna(0.0).clip(0.0, cap).to_numpy(dtype=float) / cap
+            count_blocks.append(v.reshape(-1, 1))
+        count_part = (
+            np.hstack(count_blocks) if count_blocks else np.zeros((len(df), 0))
+        )
+
+        bin_cols = [
+            "has_discount_badge",
+            "has_ugc_style",
+            "has_price",
+            "has_gameplay",
+        ]
+        bin_part = df[bin_cols].fillna(0).to_numpy(dtype=float)
+
+        # Down-weight categoricals (they dominate by sheer dimension count
+        # otherwise; numerics are 0–1 across only ~6 cells).
+        feature = np.hstack(
+            [
+                cat_part.to_numpy(dtype=float) * 1.0,
+                num_part * 1.5,
+                count_part * 1.0,
+                bin_part * 1.5,
+            ]
+        )
+        norms = np.linalg.norm(feature, axis=1, keepdims=True)
+        norms[norms == 0] = 1.0
+        feature /= norms
+
+        self.creative_vector_dims = int(feature.shape[1])
+        for i, cid in enumerate(df["creative_id"].astype(int)):
+            self.creative_vectors[int(cid)] = feature[i]
 
     def _compute_saturation(self) -> None:
         """Per-creative portfolio-saturation diagnostic.
