@@ -11,7 +11,7 @@ import {
   formatPct,
   formatRoas,
 } from "@/lib/format";
-import { HealthBreakdownDropdown } from "./HealthBreakdownDropdown";
+import { HealthBreakdownPanel } from "./HealthBreakdownPanel";
 import { HealthRing } from "./HealthRing";
 import { Sparkline } from "./Sparkline";
 
@@ -109,9 +109,17 @@ export function CreativeRow({
       <div className={`creative-row-expander${expanded ? " open" : ""}`}>
         <div>
           <div className="creative-row-expander-inner">
-            <HealthBreakdownDropdown
+            <HealthBreakdownPanel
               breakdown={row.health_breakdown as HealthBreakdown | null}
               daysActive={row.days_active}
+              rowData={{
+                total_impressions: row.impressions,
+                total_clicks: row.clicks,
+                total_conversions: row.conversions,
+                total_spend_usd: row.spend_usd,
+                total_revenue_usd: row.revenue_usd,
+                total_days_active: row.days_active,
+              }}
             />
           </div>
         </div>

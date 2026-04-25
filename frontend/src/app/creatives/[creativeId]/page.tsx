@@ -8,8 +8,7 @@ import { MetadataPills } from "@/components/design/MetadataPills";
 import { PerformanceGrid } from "@/components/design/PerformanceGrid";
 import { FatigueChart } from "@/components/design/FatigueChart";
 import { SaturationCard } from "@/components/design/SaturationCard";
-import { HealthBreakdownCard } from "@/components/design/HealthBreakdownCard";
-import { HealthBreakdownDropdown } from "@/components/design/HealthBreakdownDropdown";
+import { HealthBreakdownPanel } from "@/components/design/HealthBreakdownPanel";
 
 const VALID_FROM = new Set(["scale", "watch", "rescue", "cut", "explore"]);
 
@@ -151,14 +150,18 @@ export default async function CreativeDetailPage(
         </div>
       </div>
 
-      <HealthBreakdownDropdown
+      <HealthBreakdownPanel
         breakdown={data.health_breakdown as HealthBreakdown | null}
         daysActive={(data.total_days_active as number | null) ?? undefined}
         alwaysOpen
-      />
-
-      <HealthBreakdownCard
-        breakdown={data.health_breakdown as HealthBreakdown | null | undefined}
+        rowData={{
+          total_impressions: data.total_impressions as number | undefined,
+          total_clicks: data.total_clicks as number | undefined,
+          total_conversions: data.total_conversions as number | undefined,
+          total_spend_usd: data.total_spend_usd as number | undefined,
+          total_revenue_usd: data.total_revenue_usd as number | undefined,
+          total_days_active: data.total_days_active as number | undefined,
+        }}
       />
 
       {status === "fatigued" && (

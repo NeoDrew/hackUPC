@@ -1198,6 +1198,200 @@ a:focus-visible {
   display: block;
 }
 
+/* HealthBreakdownPanel — unified replacement for HealthBreakdownCard +
+   HealthBreakdownDropdown. Second-table layout (rows with bars +
+   weight + contribution); each row is expandable to show the math the
+   backend uses to derive that component's score. */
+.health-panel {
+  background: var(--bg-2);
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.health-panel.always-open {
+  background: var(--bg-1);
+  border: 1px solid var(--line);
+  padding: 18px 20px;
+}
+.health-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.health-panel-score {
+  font-size: 32px;
+  line-height: 1;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.health-panel-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.health-panel-row {
+  border: 1px solid transparent;
+  border-radius: 8px;
+  transition: background var(--t-fast) var(--ease-out), border-color var(--t-fast) var(--ease-out);
+}
+.health-panel-row.expanded {
+  background: var(--bg-2);
+  border-color: var(--line-soft);
+}
+.health-panel.always-open .health-panel-row.expanded {
+  background: var(--bg-3);
+  border-color: var(--line);
+}
+.health-panel-row-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 56px 24px;
+  gap: 14px;
+  align-items: center;
+  width: 100%;
+  padding: 8px 10px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  border-radius: 8px;
+  transition: background var(--t-fast) var(--ease-out);
+}
+.health-panel-row-summary:hover {
+  background: var(--bg-3);
+}
+.health-panel-row-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.health-panel-row-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--t-1);
+}
+.health-panel-tone-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.health-panel-tone-dot.tone-good { background: var(--status-top); }
+.health-panel-tone-dot.tone-warn { background: var(--status-fatigued); }
+.health-panel-tone-dot.tone-bad { background: var(--status-cut); }
+.health-panel-tone-dot.dim { opacity: 0.4; }
+.health-panel-row-score {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 16px;
+  text-align: right;
+  color: var(--t-1);
+}
+.health-panel-row-chevron {
+  color: var(--t-3);
+  font-size: 14px;
+  transition: transform var(--t-fast) var(--ease-out);
+  text-align: center;
+}
+.health-panel-row[aria-expanded] .health-panel-row-chevron,
+.health-panel-row.expanded .health-panel-row-chevron {
+  transform: rotate(180deg);
+  color: var(--accent);
+}
+.health-panel-row-detail {
+  padding: 6px 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px solid var(--line-soft);
+  margin-top: 4px;
+}
+.health-math-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 19px;
+  color: var(--t-2);
+}
+.health-math-text strong {
+  color: var(--t-1);
+}
+.health-math-block {
+  background: var(--bg-1);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.health-panel.always-open .health-math-block {
+  background: var(--bg-2);
+}
+.health-math-block code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--t-1);
+  white-space: pre;
+  overflow-x: auto;
+  display: block;
+}
+.health-math-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+}
+.health-math-label {
+  color: var(--t-3);
+}
+.health-math-value {
+  font-family: var(--font-mono);
+  color: var(--t-1);
+  font-weight: 500;
+}
+.health-math-contribution {
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-line);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--t-1);
+}
+.health-math-contribution code {
+  font-family: var(--font-mono);
+  white-space: pre-wrap;
+}
+.health-panel-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid var(--line-soft);
+  padding-top: 12px;
+}
+.health-panel-narrative {
+  margin: 0;
+  font-size: 13px;
+  line-height: 19px;
+  color: var(--t-1);
+}
+.health-panel-meta {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 /* HealthBreakdownDropdown — chips + narrative + "How is this calculated?".
    Used inline below an expanded creative row AND always-open on the
    creative detail page. Pill chips reuse rounded-full text-xs vibe with
