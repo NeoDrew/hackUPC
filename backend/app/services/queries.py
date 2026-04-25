@@ -221,11 +221,17 @@ _TWIN_FIELDS: list[str] = [
 
 
 async def get_twin_stub(store: Datastore, creative_id: int) -> dict[str, Any] | None:
-    """Pick the cohort-leader twin within (vertical, format) — the highest
-    perf_score creative tagged top_performer. Compute attribute diffs vs the
-    source creative. Vision insight body picked from a template keyed on the
-    largest-magnitude diff. Marked is_stub=True for the UI to display a
-    [preview] chip until Q2b CLIP+HDBSCAN clustering ships."""
+    """Pick the *most attribute-similar* top_performer within the same
+    (vertical, format) cohort using cosine similarity over a per-creative
+    feature vector (one-hot categoricals + normalised numerics + binary
+    flags). Returns the real similarity score in ``similarity``.
+
+    The diff table is computed on the picked twin's attributes vs the
+    source. Vision insight comes from Gemma when configured; otherwise
+    falls back to a 3-template body keyed on the largest diff.
+    """
+    import numpy as np
+
     source = store.creative_detail.get(creative_id)
     if source is None:
         return None
@@ -247,8 +253,29 @@ async def get_twin_stub(store: Datastore, creative_id: int) -> dict[str, Any] | 
     if cohort.empty:
         return None
 
-    winner_row = cohort.sort_values("perf_score", ascending=False).iloc[0]
-    winner_id = int(winner_row["creative_id"])
+    source_vec = store.creative_vectors.get(creative_id)
+    if source_vec is None:
+        # Vector unavailable for some reason — fall back to the cohort leader.
+        winner_row = cohort.sort_values("perf_score", ascending=False).iloc[0]
+        winner_id = int(winner_row["creative_id"])
+        similarity = 0.0
+    else:
+        best_id: int | None = None
+        best_sim = -1.0
+        for cid in cohort["creative_id"]:
+            cid_int = int(cid)
+            v = store.creative_vectors.get(cid_int)
+            if v is None:
+                continue
+            sim = float(np.dot(source_vec, v))
+            if sim > best_sim:
+                best_sim = sim
+                best_id = cid_int
+        if best_id is None:
+            return None
+        winner_id = best_id
+        similarity = max(0.0, min(1.0, best_sim))
+
     winner = store.creative_detail.get(winner_id)
     if winner is None:
         return None
@@ -291,10 +318,12 @@ async def get_twin_stub(store: Datastore, creative_id: int) -> dict[str, Any] | 
     return {
         "fatigued_id": creative_id,
         "winner_id": winner_id,
-        "similarity": 0.81,
+        "similarity": round(similarity, 3),
         "segment": segment,
         "diffs": diffs,
         "vision_insight": insight,
+        # is_stub now reflects only the Vision Insight provenance — the twin
+        # pick itself is real attribute-cosine matching.
         "is_stub": is_stub,
     }
 
