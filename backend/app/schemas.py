@@ -134,6 +134,29 @@ class CreativeListItem(BaseModel):
     asset_file: str
 
 
+class PredictedFatigue(BaseModel):
+    """Our own fatigue verdict for a creative, computed from the daily
+    impressions / clicks time series — isotonic regression + Ruptures
+    changepoint detection + Beta-binomial significance test.
+
+    The dataset's ``creative_status`` and ``fatigue_day`` columns are NOT
+    inputs here; they remain reserved as ground-truth labels for
+    validation. This is the prediction we surface in the UI.
+    """
+
+    is_fatigued: bool
+    predicted_fatigue_day: int | None = None
+    predicted_fatigue_date: str | None = None
+    fatigue_ctr_drop: float | None = None
+    p_value: float | None = None
+    is_significant: bool = False
+    pre_ctr: float | None = None
+    post_ctr: float | None = None
+    cohort_first_median: float | None = None
+    cohort_last_p25: float | None = None
+    model_score: float | None = None
+
+
 class CreativeDetail(BaseModel):
     """Full creative metadata joined with creative_summary on creative_id.
 
@@ -154,6 +177,7 @@ class CreativeDetail(BaseModel):
     status_band: str | None = None
     health_components: HealthComponents | None = None
     health_breakdown: HealthBreakdown | None = None
+    predicted_fatigue: PredictedFatigue | None = None
 
 
 class TimeseriesPoint(BaseModel):
@@ -204,6 +228,10 @@ class CreativeRow(BaseModel):
     headline: str
     vertical: str
     format: str
+    theme: str | None = None
+    hook_type: str | None = None
+    countries: list[str] = []
+    target_os: str | None = None
     status: str | None
     status_band: str | None
     ctr: float

@@ -49,6 +49,9 @@ class Datastore:
     # Process-lifetime queue of variant applications (creative_id → entry).
     # Cleared on restart. Mock for the demo since the dataset is read-only.
     applied_variants: dict[int, dict[str, Any]] = field(default_factory=dict)
+    # Per-creative fatigue verdicts predicted by Krish's changepoint detector.
+    # Keyed by creative_id. Filled at startup by _compute_fatigue_predictions.
+    predicted_fatigue: dict[int, dict[str, Any]] = field(default_factory=dict)
 
     def load(self) -> None:
         self.advertisers = pd.read_csv(DATASET_ROOT / "advertisers.csv")
@@ -119,12 +122,146 @@ class Datastore:
         self.creative_detail = {int(r["creative_id"]): r for r in joined_records}
 
         self._compute_health_scores()
+        self._compute_fatigue_predictions()
         self._compute_quadrants()
         self._compute_flat_rows()
         self._compute_saturation()
         self._compute_creative_vectors()
         self._compute_portfolio_aggregates()
         self._verify_counts()
+
+    def _train_fatigue_classifier_inline(
+        self,
+        fatigue_module: Any,
+        cohort_first_median: dict[tuple[Any, Any], float],
+        cohort_last_p25: dict[tuple[Any, Any], float],
+    ) -> tuple[Any, float]:
+        """Fit and persist the fatigue classifier when the saved
+        artifact is missing. Same code path as
+        ``scripts/train_fatigue.py``, just runs in-process."""
+        feature_rows: list[dict[str, float]] = []
+        labels: list[int] = []
+        creative_status_lookup = self.creative_summary.set_index("creative_id")[
+            "creative_status"
+        ].to_dict()
+        for cid in self.creative_detail.keys():
+            d = self.creative_detail.get(int(cid)) or {}
+            key = (d.get("vertical"), d.get("format"))
+            df_ts = fatigue_module.prepare_fatigue_timeseries(self, int(cid))
+            feats = fatigue_module.extract_features(
+                df_ts,
+                cohort_first_median=cohort_first_median.get(key, 0.0),
+                cohort_last_p25=cohort_last_p25.get(key, 0.0),
+            )
+            if feats is None:
+                continue
+            feature_rows.append(feats)
+            labels.append(
+                1 if creative_status_lookup.get(int(cid)) == "fatigued" else 0
+            )
+        if not feature_rows or not any(labels):
+            log.warning("no training data for fatigue classifier — using None")
+            return None, 0.5
+        classifier, threshold = fatigue_module.train_classifier(
+            feature_rows, labels
+        )
+        try:
+            saved = fatigue_module.save_classifier(
+                classifier, threshold, fatigue_module._FEATURE_NAMES
+            )
+            log.info("persisted fallback-trained fatigue model to %s", saved)
+        except Exception as e:  # noqa: BLE001
+            log.warning("failed to persist fatigue model: %s", e)
+        return classifier, threshold
+
+    def _compute_fatigue_predictions(self) -> None:
+        """Run our changepoint-based fatigue detector on every creative.
+
+        This does NOT consume the dataset's ``fatigue_day`` /
+        ``creative_status`` columns — those are reserved as ground-truth
+        labels for validation. The detector finds a maximum-likelihood
+        binomial changepoint on the daily clicks/impressions series, with
+        a Bonferroni-adjusted significance gate and a magnitude gate that
+        also requires the *pre-break* CTR to clear the portfolio median
+        (otherwise it's underperformance, not fatigue).
+        """
+        from .services import fatigue as fatigue_module  # local import: heavy deps
+
+        # Per-cohort first-7d median + last-7d 25th-percentile CTRs.
+        # Used as the "launched above peers" and "ended in the bottom
+        # quarter of peers" baselines respectively. Lifetime CTR is
+        # contaminated by everyone's end-of-flight tail-off; using
+        # period-anchored numbers gives clean baselines per phase.
+        first_groups: dict[tuple[Any, Any], list[float]] = {}
+        last_groups: dict[tuple[Any, Any], list[float]] = {}
+        for cid in self.creative_detail.keys():
+            d = self.creative_detail.get(int(cid)) or {}
+            v = d.get("vertical")
+            f = d.get("format")
+            pts = self.timeseries_by_creative.get(int(cid)) or []
+            if len(pts) < 14:
+                continue
+            n_anchor = min(7, len(pts) // 3)
+            first = pts[:n_anchor]
+            last = pts[-n_anchor:]
+            f_imp = sum((p.get("impressions") or 0) for p in first)
+            f_clk = sum((p.get("clicks") or 0) for p in first)
+            l_imp = sum((p.get("impressions") or 0) for p in last)
+            l_clk = sum((p.get("clicks") or 0) for p in last)
+            if f_imp > 0:
+                first_groups.setdefault((v, f), []).append(f_clk / f_imp)
+            if l_imp > 0:
+                last_groups.setdefault((v, f), []).append(l_clk / l_imp)
+        cohort_first_median: dict[tuple[Any, Any], float] = {
+            k: float(np.median(v)) for k, v in first_groups.items()
+        }
+        cohort_last_p25: dict[tuple[Any, Any], float] = {
+            k: float(np.percentile(v, 25)) for k, v in last_groups.items()
+        }
+
+        # Try to load the persisted classifier first. The model is
+        # trained offline by scripts/train_fatigue.py and committed to
+        # the repo as backend/models/fatigue_classifier_<ver>.joblib.
+        # If it's missing (e.g. fresh checkout pre-training) we fall
+        # back to fitting in-process so the system never boots without
+        # a model.
+        classifier, threshold = fatigue_module.load_classifier()
+        if classifier is None:
+            log.info("fatigue model missing — fitting in-process as fallback")
+            classifier, threshold = self._train_fatigue_classifier_inline(
+                fatigue_module, cohort_first_median, cohort_last_p25
+            )
+        self.fatigue_classifier = classifier
+        self.fatigue_threshold = threshold
+
+        # Score every creative with the loaded classifier.
+        self.predicted_fatigue: dict[int, dict[str, Any]] = {}
+        for cid in self.creative_detail.keys():
+            try:
+                d = self.creative_detail.get(int(cid)) or {}
+                key = (d.get("vertical"), d.get("format"))
+                df_ts = fatigue_module.prepare_fatigue_timeseries(self, int(cid))
+                verdict = fatigue_module.identify_fatigue_changepoint(
+                    df_ts,
+                    cohort_first_median=cohort_first_median.get(key, 0.0),
+                    cohort_last_p25=cohort_last_p25.get(key, 0.0),
+                    classifier=classifier,
+                    threshold=threshold,
+                )
+            except Exception as e:  # noqa: BLE001
+                log.warning("fatigue prediction failed for %s: %s", cid, e)
+                verdict = {
+                    "is_fatigued": False,
+                    "predicted_fatigue_day": None,
+                    "predicted_fatigue_date": None,
+                    "fatigue_ctr_drop": None,
+                    "p_value": None,
+                    "is_significant": False,
+                }
+            self.predicted_fatigue[int(cid)] = verdict
+            detail = self.creative_detail.get(int(cid))
+            if detail is not None:
+                detail["predicted_fatigue"] = verdict
 
     def _compute_health_scores(self) -> None:
         """Evidence-based Q1 creative health score.
@@ -554,13 +691,35 @@ class Datastore:
                 if fatigue_day is not None and not pd.isna(fatigue_day)
                 else None
             )
+            campaign_id = int(meta_row["campaign_id"])
+            campaign_row = (
+                self.campaigns.loc[
+                    self.campaigns["campaign_id"] == campaign_id
+                ].iloc[0]
+                if (self.campaigns["campaign_id"] == campaign_id).any()
+                else None
+            )
+            country_list = (
+                [c.strip() for c in (campaign_row.get("country_list") or []) if c]
+                if campaign_row is not None
+                else []
+            )
+            target_os = (
+                str(campaign_row.get("target_os")) if campaign_row is not None else ""
+            )
             self.flat_row_by_creative[creative_id] = {
                 "creative_id": creative_id,
-                "campaign_id": int(meta_row["campaign_id"]),
+                "campaign_id": campaign_id,
                 "advertiser_name": meta_row["advertiser_name"],
                 "headline": meta_row.get("headline") or "",
                 "vertical": meta_row["vertical"],
                 "format": meta_row["format"],
+                # Creative-level attributes used as Explore filters.
+                "theme": meta_row.get("theme"),
+                "hook_type": meta_row.get("hook_type"),
+                # Campaign-level delivery context.
+                "countries": country_list,
+                "target_os": target_os,
                 "status": summary_row.get("creative_status"),
                 "status_band": band,
                 "ctr": _safe_float(summary_row.get("overall_ctr")),

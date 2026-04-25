@@ -46,7 +46,20 @@ export default async function CreativeDetailPage(
   const status = (data.creative_status as string | null) ?? null;
   const band = (creative.status_band as string | null) ?? null;
   const needsRescue = band === "rescue" || band === "cut";
-  const fatigueDay = (data.fatigue_day as number | null) ?? null;
+  // Our predicted fatigue verdict (changepoint + trained classifier).
+  // The dataset's `fatigue_day` is the supervised training label and is
+  // never read here — predictions only.
+  const predictedFatigue = (creative.predicted_fatigue ?? null) as {
+    is_fatigued: boolean;
+    predicted_fatigue_day: number | null;
+    predicted_fatigue_date: string | null;
+    fatigue_ctr_drop: number | null;
+    pre_ctr: number | null;
+    post_ctr: number | null;
+    model_score: number | null;
+  } | null;
+  const fatigueDay = predictedFatigue?.predicted_fatigue_day ?? null;
+  const fatiguePredicted = predictedFatigue?.is_fatigued ?? false;
 
   return (
     <section
@@ -77,6 +90,16 @@ export default async function CreativeDetailPage(
             <Link
               href={`/creatives/${id}/variant${twinSuffix}`}
               className="btn primary"
+              style={{
+                padding: "12px 22px",
+                fontSize: 15,
+                fontWeight: 700,
+                letterSpacing: "-0.01em",
+                background: "var(--accent)",
+                borderColor: "var(--accent)",
+                color: "#fff",
+                boxShadow: "var(--shadow-1)",
+              }}
             >
               Improve →
             </Link>
@@ -185,25 +208,30 @@ export default async function CreativeDetailPage(
         }}
       />
 
-      {status === "fatigued" && (
-        <section
-          className="col gap-2"
-          style={{
-            background: "var(--bg-1)",
-            border: "1px solid var(--line)",
-            borderRadius: 12,
-            padding: 16,
-          }}
-        >
-          <header className="row center between">
-            <h3 className="t-section">Daily CTR · fatigue signature</h3>
-            <span className="t-micro">
-              Launched day 0 · fatigue flagged day {fatigueDay ?? "–"}
-            </span>
-          </header>
-          <FatigueChart creativeId={id} fatigueDay={fatigueDay} />
-        </section>
-      )}
+      <section
+        className="col gap-2"
+        style={{
+          background: "var(--bg-1)",
+          border: "1px solid var(--line)",
+          borderRadius: 12,
+          padding: 16,
+        }}
+      >
+        <header className="row center between">
+          <h3 className="t-section">Daily CTR · 75-day trend</h3>
+          <span className="t-micro muted">
+            {fatiguePredicted && fatigueDay !== null
+              ? `Our model flags fatigue from day ${fatigueDay}${
+                  predictedFatigue?.model_score !== null &&
+                  predictedFatigue?.model_score !== undefined
+                    ? ` (confidence ${Math.round(predictedFatigue.model_score * 100)}%)`
+                    : ""
+                }`
+              : "Our model: no fatigue detected"}
+          </span>
+        </header>
+        <FatigueChart creativeId={id} fatigueDay={fatigueDay} />
+      </section>
 
       <section className="col gap-2">
         <h3 className="t-section">Creative attributes</h3>

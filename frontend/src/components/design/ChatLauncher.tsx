@@ -206,7 +206,6 @@ export function ChatLauncher() {
         aria-label="Open assistant"
         onClick={beginOpen}
       >
-        <span className="chat-launcher-glyph">✦</span>
         <span className="chat-launcher-label">Open assistant</span>
       </button>
     );

@@ -153,9 +153,21 @@ export function generateNarrative(input: NarrativeInput): string {
   );
   const weakest = sorted[0];
 
+  // "Data-bottlenecked" case: low Confidence (or low Reliability) is the
+  // dominant problem — every other component is reasonably healthy. The
+  // right call here is to wait for more impressions/clicks, NOT to pause
+  // a creative that hasn't had a fair chance yet.
+  const dataBottlenecked = isDataBottlenecked(components, trendGated);
+
   let lead: string;
   if (trendGated && daysActive !== undefined) {
     lead = `Active for ${daysActive} day${daysActive === 1 ? "" : "s"} — too early to assess trend, but ${weakest.weakNarrative}.`;
+  } else if (dataBottlenecked) {
+    const reason =
+      components.C <= components.B
+        ? "we don't have enough data yet to be confident in the score"
+        : "this creative hasn't accumulated enough volume to call reliable";
+    lead = `${reason.charAt(0).toUpperCase() + reason.slice(1)}.`;
   } else if (weakest && components[weakest.key] < 0.5) {
     lead = `${weakest.weakNarrative.charAt(0).toUpperCase() + weakest.weakNarrative.slice(1)}.`;
   } else {
@@ -163,11 +175,38 @@ export function generateNarrative(input: NarrativeInput): string {
   }
 
   let verdict: string;
-  if (health >= 70) verdict = "Safe to scale.";
-  else if (health >= 45) verdict = "Monitor closely.";
-  else verdict = "Consider pausing or refreshing this creative.";
+  if (dataBottlenecked) {
+    verdict = "Hold and let it gather more data before deciding.";
+  } else if (health >= 70) {
+    verdict = "Safe to scale.";
+  } else if (health >= 45) {
+    verdict = "Monitor closely.";
+  } else {
+    verdict = "Consider pausing or refreshing this creative.";
+  }
 
   return `${lead} ${verdict}`;
+}
+
+/** Low Confidence (or low Reliability) is the binding constraint when:
+ *  - C or B is below 0.4, AND
+ *  - Strength, Trend (if not gated), Cohort rank, and Efficiency are all
+ *    at or above the median (≥ 0.5). I.e. the creative would look fine if
+ *    we only had more data on it.
+ */
+function isDataBottlenecked(
+  components: NarrativeInput["components"],
+  trendGated: boolean,
+): boolean {
+  const cLow = components.C < 0.4;
+  const bLow = components.B < 0.4;
+  if (!cLow && !bLow) return false;
+  const performanceFloor =
+    components.S >= 0.5 &&
+    components.R >= 0.5 &&
+    components.E >= 0.5 &&
+    (trendGated || components.T >= 0.5);
+  return performanceFloor;
 }
 
 function tone(value: number): "good" | "warn" | "bad" {
