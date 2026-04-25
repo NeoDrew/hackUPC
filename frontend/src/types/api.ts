@@ -38,6 +38,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/portfolio/dataset-bounds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Dataset Bounds
+         * @description Returns the dataset's date range so the frontend can map a 'week N'
+         *     selection to a concrete (start, end) window. Total weeks is ceil(days/7).
+         */
+        get: operations["get_dataset_bounds_api_portfolio_dataset_bounds_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/portfolio/health-diagnostics": {
         parameters: {
             query?: never;
@@ -425,6 +446,58 @@ export interface components {
             daily_budget_usd: number;
             /** Kpi Goal */
             kpi_goal: string;
+            metrics?: components["schemas"]["CampaignMetrics"] | null;
+        };
+        /** CampaignHealthComponents */
+        CampaignHealthComponents: {
+            /** Pct Fatigued */
+            pct_fatigued: number;
+            /** Mean Drop Ratio */
+            mean_drop_ratio: number;
+            /** Agg Ctr Cv */
+            agg_ctr_cv: number;
+            /** Cohort Rank Pct */
+            cohort_rank_pct: number;
+            /** Creative Count */
+            creative_count: number;
+            /** Fatigued Count */
+            fatigued_count: number;
+        };
+        /**
+         * CampaignMetrics
+         * @description Per-campaign rollup attached to ``Campaign`` when ``with_metrics=true``.
+         *     Reuses the advertiser-scope aggregator so totals always reconcile.
+         */
+        CampaignMetrics: {
+            /** Total Spend Usd */
+            total_spend_usd: number;
+            /** Total Revenue Usd */
+            total_revenue_usd: number;
+            /** Roas */
+            roas: number;
+            /** Ctr */
+            ctr: number;
+            /** Cvr */
+            cvr: number;
+            /** Attention Count */
+            attention_count: number;
+            /** Creative Count */
+            creative_count: number;
+            /** Scale */
+            scale: number;
+            /** Watch */
+            watch: number;
+            /** Rescue */
+            rescue: number;
+            /** Cut */
+            cut: number;
+            /** Health */
+            health: number;
+            health_components: components["schemas"]["CampaignHealthComponents"];
+            /** Health Weights */
+            health_weights?: {
+                [key: string]: number;
+            } | null;
         };
         /** ChatMessage */
         ChatMessage: {
@@ -516,6 +589,8 @@ export interface components {
             creative_id: number;
             /** Campaign Id */
             campaign_id: number;
+            /** Advertiser Id */
+            advertiser_id?: number | null;
             /** Advertiser Name */
             advertiser_name: string;
             /** Headline */
@@ -992,6 +1067,10 @@ export interface operations {
                 start?: string | null;
                 /** @description ISO date YYYY-MM-DD */
                 end?: string | null;
+                /** @description Scope KPIs to one advertiser; cohort math elsewhere stays portfolio-wide. */
+                advertiser_id?: number | null;
+                /** @description Scope KPIs to one campaign. Wins over advertiser_id when both are present. */
+                campaign_id?: number | null;
             };
             header?: never;
             path?: never;
@@ -1024,6 +1103,8 @@ export interface operations {
             query?: {
                 start?: string | null;
                 end?: string | null;
+                advertiser_id?: number | null;
+                campaign_id?: number | null;
             };
             header?: never;
             path?: never;
@@ -1047,6 +1128,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_dataset_bounds_api_portfolio_dataset_bounds_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
         };
@@ -1127,6 +1230,10 @@ export interface operations {
                 start?: string | null;
                 /** @description ISO date YYYY-MM-DD */
                 end?: string | null;
+                /** @description Scope the listing to one advertiser (cohort math elsewhere stays portfolio-wide). */
+                advertiser_id?: number | null;
+                /** @description Scope the listing to one campaign. Wins over advertiser_id when both are present. */
+                campaign_id?: number | null;
             };
             header?: never;
             path?: never;
@@ -1368,7 +1475,14 @@ export interface operations {
     };
     list_campaigns_api_advertisers__advertiser_id__campaigns_get: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Attach a per-campaign rollup (KPIs + band counts + composite health) to each campaign. */
+                with_metrics?: boolean;
+                /** @description ISO date YYYY-MM-DD */
+                start?: string | null;
+                /** @description ISO date YYYY-MM-DD */
+                end?: string | null;
+            };
             header?: never;
             path: {
                 advertiser_id: number;

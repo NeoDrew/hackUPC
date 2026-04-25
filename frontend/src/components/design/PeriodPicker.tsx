@@ -1,160 +1,85 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useTransition } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
-const DATASET_START = "2026-01-01";
-const DATASET_END = "2026-03-16";
+import { setActiveWeek } from "@/lib/periodScopeActions";
 
-const PRESETS: Array<{ key: string; label: string; days: number | "all" }> = [
-  { key: "7d", label: "Last 7 days", days: 7 },
-  { key: "30d", label: "Last 30 days", days: 30 },
-  { key: "75d", label: "Last 75 days", days: 75 },
-  { key: "all", label: "All time", days: "all" },
-];
-
-function isoSubtractDays(end: string, days: number): string {
-  const d = new Date(`${end}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() - (days - 1));
-  return d.toISOString().slice(0, 10);
-}
-
-function summarise(start: string | null, end: string | null): string {
-  if (!start && !end) return "Last 75 days";
-  const s = start ?? DATASET_START;
-  const e = end ?? DATASET_END;
-  if (s === DATASET_START && e === DATASET_END) return "All time";
-  for (const p of PRESETS) {
-    if (p.days === "all") continue;
-    if (s === isoSubtractDays(DATASET_END, p.days as number) && e === DATASET_END) {
-      return p.label;
-    }
-  }
-  return `${s} → ${e}`;
-}
-
-export function PeriodPicker() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const sp = useSearchParams();
-  const startParam = sp.get("start");
-  const endParam = sp.get("end");
-
-  const [open, setOpen] = useState(false);
-  const [customStart, setCustomStart] = useState(startParam ?? DATASET_START);
-  const [customEnd, setCustomEnd] = useState(endParam ?? DATASET_END);
+/**
+ * Cumulative week stepper. Selecting "Week N" exposes data from week 1
+ * through end of week N to every read site (KPIs, bands, queue, cards),
+ * so the demo can replay how the cockpit's recommendations would have
+ * looked at any point in the campaign.
+ *
+ * "All time" clears the cookie and shows the full dataset.
+ */
+export function PeriodPicker({
+  totalWeeks,
+  activeWeek,
+}: {
+  totalWeeks: number;
+  activeWeek: number | null;
+}) {
   const [isPending, startTransition] = useTransition();
-  const ref = useRef<HTMLDivElement | null>(null);
+  const week = activeWeek ?? totalWeeks; // when "all time", display as last week
+  const isAllTime = activeWeek == null || activeWeek >= totalWeeks;
 
-  useEffect(() => {
-    setCustomStart(startParam ?? DATASET_START);
-    setCustomEnd(endParam ?? DATASET_END);
-  }, [startParam, endParam]);
-
-  useEffect(() => {
-    if (!open) return;
-    function onClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    document.addEventListener("mousedown", onClick);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onClick);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
-  function applyRange(start: string | null, end: string | null) {
-    const next = new URLSearchParams(sp.toString());
-    // Page-specific params (limit, sort, tab) should reset when the window
-    // changes — the underlying band assignment changes, so a "tab=scale&limit=300"
-    // from the previous window is meaningless.
-    next.delete("limit");
-    if (start) next.set("start", start);
-    else next.delete("start");
-    if (end) next.set("end", end);
-    else next.delete("end");
-    const qs = next.toString();
-    // Wrap navigation in a transition so React keeps the old UI interactive
-    // until the new RSC payload arrives — the chip shows a pending dot
-    // immediately on click, the Suspense boundaries below render skeletons
-    // when data starts streaming.
+  function setWeek(n: number | null) {
+    if (isPending) return;
+    const fd = new FormData();
+    if (n != null) fd.set("week", String(n));
     startTransition(() => {
-      router.push(`${pathname}${qs ? `?${qs}` : ""}`);
+      setActiveWeek(fd);
     });
-    setOpen(false);
   }
 
-  function applyPreset(p: (typeof PRESETS)[number]) {
-    if (p.days === "all") return applyRange(null, null);
-    const start = isoSubtractDays(DATASET_END, p.days as number);
-    applyRange(start, DATASET_END);
+  function step(delta: number) {
+    const next = week + delta;
+    if (next < 1) return;
+    if (next >= totalWeeks) {
+      setWeek(null);
+      return;
+    }
+    setWeek(next);
   }
-
-  const summary = summarise(startParam, endParam);
 
   return (
-    <div ref={ref} style={{ position: "relative" }}>
+    <div className={`week-stepper${isPending ? " pending" : ""}`}>
       <button
         type="button"
-        className={`filter-chip${open ? " active" : ""}${isPending ? " pending" : ""}`}
-        onClick={() => setOpen((v) => !v)}
-        style={{ cursor: "pointer" }}
-        aria-busy={isPending}
+        className="week-step-btn"
+        aria-label="Previous week"
+        disabled={week <= 1 || isPending}
+        onClick={() => step(-1)}
       >
-        <span className="muted">Period</span>
-        <strong>{summary}</strong>
-        {isPending ? <span className="period-spinner" aria-hidden /> : null}
+        <ChevronLeft size={14} strokeWidth={2} aria-hidden />
       </button>
-      {open && (
-        <div className="period-popover">
-          <div className="period-popover-presets">
-            {PRESETS.map((p) => (
-              <button
-                key={p.key}
-                type="button"
-                className="period-preset"
-                onClick={() => applyPreset(p)}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-          <div className="period-popover-divider" />
-          <div className="period-popover-custom">
-            <span className="t-micro">Custom range</span>
-            <div className="row gap-2 center">
-              <input
-                type="date"
-                value={customStart}
-                min={DATASET_START}
-                max={DATASET_END}
-                onChange={(e) => setCustomStart(e.target.value)}
-                className="period-date"
-              />
-              <span className="muted">→</span>
-              <input
-                type="date"
-                value={customEnd}
-                min={DATASET_START}
-                max={DATASET_END}
-                onChange={(e) => setCustomEnd(e.target.value)}
-                className="period-date"
-              />
-            </div>
-            <button
-              type="button"
-              className="btn dense primary"
-              onClick={() => applyRange(customStart, customEnd)}
-            >
-              Apply
-            </button>
-          </div>
-        </div>
-      )}
+      <div className="week-stepper-text">
+        <span className="week-stepper-label">Period</span>
+        <span className="week-stepper-value">
+          {isAllTime ? "All time" : `Week ${week} of ${totalWeeks}`}
+        </span>
+      </div>
+      <button
+        type="button"
+        className="week-step-btn"
+        aria-label="Next week"
+        disabled={isAllTime || isPending}
+        onClick={() => step(+1)}
+      >
+        <ChevronRight size={14} strokeWidth={2} aria-hidden />
+      </button>
+      {!isAllTime ? (
+        <button
+          type="button"
+          className="week-stepper-reset"
+          onClick={() => setWeek(null)}
+          disabled={isPending}
+          aria-label="Show all time"
+        >
+          All time
+        </button>
+      ) : null}
     </div>
   );
 }

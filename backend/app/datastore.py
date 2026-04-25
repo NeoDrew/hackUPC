@@ -52,6 +52,10 @@ class Datastore:
     # Per-creative fatigue verdicts predicted by Krish's changepoint detector.
     # Keyed by creative_id. Filled at startup by _compute_fatigue_predictions.
     predicted_fatigue: dict[int, dict[str, Any]] = field(default_factory=dict)
+    # Campaign cohort rank pct ∈ [0, 1] within (vertical, objective) cohort
+    # across all 36 advertisers. Filled at startup; consumed by the campaign
+    # health composite.
+    campaign_cohort_rank_pct: dict[int, float] = field(default_factory=dict)
 
     def load(self) -> None:
         self.advertisers = pd.read_csv(DATASET_ROOT / "advertisers.csv")
@@ -128,7 +132,13 @@ class Datastore:
         self._compute_saturation()
         self._compute_creative_vectors()
         self._compute_portfolio_aggregates()
+        self._compute_campaign_cohort_ranks()
         self._verify_counts()
+
+    def _compute_campaign_cohort_ranks(self) -> None:
+        from .services import campaign_health as _ch
+
+        self.campaign_cohort_rank_pct = _ch.precompute_cohort_ranks(self)
 
     def _train_fatigue_classifier_inline(
         self,
@@ -707,9 +717,15 @@ class Datastore:
             target_os = (
                 str(campaign_row.get("target_os")) if campaign_row is not None else ""
             )
+            advertiser_id = (
+                int(campaign_row["advertiser_id"])
+                if campaign_row is not None and "advertiser_id" in campaign_row
+                else -1
+            )
             self.flat_row_by_creative[creative_id] = {
                 "creative_id": creative_id,
                 "campaign_id": campaign_id,
+                "advertiser_id": advertiser_id,
                 "advertiser_name": meta_row["advertiser_name"],
                 "headline": meta_row.get("headline") or "",
                 "vertical": meta_row["vertical"],

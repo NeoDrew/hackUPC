@@ -33,7 +33,7 @@ One file per teammate with LinkedIn URL + background summary. Keep in sync if re
 
 ## The plan in one paragraph
 
-FastAPI + Next.js web app with three tabs mapped to the brief's five capabilities. **Q1 (Explorer)** = Bayesian-shrunk, cohort-adjusted ranking with 95% credible intervals, validated against the dataset's pre-computed `perf_score`. **Q2a (Fatigue)** = fit per-creative daily CTR decay with significance testing and changepoint detection; report a confusion matrix against the ground-truth `creative_status` label rather than consuming it. **Q2b (Similarity)** = HDBSCAN + UMAP over a blended feature vector of hand-labelled metadata attributes plus PCA-reduced CLIP ViT-B/32 image embeddings. **Q3a (Explainability)** = LightGBM + SHAP per-creative attribute contributions. **Q3b (Recommendation)** = attribute-cube bandit with Thompson sampling / UCB, peer benchmarking against same-vertical advertisers, Gemma-4-templated natural-language rationales. MongoDB Atlas + GoDaddy domain to stack MLH side-prizes. See `resources/taskInfo/strategy.md` for the full plan.
+FastAPI + Next.js web app with three tabs mapped to the brief's five capabilities. **Q1 (Explorer)** = Bayesian-shrunk, cohort-adjusted ranking with 95% credible intervals, validated against the dataset's pre-computed `perf_score`. **Q2a (Fatigue)** = fit per-creative daily CTR decay with significance testing and changepoint detection; report a confusion matrix against the ground-truth `creative_status` label rather than consuming it. **Q2b (Similarity)** = HDBSCAN + UMAP over a blended feature vector of hand-labelled metadata attributes plus PCA-reduced CLIP ViT-B/32 image embeddings. **Q3a (Explainability)** = LightGBM + SHAP per-creative attribute contributions. **Q3b (Recommendation)** = attribute-cube bandit with Thompson sampling / UCB, peer benchmarking against same-vertical advertisers, Gemma-4-templated natural-language rationales. MongoDB Atlas to stack the MLH side-prize. Domain `smadex.cooking` registered at Porkbun (paid, not the MLH GoDaddy freebie). See `resources/taskInfo/strategy.md` for the full plan.
 
 ## Critical dataset facts (so you don't walk into traps)
 
@@ -51,7 +51,7 @@ FastAPI + Next.js web app with three tabs mapped to the brief's five capabilitie
 - **Devpost submission deadline: Sun 26 Apr 09:15 local (UTC+2).** Miss = disqualified. Target submitting by 08:00 Sunday.
 - **Hacking ends Sun 09:00.** No code changes after.
 - **Demo is twice, 3 minutes each, no slides allowed.** Once for HackUPC judges in A3 (mandatory for HackUPC general prize + travel reimbursement), once for Smadex in A4. Same project, same demo.
-- **Opt into MLH prizes** (MongoDB Atlas, Gemma 4, GoDaddy) via Devpost. Free upside.
+- **Opt into MLH prizes** (MongoDB Atlas, Gemma 4) via Devpost. GoDaddy prize is forfeit — domain is on Porkbun.
 - **Brief requires ≥ 2 of 5 capabilities.** We're shipping all 5.
 
 ## Tech stack (target)
@@ -60,7 +60,7 @@ FastAPI + Next.js web app with three tabs mapped to the brief's five capabilitie
 - Frontend: Next.js + TypeScript + Tailwind. `recharts` + `deck.gl` / `plotly`.
 - Persistence: MongoDB Atlas (embeddings + cached aggregations + session state). **Opt-in for MLH prize.**
 - LLM: Gemma 4 via Google AI Studio for Q3 rationales. **Opt-in for MLH prize.**
-- Domain: GoDaddy free domain. **Opt-in for MLH prize.**
+- Domain: `smadex.cooking` — registered at Porkbun. Apex `A → 216.150.1.1`, `CNAME www → 30e9567df3329599.vercel-dns-016.com` (both Vercel targets). Forfeits the MLH GoDaddy prize.
 - Deploy: Vercel (frontend) + Render / Fly.io (backend).
 - **Streamlit fallback:** if Next.js slips on Sunday morning, the brief accepts "a notebook with a strong interactive demo" — keep a Streamlit scratch version running in parallel.
 - **Not using:** ElevenLabs (gimmicky here), Solana, hardware, JetBrains Koog.

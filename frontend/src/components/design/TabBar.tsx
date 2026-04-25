@@ -2,48 +2,36 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
 
 import { TABS, type TabKey } from "@/lib/status";
-import { api, type TabCounts } from "@/lib/api";
+import { type TabCounts } from "@/lib/api";
 
-export function TabBar({ counts: initialCounts }: { counts: TabCounts }) {
+/**
+ * Tabbed band switcher. Lives on the campaign detail page where bands
+ * (scale/watch/rescue/cut) make sense; not rendered on the advertiser
+ * overview at /. ``basePath`` defaults to "/" for back-compat but the
+ * campaign page passes "/campaigns/{id}".
+ */
+export function TabBar({
+  counts,
+  basePath = "/",
+}: {
+  counts: TabCounts;
+  basePath?: string;
+}) {
   const pathname = usePathname();
   const search = useSearchParams();
-  const activeTab = resolveActiveTab(pathname, search.get("tab"));
+  const activeTab = resolveActiveTab(pathname, search.get("tab"), basePath);
 
   const start = search.get("start");
   const end = search.get("end");
-  const [counts, setCounts] = useState<TabCounts>(initialCounts);
-
-  useEffect(() => {
-    // Layout-rendered initialCounts are lifetime. When a window is set,
-    // refetch so the badges reflect the windowed band distribution.
-    if (!start && !end) {
-      setCounts(initialCounts);
-      return;
-    }
-    let cancelled = false;
-    api
-      .tabCounts({ start: start ?? undefined, end: end ?? undefined })
-      .then((c) => {
-        if (!cancelled) setCounts(c);
-      })
-      .catch(() => {
-        // Network blip — keep the prior counts rather than zeroing the badges.
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [start, end, initialCounts]);
-
   const rangeQs = new URLSearchParams();
   if (start) rangeQs.set("start", start);
   if (end) rangeQs.set("end", end);
   const rangeStr = rangeQs.toString();
 
   const actionCount = (counts.rescue ?? 0) + (counts.cut ?? 0);
-  const actionHref = rangeStr ? `/?${rangeStr}` : "/";
+  const actionHref = rangeStr ? `${basePath}?${rangeStr}` : basePath;
   const isActionActive = activeTab === "action";
 
   return (
@@ -56,7 +44,9 @@ export function TabBar({ counts: initialCounts }: { counts: TabCounts }) {
         <span className="count">{actionCount}</span>
       </Link>
       {TABS.map((tab) => {
-        const baseHref = tab.utility ? "/explore" : `/?tab=${tab.key}`;
+        const baseHref = tab.utility
+          ? "/explore"
+          : `${basePath}?tab=${tab.key}`;
         const href = rangeStr
           ? `${baseHref}${baseHref.includes("?") ? "&" : "?"}${rangeStr}`
           : baseHref;
@@ -79,17 +69,19 @@ export function TabBar({ counts: initialCounts }: { counts: TabCounts }) {
 
 type ActiveTab = TabKey | "action" | null;
 
-function resolveActiveTab(pathname: string, tabParam: string | null): ActiveTab {
+function resolveActiveTab(
+  pathname: string,
+  tabParam: string | null,
+  basePath: string,
+): ActiveTab {
   if (pathname.startsWith("/explore")) return "explore";
-  // No tab is active when drilled into a creative; keeps the bar's underline
-  // off so the user knows they're outside the cohort browser.
   if (pathname.startsWith("/creatives/") || pathname.startsWith("/debug/")) {
     return null;
   }
+  if (!pathname.startsWith(basePath)) return null;
   const requested = tabParam as TabKey | null;
   if (requested && ["scale", "watch", "rescue", "cut"].includes(requested)) {
     return requested;
   }
-  // "/" without a tab param → the Action page is the new default landing.
   return "action";
 }

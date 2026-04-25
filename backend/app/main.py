@@ -25,7 +25,7 @@ app = FastAPI(title="Smadex Creative Intelligence", version="0.1.0", lifespan=li
 # Allow:
 #   - http://(localhost|127.0.0.1):<any port>   (local dev)
 #   - https://*.vercel.app                       (Vercel preview + prod)
-#   - any FRONTEND_ORIGIN env value (e.g. custom GoDaddy domain)
+#   - any FRONTEND_ORIGIN env value (e.g. https://smadex.cooking, registered at Porkbun)
 import os as _os  # noqa: E402
 
 _extra_origin = _os.environ.get("FRONTEND_ORIGIN", "").rstrip("/")

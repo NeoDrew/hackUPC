@@ -6,7 +6,7 @@ Pulled directly from the four CSVs (advertisers / campaigns / creatives / creati
 
 > **Companion file:** [`join_aggregate_opportunities.md`](join_aggregate_opportunities.md) — five join/aggregation moves we haven't fully exploited yet (per-creative × country, cohort fatigue curve, campaign diversity index, advertiser peer-rank, country × format ROAS map).
 
-## TL;DR — the 5 things that matter
+## TL;DR — the 6 things that matter
 
 1. **`perf_score` is ~91% recoverable from just `overall_ctr + first_7d_ctr + overall_cvr + overall_roas + overall_ipm + total_impressions`**, and ~68% from CTR alone. It is **not cohort-adjusted** — banner perf_score averages 0.30 vs playable 0.68; gaming verticals 0.63 vs ecommerce 0.40. Beating perf_score = adding (a) a cohort-relative ranking and (b) a decay/trajectory penalty. Matching it = sorting by `overall_ctr`. Aditya can drop this in the demo: *"the dataset's own performance score is dominated by lifetime CTR — we replaced it with cohort-relative Bayesian ranking that catches creatives lifetime CTR misses."*
 
@@ -17,6 +17,8 @@ Pulled directly from the four CSVs (advertisers / campaigns / creatives / creati
 4. **`fatigue_day` + `ctr_decay_pct` overlap is small.** Median ctr_decay_pct is −0.84 for fatigued creatives vs −0.78 for everyone else. **All creatives decay** in this dataset; the question is *how fast and from what peak*. A flat threshold on `ctr_decay_pct` will catch fatigue but with poor precision. Fatigue detection needs slope + changepoint, not a single decay-percentage cut.
 
 5. **`overall_roas` swings 5× across verticals** (travel 7.67 mean vs gaming 1.46) and `overall_ctr` 2× (gaming 0.74% vs fintech 0.40%). **Never rank ROAS or CTR globally — only within vertical or (vertical, format).** Existing Q1 already does cohort-relative percentiles for these; just hold the line.
+
+6. **`creative_daily_country_os_stats.csv` is 192k rows at `(creative, country, OS, day)` grain — and the entire research notebook collapses it away.** That slice table is the only surface in the dataset that lets us answer "where should I pause / scale / rotate / cap / re-bid / test next?" — i.e. exactly what the brief asks for. **The advisor system in §"The slice the research notebook didn't touch" is the highest-EV unbuilt component on the project.**
 
 ---
 
@@ -113,4 +115,89 @@ For **the demo**:
 
 ---
 
-*Generated 2026-04-25 from a direct EDA over creative_summary.csv (1,080 rows) + creative_daily_country_os_stats.csv (192k rows). Code lives in the chat history; rerun any time the dataset changes.*
+## The slice the research notebook didn't touch — `(creative × country × OS × day)`
+
+`research/fatigue_kpi_research.ipynb` collapses country and OS away in cell 6 (`groupby(creative_id, date)`). Every feature, model and ablation in that notebook is built on the **summed-across-markets** series. That works for the binary fatigue verdict (test ROC-AUC 0.93), but **leaves the highest-leverage surface in the dataset untouched.**
+
+`creative_daily_country_os_stats.csv` is **192,315 rows at (creative, country, OS, day) grain** — 1,080 creatives × 10 countries × 2 OS × ~9 active days each — and it's the only place in the dataset where we can answer the questions a marketer actually pays for:
+
+- *"Where should I pause this creative?"* — geographic slice fatigue
+- *"Where should I scale it?"* — over-performing markets
+- *"Why is my ROAS down this week?"* — slice-level decomposition
+- *"What should I test next?"* — cross-slice pattern transfer
+
+The Smadex brief explicitly asks for **recommendations and "what to test next"**. A tab that shows fatigue per creative is table-stakes; the advisor system below is the differentiator.
+
+## Advisor action taxonomy — what the recommendation engine should emit
+
+Eight action types. Each one is a deterministic function over the slice grain that fires when its trigger crosses a threshold; each one carries a quantified expected lift and a one-line marketer-voice rationale.
+
+| # | Action | Trigger (per `creative_id`) | Output (example) |
+|--:|---|---|---|
+| 1 | **Geographic prune** | `country_drop_ratio < 0.66 × creative_drop_ratio` AND slice impressions ≥ 5% of creative total | *"Pause in BR — CTR has dropped 67% there while holding flat in US/UK. Saves est. $X/day at current ROAS."* |
+| 2 | **Geographic scale** | `country_cohort_percentile ≥ 90` AND `slice_roas ≥ 1.5 × creative_roas` AND budget headroom in that market | *"Increase BR bid 25% — top decile in (gaming, playable, BR) cohort, ROAS 2.3× creative average."* |
+| 3 | **OS frequency cap** | `os_impressions_last_7d / os_baseline > τ` AND `os_ctr_decay > 0.4` AND opposite OS healthy | *"Cut Android bid 30% — frequency saturated, marginal CVR collapsing. iOS still healthy."* |
+| 4 | **Cross-market fatigue early warning** | Slice-level changepoint LR significant in ≥ 2 served countries AND not yet visible in the summed series | *"Fatigue starting in LATAM cluster (BR, MX). EU still healthy. Rotate creative in LATAM before global metrics catch up."* |
+| 5 | **Concentration risk** | `top_country_share > 0.6` AND `top_country_drop_ratio < 0.85` | *"70% of this creative's impressions are in DE, where CTR has dropped 23%. Diversify or replace before lifetime ROAS collapses."* |
+| 6 | **Format-market mismatch** | Within `(country, vertical)` cohort, peer formats outperform this creative's format by ≥ 30% on ROAS | *"Banners in JP underperform playables 3.4× on ROAS. Your DE banner spend should rotate into playable creative."* |
+| 7 | **Pattern transfer** | Sibling creative with similar attribute cube wins in country X; this creative not yet served in X | *"Sibling creative #501234 ranks top decile in MX (gaming, playable). Test this creative in MX — same hook, same CTA, untested."* |
+| 8 | **Reallocation** | Rank slices by marginal ROAS = `revenue_usd / spend_usd` per slice; shift budget from bottom quartile to top quartile within the same advertiser | *"Shift $1.2k/day from (rewarded_video × IT × Android) to (rewarded_video × US × iOS). Projected lift: +$840/day revenue at constant total spend."* |
+
+Every emitted recommendation should carry: **(a)** the slice that triggered it, **(b)** the magnitude of the trigger, **(c)** a counterfactual-flavoured estimate of impact ("$X/day"), and **(d)** a one-click verb — `pause`, `scale`, `cap`, `rotate`, `replace`, `test`. The Q3b bandit lives behind #7 and #8; the other six are deterministic rules.
+
+## Slice-level features the advisor needs (compute once, cache per creative)
+
+For each `creative_id`, the recommendation engine needs these aggregates over the slice table. Compute once at startup, cache per-creative in MongoDB Atlas (we're already opted in for the MLH prize); refresh when daily data changes.
+
+**Geographic-shape features** (per creative):
+- `n_active_countries` — countries with ≥ 100 cumulative impressions.
+- `top_country_share` — fraction of total impressions in the single largest country (Herfindahl-style concentration).
+- `country_ctr_dispersion` — std of last-7d CTR across served countries; high = market-specific behaviour, low = uniform creative.
+- `country_with_steepest_decline` — `argmax_c (drop_ratio_c)`; the slice rolling first.
+- `country_with_highest_residual` — `argmax_c (slice_ctr / cohort_ctr_in_country)`; the scale candidate.
+
+**OS-divergence features** (per creative):
+- `os_ctr_ratio` = `ctr_android / ctr_ios` (or whichever is non-zero); deviation from 1.0 is the headline.
+- `os_drop_divergence` = `drop_ratio_android - drop_ratio_ios`; positive + significant = textbook "Android peeling off" early warning.
+- `os_volume_ratio` = `impressions_android / impressions_ios`; flags lopsided distribution that may bias other features.
+
+**Per-`(creative, country)` trajectory features** (one row per slice):
+- The 7 production fatigue features (`drop_ratio`, `ctr_cv`, `lr_stat`, etc. — see `research/model_justification.md`) recomputed over the **per-country** daily series rather than the summed series.
+- **Cohort-relative within country**: `slice_first_vs_country_cohort_median`, `slice_last_vs_country_cohort_p25` — same logic as production but cohorted by `(vertical, format, country)`.
+
+**Per-`(campaign, country)` and `(advertiser, country)` rollups**:
+- Aggregate ROAS, mean fatigue rate, breadth of creative coverage in that market.
+- Drives the **campaign-health KPI**: roll up slice grain → campaign × country → campaign global. Country/OS detail is inherited for free.
+
+## Slice-level trapdoors (read this before computing)
+
+| Trap | What goes wrong | How to handle |
+|---|---|---|
+| **Sparse slices** | Many `(creative, country, OS, day)` cells have impressions < 1k. Per-slice CTR with no shrinkage produces wild outliers. | Bayesian shrinkage with a `(vertical, format, country)` cohort prior; or hard-floor slices at < 5k cumulative impressions. |
+| **`impressions_last_7d` is a rolling column** | Already in the trap-columns table; bites harder at slice grain — summing it across 7 dates per slice multi-counts ×49. | Use as a feature on the latest date row only, never as an aggregate. |
+| **Days with `spend_usd > 0` but `impressions = 0`** | Allocated spend that didn't serve. Treating as an active day pollutes the fatigue trajectory. | Drop from the per-slice series; report separately as "ad-server fill failure" if the count is material. |
+| **`countries` on `campaigns.csv` is pipe-separated** | Already known. The slice table doesn't have this issue (it's already normalised). | Use the slice table as source-of-truth for "where did this creative actually serve". Don't trust `campaigns.countries` for the question of *served*, only *targeted*. |
+| **`target_os = "Both"` → two daily rows** | Already documented. Confirms OS-level features should be computed from the slice table, not from `campaigns.target_os`. | Slice table is authoritative. |
+| **Cohort sample size at country grain** | Some `(vertical, format, country)` cohorts have only a handful of creatives. Cohort percentiles will be unstable. | Fall back to `(vertical, format)` cohort with a learned country offset (random effect, or simple country-mean adjustment). |
+| **Synthetic country signal** | The dataset is synthetic — country effects may be partly generator artefacts (e.g. uniform multiplicative scaling per country). Don't claim "real geographic insights" without caveat. | Demo phrasing: *"if these patterns held on real exchange data, here's what the system would surface."* Validate at least one finding by reading raw rows before quoting. |
+
+## Three slice-level demo soundbites Aditya can lean on
+
+(Numbers below are *illustrative shapes* — verify on the data once the engine runs end-to-end; the structure of the claim survives whatever specific numbers fall out.)
+
+1. *"This creative is healthy in 3 of 5 markets — but you've been treating it as one global asset. We'd pause it in MX (CTR -52% in last 7 days) and scale it 30% in US (still top quartile). Net effect: +$2.1k/day in revenue at constant total spend."*
+2. *"Across all 1,080 creatives, Android shows fatigue ~6 days earlier than iOS on average. Our system catches it from the OS-divergence signal alone, before the global CTR drops enough for a standard fatigue test to fire — that's a one-week head start on rotation."*
+3. *"Banners in JP underperform playables 3.4× on ROAS — across every advertiser in the dataset. Any banner spend in JP should rotate to playable creative. We surface this as a one-click recommendation, with the projected daily lift attached."*
+
+## Engineering notes for the advisor build
+
+- **Don't introduce Spark / Dask.** 192k rows fits in pandas comfortably; the slice features for all 1,080 creatives compute in seconds.
+- **Cache aggregates in MongoDB Atlas** (already in the stack for the MLH prize). Schema sketch: one document per `creative_id` with nested `by_country` and `by_os` blocks plus a `slices: [...]` array.
+- **The advisor endpoint returns a ranked list of actions across the advertiser's portfolio**, not per-creative. Marketers want a daily action queue, not a forensic report. Sort by expected revenue impact descending.
+- **Wrap the rules + the Q3b bandit in one LLM tool** (Andrew's orchestrator) — the marketer asks *"what should I do today?"* and gets the top 3 actions across all creatives with rationales. Each action carries the underlying slice for drill-down.
+- **Don't surface ground-truth `creative_status` or `fatigue_day` in any rationale.** Validate against, never quote.
+- **Per-recommendation explainability**: each action ships with the trigger (e.g. *"BR drop_ratio = 0.32, creative drop_ratio = 0.81"*) so a sceptical user can audit. SHAP on the bandit / slice-level deterministic values on the rules.
+
+---
+
+*Generated 2026-04-25 from a direct EDA over `creative_summary.csv` (1,080 rows) + `creative_daily_country_os_stats.csv` (192k rows). Slice-advisor section added 2026-04-25 after Smadex feedback that the per-country/OS surface was the highest-EV unused component. Code lives in the chat history; rerun any time the dataset changes.*

@@ -1,288 +1,54 @@
 import { Suspense } from "react";
 
-import { api } from "@/lib/api";
-import { ActionQueue } from "@/components/design/ActionQueue";
 import { AutoScaleBanner } from "@/components/design/AutoScaleBanner";
-import { CreativeTable } from "@/components/design/CreativeTable";
-import { CreativeTableSkeleton } from "@/components/design/CreativeTableSkeleton";
+import { CampaignGrid } from "@/components/design/CampaignGrid";
+import { CockpitHero } from "@/components/design/CockpitHero";
+import { KpiStrip } from "@/components/design/KpiStrip";
 import { KpiStripSkeleton } from "@/components/design/KpiStripSkeleton";
-import { KpiTile } from "@/components/design/KpiTile";
-import { formatCount, formatCurrency, formatPct, formatRoas } from "@/lib/format";
-import { TAB_TO_STATUS, type TabKey } from "@/lib/status";
+import { getActiveAdvertiser } from "@/lib/advertiserScope";
+import { getActiveWindow } from "@/lib/periodScope";
 
-const TAB_HEADINGS: Record<TabKey, { heading: string; subcopy: string }> = {
-  scale: {
-    heading: "Creatives recommended to scale",
-    subcopy: "Top performers. Increase spend or replicate the winning attributes.",
-  },
-  watch: {
-    heading: "Stable creatives to watch",
-    subcopy: "Maintain current spend; monitor for fatigue or sudden drops.",
-  },
-  rescue: {
-    heading: "Losing performance: rescue or replace",
-    subcopy: "These creatives have declining CTR/CVR. Drill in to find the twin and generate a variant.",
-  },
-  cut: {
-    heading: "Underperformers: cut or rework",
-    subcopy: "Below cohort baseline since launch. Pause or fundamentally redesign.",
-  },
-  explore: {
-    heading: "Explore",
-    subcopy: "All creatives.",
-  },
-};
-
-interface CockpitSearchParams {
-  tab?: string;
-  limit?: string;
-  sort?: string;
-  desc?: string;
+interface AdvertiserOverviewSearchParams {
   start?: string;
   end?: string;
-  vertical?: string;
-  format?: string;
 }
 
-const PAGE_SIZE = 100;
-const SORTABLE = new Set(["ctr", "cvr", "roas", "spend_usd", "days_active", "health"]);
-
-export default async function Cockpit(props: {
-  searchParams: Promise<CockpitSearchParams>;
+export default async function AdvertiserOverview(props: {
+  searchParams: Promise<AdvertiserOverviewSearchParams>;
 }) {
   const params = await props.searchParams;
-  const limit = clampLimit(params.limit);
-  const sort = params.sort && SORTABLE.has(params.sort) ? params.sort : undefined;
-  const desc = params.desc !== "false";
-  const start = params.start;
-  const end = params.end;
-  const vertical = params.vertical;
-  const format = params.format;
+  // Cookie-driven week wins over URL params; URL is a power-user override.
+  const cookieWindow = await getActiveWindow();
+  const start = params.start ?? cookieWindow?.start;
+  const end = params.end ?? cookieWindow?.end;
   const rangeKey = `${start ?? ""}|${end ?? ""}`;
 
-  // No `tab` param means the new Action page is the landing surface —
-  // an inbox of decisions that need a human, ranked by spend at risk.
-  // Per-band drill-downs (?tab=scale|watch|rescue|cut) keep rendering
-  // the existing KPI strip + table cockpit unchanged.
-  const tabParam = params.tab;
-  if (!tabParam || !["scale", "watch", "rescue", "cut"].includes(tabParam)) {
-    return (
-      <>
-        <Suspense key={`hero|${rangeKey}`} fallback={null}>
-          <CockpitHero />
-        </Suspense>
-        <Suspense key={`autoscale|${rangeKey}`} fallback={null}>
-          <AutoScaleBanner />
-        </Suspense>
-        <Suspense key={`queue|${rangeKey}`} fallback={null}>
-          <ActionQueue />
-        </Suspense>
-      </>
-    );
-  }
+  const active = await getActiveAdvertiser();
+  const advertiserId = active?.advertiser_id;
+  const advertiserName = active?.advertiser_name ?? null;
+  const scopeKey = advertiserId ?? "all";
 
-  const tab = tabParam as TabKey;
-  const headings = TAB_HEADINGS[tab];
-  const tableKey = `${tab}|${sort ?? ""}|${desc ? "d" : "a"}|${limit}|${rangeKey}|${vertical ?? ""}|${format ?? ""}`;
   return (
     <>
-      <Suspense key={`hero|${rangeKey}`} fallback={null}>
-        <CockpitHero />
-      </Suspense>
-      <Suspense key={rangeKey} fallback={<KpiStripSkeleton />}>
-        <KpiStrip start={start} end={end} />
-      </Suspense>
-      <Suspense
-        key={tableKey}
-        fallback={
-          <CreativeTableSkeleton
-            heading={headings.heading}
-            subcopy={headings.subcopy}
-          />
-        }
-      >
-        <CockpitTable
-          tab={tab}
-          limit={limit}
-          sort={sort}
-          desc={desc}
+      <Suspense key={`hero|${rangeKey}|${scopeKey}`} fallback={null}>
+        <CockpitHero
+          advertiserId={advertiserId}
+          advertiserName={advertiserName}
           start={start}
           end={end}
-          vertical={vertical}
-          format={format}
         />
       </Suspense>
+      <Suspense key={`kpis|${rangeKey}|${scopeKey}`} fallback={<KpiStripSkeleton />}>
+        <KpiStrip start={start} end={end} advertiserId={advertiserId} />
+      </Suspense>
+      <Suspense key={`autoscale|${rangeKey}|${scopeKey}`} fallback={null}>
+        <AutoScaleBanner advertiserId={advertiserId} start={start} end={end} />
+      </Suspense>
+      {advertiserId ? (
+        <Suspense key={`grid|${scopeKey}|${rangeKey}`} fallback={null}>
+          <CampaignGrid advertiserId={advertiserId} start={start} end={end} />
+        </Suspense>
+      ) : null}
     </>
   );
 }
-
-async function CockpitHero() {
-  const counts = await api.tabCounts();
-  const refreshedMinutes = 2; // synthetic; replace with real refresh timestamp later
-  return (
-    <section className="cockpit-hero">
-      <div className="col gap-1">
-        <h1 className="cockpit-hero-title">Hi Maya, here&apos;s your portfolio</h1>
-        <p className="cockpit-hero-sub">
-          <strong>{counts.scale}</strong> to scale ·{" "}
-          <strong>{counts.rescue}</strong> to rescue ·{" "}
-          <strong>{counts.cut}</strong> to cut · last refresh{" "}
-          {refreshedMinutes} min ago
-        </p>
-      </div>
-    </section>
-  );
-}
-
-async function KpiStrip({ start, end }: { start?: string; end?: string }) {
-  const kpis = await api.portfolioKpis({ start, end });
-  return (
-    <section className="kpi-strip">
-      <KpiTile label="ROAS" value={formatRoas(kpis.roas)} series={kpis.roas_series} />
-      <KpiTile
-        label="Spend"
-        value={formatCurrency(kpis.total_spend_usd, { compact: true })}
-        series={kpis.spend_series}
-      />
-      <KpiTile label="CTR" value={formatPct(kpis.ctr, 2)} series={kpis.ctr_series} />
-      <KpiTile label="CVR" value={formatPct(kpis.cvr, 1)} series={kpis.cvr_series} />
-      <KpiTile
-        label="Need attention"
-        value={formatCount(kpis.attention_count)}
-        urgent
-      />
-    </section>
-  );
-}
-
-async function CockpitTable({
-  tab,
-  limit,
-  sort,
-  desc,
-  start,
-  end,
-  vertical,
-  format,
-}: {
-  tab: TabKey;
-  limit: number;
-  sort?: string;
-  desc: boolean;
-  start?: string;
-  end?: string;
-  vertical?: string;
-  format?: string;
-}) {
-  const listing = await api.listCreatives({
-    tab,
-    limit,
-    sort,
-    desc,
-    start,
-    end,
-    vertical,
-    format,
-  });
-  const headings = TAB_HEADINGS[tab];
-  const total = listing.total;
-  const shown = listing.rows.length;
-  const buildSortHref = (key: string) => {
-    // 3-click cycle: off → asc → desc → off
-    const next: Record<string, string> = { tab };
-    if (limit !== PAGE_SIZE) next.limit = String(limit);
-    if (sort !== key) {
-      next.sort = key;
-      next.desc = "false";
-    } else if (!desc) {
-      next.sort = key;
-      next.desc = "true";
-    }
-    if (start) next.start = start;
-    if (end) next.end = end;
-    const qp = new URLSearchParams(next).toString();
-    return `/?${qp}`;
-  };
-  return (
-    <CreativeTable
-      rows={listing.rows}
-      heading={headings.heading}
-      subcopy={headings.subcopy}
-      from={tab}
-      tab={tab}
-      total={total}
-      range={{ start, end }}
-      sortState={{ sort, desc, buildHref: buildSortHref }}
-      footer={
-        shown < total ? (
-          <ShowMoreFooter
-            tab={tab}
-            shown={shown}
-            total={total}
-            currentLimit={limit}
-            sort={sort}
-            desc={desc}
-            start={start}
-            end={end}
-          />
-        ) : (
-          <p className="t-micro muted" style={{ padding: "10px 16px" }}>
-            Showing all {total} creatives in this view.
-          </p>
-        )
-      }
-    />
-  );
-}
-
-function ShowMoreFooter({
-  tab,
-  shown,
-  total,
-  currentLimit,
-  sort,
-  desc,
-  start,
-  end,
-}: {
-  tab: TabKey;
-  shown: number;
-  total: number;
-  currentLimit: number;
-  sort?: string;
-  desc: boolean;
-  start?: string;
-  end?: string;
-}) {
-  const next = Math.min(currentLimit + PAGE_SIZE, total);
-  const params: Record<string, string> = { tab, limit: String(next) };
-  if (sort) {
-    params.sort = sort;
-    params.desc = desc ? "true" : "false";
-  }
-  if (start) params.start = start;
-  if (end) params.end = end;
-  const href = `/?${new URLSearchParams(params).toString()}`;
-  return (
-    <div
-      className="row between center"
-      style={{ padding: "10px 16px", borderTop: "1px solid var(--line-soft)" }}
-    >
-      <span className="t-micro muted">
-        Showing {shown} of {total}
-      </span>
-      <a className="btn dense" href={href}>
-        Show {Math.min(PAGE_SIZE, total - shown)} more
-      </a>
-    </div>
-  );
-}
-
-function clampLimit(raw: string | undefined): number {
-  const n = raw ? Number(raw) : PAGE_SIZE;
-  if (!Number.isFinite(n) || n < 1) return PAGE_SIZE;
-  return Math.min(2000, Math.max(PAGE_SIZE, n));
-}
-
-// Make TAB_TO_STATUS importable for trees that might want it.
-export { TAB_TO_STATUS };

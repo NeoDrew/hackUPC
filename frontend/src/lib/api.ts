@@ -13,6 +13,8 @@ async function fetchJSON<T>(path: string): Promise<T> {
 
 export type Advertiser = components["schemas"]["Advertiser"];
 export type Campaign = components["schemas"]["Campaign"];
+export type CampaignMetrics = components["schemas"]["CampaignMetrics"];
+export type CampaignHealthComponents = components["schemas"]["CampaignHealthComponents"];
 export type CreativeListItem = components["schemas"]["CreativeListItem"];
 export type CreativeDetail = components["schemas"]["CreativeDetail"];
 export type Quadrant = components["schemas"]["Quadrant"];
@@ -58,6 +60,17 @@ export interface ListCreativesArgs {
   limit?: number;
   start?: string;
   end?: string;
+  advertiser_id?: number;
+  campaign_id?: number;
+}
+
+export interface ScopedRange extends DateRange {
+  advertiser_id?: number;
+  campaign_id?: number;
+}
+
+export interface CampaignsListOpts extends DateRange {
+  with_metrics?: boolean;
 }
 
 export interface DateRange {
@@ -82,8 +95,10 @@ export const api = {
   listAdvertisers: () => fetchJSON<AdvertisersResponse>("/api/advertisers"),
   getAdvertiser: (id: number) =>
     fetchJSON<Advertiser>(`/api/advertisers/${id}`),
-  listCampaigns: (advertiserId: number) =>
-    fetchJSON<CampaignsResponse>(`/api/advertisers/${advertiserId}/campaigns`),
+  listCampaigns: (advertiserId: number, opts: CampaignsListOpts = {}) =>
+    fetchJSON<CampaignsResponse>(
+      `/api/advertisers/${advertiserId}/campaigns${buildQuery(opts)}`,
+    ),
   getCampaign: (id: number) => fetchJSON<Campaign>(`/api/campaigns/${id}`),
   listCreativesForCampaign: (campaignId: number) =>
     fetchJSON<CampaignCreativesResponse>(
@@ -91,10 +106,10 @@ export const api = {
     ),
 
   // Cockpit / portfolio.
-  portfolioKpis: (range: DateRange = {}) =>
-    fetchJSON<PortfolioKPIs>(`/api/portfolio/kpis${buildQuery(range)}`),
-  tabCounts: (range: DateRange = {}) =>
-    fetchJSON<TabCounts>(`/api/portfolio/tab-counts${buildQuery(range)}`),
+  portfolioKpis: (scope: ScopedRange = {}) =>
+    fetchJSON<PortfolioKPIs>(`/api/portfolio/kpis${buildQuery(scope)}`),
+  tabCounts: (scope: ScopedRange = {}) =>
+    fetchJSON<TabCounts>(`/api/portfolio/tab-counts${buildQuery(scope)}`),
   listCreatives: (args: ListCreativesArgs = {}) =>
     fetchJSON<CreativeListResponse>(
       `/api/creatives${buildQuery(args as Record<string, string | number | boolean | undefined>)}`,

@@ -12,6 +12,38 @@ class Advertiser(BaseModel):
     hq_region: str
 
 
+class CampaignHealthComponents(BaseModel):
+    pct_fatigued: float
+    mean_drop_ratio: float
+    agg_ctr_cv: float
+    cohort_rank_pct: float
+    creative_count: int
+    fatigued_count: int
+
+
+class CampaignMetrics(BaseModel):
+    """Per-campaign rollup attached to ``Campaign`` when ``with_metrics=true``.
+    Reuses the advertiser-scope aggregator so totals always reconcile.
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    total_spend_usd: float
+    total_revenue_usd: float
+    roas: float
+    ctr: float
+    cvr: float
+    attention_count: int
+    creative_count: int
+    scale: int
+    watch: int
+    rescue: int
+    cut: int
+    health: int
+    health_components: CampaignHealthComponents
+    health_weights: dict[str, float] | None = None
+
+
 class Campaign(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
@@ -30,6 +62,7 @@ class Campaign(BaseModel):
     end_date: str
     daily_budget_usd: float
     kpi_goal: str
+    metrics: CampaignMetrics | None = None
 
 
 QuadrantLabel = str  # "top-performer" | "clickbait-risk" | "niche-converter" | "below-peers" | "unknown"
@@ -224,6 +257,7 @@ class TabCounts(BaseModel):
 class CreativeRow(BaseModel):
     creative_id: int
     campaign_id: int
+    advertiser_id: int | None = None
     advertiser_name: str
     headline: str
     vertical: str

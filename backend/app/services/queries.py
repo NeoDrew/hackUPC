@@ -30,10 +30,44 @@ def get_advertiser(store: Datastore, advertiser_id: int) -> dict[str, Any] | Non
 
 
 def list_campaigns_for_advertiser(
-    store: Datastore, advertiser_id: int
+    store: Datastore,
+    advertiser_id: int,
+    *,
+    with_metrics: bool = False,
+    start: str | None = None,
+    end: str | None = None,
 ) -> list[dict[str, Any]]:
     rows = store.campaigns[store.campaigns["advertiser_id"] == advertiser_id]
-    return [_campaign_record(row) for _, row in rows.iterrows()]
+    out = [_campaign_record(row) for _, row in rows.iterrows()]
+    if with_metrics:
+        from . import campaign_health as _ch
+
+        for record in out:
+            cid_int = int(record["campaign_id"])
+            cids = _creative_ids_for_campaign(store, cid_int)
+            kpis = _kpis_from_daily(store, cids, start=start, end=end)
+            band_counts = {"scale": 0, "watch": 0, "rescue": 0, "cut": 0}
+            for c in cids:
+                band = (store.flat_row_by_creative.get(c, {}) or {}).get(
+                    "status_band"
+                )
+                if band in band_counts:
+                    band_counts[band] += 1
+            health = _ch.compute(store, cid_int)
+            record["metrics"] = {
+                "total_spend_usd": kpis["total_spend_usd"],
+                "total_revenue_usd": kpis["total_revenue_usd"],
+                "roas": kpis["roas"],
+                "ctr": kpis["ctr"],
+                "cvr": kpis["cvr"],
+                "attention_count": kpis["attention_count"],
+                "creative_count": len(cids),
+                **band_counts,
+                "health": health["health"],
+                "health_components": health["components"],
+                "health_weights": health.get("weights"),
+            }
+    return out
 
 
 def get_campaign(store: Datastore, campaign_id: int) -> dict[str, Any] | None:
@@ -145,9 +179,144 @@ _ROW_SORTABLE = {
 }
 
 
-def portfolio_kpis(
-    store: Datastore, *, start: str | None = None, end: str | None = None
+def _creative_ids_for_advertiser(
+    store: Datastore, advertiser_id: int
+) -> set[int]:
+    return {
+        cid
+        for cid, row in store.flat_row_by_creative.items()
+        if row.get("advertiser_id") == advertiser_id
+    }
+
+
+def _creative_ids_for_campaign(
+    store: Datastore, campaign_id: int
+) -> set[int]:
+    return {
+        cid
+        for cid, row in store.flat_row_by_creative.items()
+        if row.get("campaign_id") == campaign_id
+    }
+
+
+def _resolve_scope(
+    store: Datastore,
+    advertiser_id: int | None,
+    campaign_id: int | None,
+) -> tuple[int | None, int | None]:
+    """Drop a stale ``campaign_id`` that doesn't belong to the given
+    advertiser. Returns the cleaned (advertiser_id, campaign_id) pair."""
+    if campaign_id is None:
+        return advertiser_id, None
+    rows = store.campaigns[store.campaigns["campaign_id"] == campaign_id]
+    if rows.empty:
+        return advertiser_id, None
+    owner = int(rows.iloc[0]["advertiser_id"])
+    if advertiser_id is not None and owner != advertiser_id:
+        return advertiser_id, None
+    return advertiser_id, campaign_id
+
+
+def _kpis_from_daily(
+    store: Datastore,
+    cids: set[int],
+    *,
+    start: str | None,
+    end: str | None,
 ) -> dict[str, Any]:
+    """Aggregate the same KPI shape as ``portfolio_kpis`` but for a subset
+    of creatives. Used when the cockpit is scoped to one advertiser; the
+    full daily fact table stays in memory so cohort math is unaffected.
+    """
+    df = store.daily
+    mask = df["creative_id"].isin(cids)
+    if start is not None:
+        mask &= df["date"] >= start
+    if end is not None:
+        mask &= df["date"] <= end
+    win = df.loc[mask]
+
+    total_impressions = int(win["impressions"].sum())
+    total_clicks = int(win["clicks"].sum())
+    total_conversions = int(win["conversions"].sum())
+    total_spend = float(win["spend_usd"].sum())
+    total_revenue = float(win["revenue_usd"].sum())
+
+    # Use lifetime bands when no window is set; otherwise pull windowed
+    # bands so the "Need attention" count and per-band aggregates honour
+    # the user's week selection. Skip the windowed call when the requested
+    # range covers the full dataset (lifetime bands == windowed bands).
+    band_counts = {"scale": 0, "watch": 0, "rescue": 0, "cut": 0}
+    if (start or end) and not windowed.is_full_range(store, start, end):
+        s, e = windowed.normalize_window(store, start, end)
+        win_rows = windowed.compute_window(store, s, e)["rows_by_cid"]
+        for cid in cids:
+            band = (win_rows.get(cid, {}) or {}).get("status_band")
+            if band in band_counts:
+                band_counts[band] += 1
+    else:
+        for cid in cids:
+            band = (store.flat_row_by_creative.get(cid, {}) or {}).get(
+                "status_band"
+            )
+            if band in band_counts:
+                band_counts[band] += 1
+    attention = band_counts["rescue"] + band_counts["cut"]
+
+    daily_agg = (
+        win.groupby("date", as_index=False)
+        .agg(
+            impressions=("impressions", "sum"),
+            clicks=("clicks", "sum"),
+            conversions=("conversions", "sum"),
+            spend_usd=("spend_usd", "sum"),
+            revenue_usd=("revenue_usd", "sum"),
+        )
+        .sort_values("date")
+    )
+    spend_series = [float(v) for v in daily_agg["spend_usd"].tolist()]
+    ctr_series = [
+        (float(c) / float(i)) if i else 0.0
+        for c, i in zip(daily_agg["clicks"], daily_agg["impressions"])
+    ]
+    cvr_series = [
+        (float(c) / float(k)) if k else 0.0
+        for c, k in zip(daily_agg["conversions"], daily_agg["clicks"])
+    ]
+    roas_series = [
+        (float(r) / float(s)) if s else 0.0
+        for r, s in zip(daily_agg["revenue_usd"], daily_agg["spend_usd"])
+    ]
+
+    return {
+        "total_spend_usd": total_spend,
+        "total_revenue_usd": total_revenue,
+        "roas": (total_revenue / total_spend) if total_spend else 0.0,
+        "ctr": (total_clicks / total_impressions) if total_impressions else 0.0,
+        "cvr": (total_conversions / total_clicks) if total_clicks else 0.0,
+        "attention_count": attention,
+        "spend_series": spend_series,
+        "ctr_series": ctr_series,
+        "cvr_series": cvr_series,
+        "roas_series": roas_series,
+    }
+
+
+def portfolio_kpis(
+    store: Datastore,
+    *,
+    start: str | None = None,
+    end: str | None = None,
+    advertiser_id: int | None = None,
+    campaign_id: int | None = None,
+) -> dict[str, Any]:
+    advertiser_id, campaign_id = _resolve_scope(store, advertiser_id, campaign_id)
+    if campaign_id is not None:
+        cids = _creative_ids_for_campaign(store, campaign_id)
+        return _kpis_from_daily(store, cids, start=start, end=end)
+    if advertiser_id is not None:
+        cids = _creative_ids_for_advertiser(store, advertiser_id)
+        return _kpis_from_daily(store, cids, start=start, end=end)
     if windowed.is_full_range(store, start, end):
         return store.portfolio_kpis
     s, e = windowed.normalize_window(store, start, end)
@@ -155,12 +324,42 @@ def portfolio_kpis(
 
 
 def tab_counts(
-    store: Datastore, *, start: str | None = None, end: str | None = None
+    store: Datastore,
+    *,
+    start: str | None = None,
+    end: str | None = None,
+    advertiser_id: int | None = None,
+    campaign_id: int | None = None,
 ) -> dict[str, int]:
+    advertiser_id, campaign_id = _resolve_scope(store, advertiser_id, campaign_id)
+    if advertiser_id is None and campaign_id is None:
+        if windowed.is_full_range(store, start, end):
+            return store.tab_counts
+        s, e = windowed.normalize_window(store, start, end)
+        return windowed.compute_window(store, s, e)["tab_counts"]
+
+    if campaign_id is not None:
+        cids = _creative_ids_for_campaign(store, campaign_id)
+    else:
+        cids = _creative_ids_for_advertiser(store, advertiser_id)  # type: ignore[arg-type]
+
     if windowed.is_full_range(store, start, end):
-        return store.tab_counts
-    s, e = windowed.normalize_window(store, start, end)
-    return windowed.compute_window(store, s, e)["tab_counts"]
+        rows = [
+            store.flat_row_by_creative[c]
+            for c in cids
+            if c in store.flat_row_by_creative
+        ]
+    else:
+        s, e = windowed.normalize_window(store, start, end)
+        win_rows = windowed.compute_window(store, s, e)["rows_by_cid"]
+        rows = [win_rows[c] for c in cids if c in win_rows]
+
+    band_counts: dict[str, int] = {"scale": 0, "watch": 0, "rescue": 0, "cut": 0}
+    for r in rows:
+        b = r.get("status_band")
+        if b in band_counts:
+            band_counts[b] += 1
+    return {**band_counts, "explore": len(rows)}
 
 
 def health_diagnostics(store: Datastore) -> dict[str, Any]:
@@ -541,6 +740,8 @@ def list_creatives_flat(
     limit: int | None = None,
     start: str | None = None,
     end: str | None = None,
+    advertiser_id: int | None = None,
+    campaign_id: int | None = None,
 ) -> dict[str, Any]:
     """Flat creative list, wrapped with pre-pagination ``total``.
 
@@ -560,6 +761,12 @@ def list_creatives_flat(
             base = store.flat_row_by_creative.get(int(r["creative_id"]), {})
             for key in ("theme", "hook_type", "countries", "target_os"):
                 r.setdefault(key, base.get(key))
+
+    advertiser_id, campaign_id = _resolve_scope(store, advertiser_id, campaign_id)
+    if campaign_id is not None:
+        rows = [r for r in rows if r.get("campaign_id") == campaign_id]
+    elif advertiser_id is not None:
+        rows = [r for r in rows if r.get("advertiser_id") == advertiser_id]
 
     if tab and tab != "explore":
         if tab not in _STATUS_BANDS:

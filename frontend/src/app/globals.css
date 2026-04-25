@@ -501,6 +501,411 @@ a:focus-visible {
   font-weight: 600;
   font-family: var(--font-mono);
 }
+.cockpit-hero-advertiser {
+  color: var(--accent);
+}
+.cockpit-hero-crumb {
+  color: var(--t-3);
+  font-weight: 500;
+}
+.cockpit-hero-sub-theme {
+  color: var(--t-3);
+  font-weight: 500;
+  font-size: 16px;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Campaign grid (advertiser overview landing)
+   ────────────────────────────────────────────────────────────── */
+.campaign-grid {
+  padding: 8px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.campaign-grid-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.campaign-grid-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+.campaign-grid.empty {
+  padding: 24px;
+}
+
+.campaign-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--bg-1);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 120ms ease, transform 120ms ease, box-shadow 120ms ease;
+}
+.campaign-card:hover {
+  border-color: var(--accent-line);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-2);
+}
+.campaign-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.campaign-card-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.campaign-card-app {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--t-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.005em;
+}
+.campaign-card-theme {
+  font-size: 11px;
+  color: var(--t-3);
+  text-transform: capitalize;
+}
+.campaign-card-health {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--bg-2);
+  color: var(--t-2);
+  flex-shrink: 0;
+}
+.campaign-card-health.tone-good {
+  color: var(--status-top);
+  background: var(--status-top-soft);
+}
+.campaign-card-health.tone-watch {
+  color: var(--status-fatigued);
+  background: var(--status-fatigued-soft);
+}
+.campaign-card-health.tone-bad {
+  color: var(--status-cut);
+  background: var(--status-cut-soft);
+}
+.campaign-card-spend {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--t-1);
+  letter-spacing: -0.01em;
+}
+.campaign-card-bands {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.campaign-band {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px 2px 4px;
+  border-radius: 999px;
+  background: var(--bg-2);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--t-2);
+  font-family: var(--font-mono);
+}
+.campaign-band-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--t-3);
+}
+.campaign-band.band-scale .campaign-band-dot { background: var(--status-top); }
+.campaign-band.band-watch .campaign-band-dot { background: var(--status-stable); }
+.campaign-band.band-rescue .campaign-band-dot { background: var(--status-fatigued); }
+.campaign-band.band-cut .campaign-band-dot { background: var(--status-cut); }
+
+/* ──────────────────────────────────────────────────────────────
+   Back link (campaign detail breadcrumb)
+   ────────────────────────────────────────────────────────────── */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 12px 24px 0;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--t-3);
+  text-decoration: none;
+  border-radius: 6px;
+  transition: color 120ms ease, background 120ms ease;
+  width: fit-content;
+}
+.back-link:hover {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Campaign health panel (campaign detail page)
+   ────────────────────────────────────────────────────────────── */
+.campaign-health-panel {
+  margin: 12px 24px;
+  padding: 16px 18px;
+  background: var(--bg-1);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.campaign-health-head {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.campaign-health-score-block {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 4px 12px;
+  background: var(--bg-2);
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+.campaign-health-score {
+  font-family: var(--font-mono);
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--t-2);
+}
+.campaign-health-score.tone-good { color: var(--status-top); }
+.campaign-health-score.tone-watch { color: var(--status-fatigued); }
+.campaign-health-score.tone-bad { color: var(--status-cut); }
+.campaign-health-score-out {
+  color: var(--t-3);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
+}
+.campaign-health-explainer {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.campaign-health-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.campaign-health-row {
+  display: grid;
+  grid-template-columns: 1fr auto 100px;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+.campaign-health-row:hover {
+  background: var(--bg-2);
+}
+.campaign-health-row-label {
+  font-size: 12px;
+  color: var(--t-2);
+}
+.campaign-health-row-raw {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--t-1);
+  text-align: right;
+}
+.campaign-health-row-bar {
+  height: 6px;
+  background: var(--bg-3);
+  border-radius: 999px;
+  overflow: hidden;
+  display: block;
+}
+.campaign-health-row-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width 200ms ease;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Profile picker (TopBar) — current advertiser + native swap
+   ────────────────────────────────────────────────────────────── */
+.profile-picker {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px 4px 4px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg-1);
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease;
+  max-width: 240px;
+}
+.profile-picker:hover {
+  border-color: var(--line-strong, var(--line));
+  background: var(--bg-2);
+}
+.profile-picker.pending {
+  opacity: 0.6;
+  cursor: progress;
+}
+.profile-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--bg-3);
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.profile-text {
+  display: inline-flex;
+  flex-direction: column;
+  line-height: 1.1;
+  min-width: 0;
+}
+.profile-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--t-3);
+  font-weight: 600;
+}
+.profile-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--t-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+.profile-select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  border: 0;
+  background: transparent;
+}
+.profile-select:disabled {
+  cursor: progress;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Week stepper (TopBar period picker)
+   ────────────────────────────────────────────────────────────── */
+.week-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg-1);
+  transition: border-color 120ms ease, background 120ms ease;
+}
+.week-stepper:hover {
+  border-color: var(--line-strong, var(--line));
+  background: var(--bg-2);
+}
+.week-stepper.pending {
+  opacity: 0.6;
+}
+.week-step-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: transparent;
+  border: 0;
+  color: var(--t-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+.week-step-btn:hover:not(:disabled) {
+  background: var(--bg-3);
+  color: var(--accent);
+}
+.week-step-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.week-stepper-text {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.1;
+  padding: 0 4px;
+  min-width: 76px;
+}
+.week-stepper-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--t-3);
+  font-weight: 600;
+}
+.week-stepper-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--t-1);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+.week-stepper-reset {
+  margin-left: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--t-3);
+  background: transparent;
+  border: 0;
+  border-left: 1px solid var(--line);
+  cursor: pointer;
+  border-radius: 0;
+}
+.week-stepper-reset:hover:not(:disabled) {
+  color: var(--accent);
+}
 
 /* ──────────────────────────────────────────────────────────────
    Action page — auto-scale banner + ranked decision queue

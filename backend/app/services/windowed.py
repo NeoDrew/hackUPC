@@ -44,6 +44,20 @@ def reset_cache() -> None:
     _cache.clear()
 
 
+_camp_to_adv_cache: dict[int, int] | None = None
+
+
+def _advertiser_id_for_campaign(store: Datastore, campaign_id: int) -> int:
+    global _camp_to_adv_cache
+    if _camp_to_adv_cache is None:
+        _camp_to_adv_cache = (
+            store.campaigns.set_index("campaign_id")["advertiser_id"]
+            .astype(int)
+            .to_dict()
+        )
+    return int(_camp_to_adv_cache.get(campaign_id, -1))
+
+
 def is_full_range(store: Datastore, start: str | None, end: str | None) -> bool:
     """The chip "All time" / no params should bypass windowing entirely so
     the cockpit reuses the precomputed lifetime metrics. This returns True
@@ -250,6 +264,7 @@ def compute_window(
         rows_by_cid[cid] = {
             "creative_id": cid,
             "campaign_id": int(meta_row["campaign_id"]),
+            "advertiser_id": _advertiser_id_for_campaign(store, int(meta_row["campaign_id"])),
             "advertiser_name": meta_row["advertiser_name"],
             "headline": meta_row.get("headline") or "",
             "vertical": meta_row["vertical"],

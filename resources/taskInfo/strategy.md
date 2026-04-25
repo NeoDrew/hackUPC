@@ -118,7 +118,7 @@ Single-page web app, tab layout, one polished demo flow.
 - **Backend:** Python 3.12 + FastAPI. `pandas`, `numpy`, `scipy` (beta-binomial posteriors), `scikit-learn`, `lightgbm`, `shap`, `hdbscan`, `umap-learn`, `open-clip-torch` (CPU), `ruptures` (optional, for fatigue changepoints).
 - **Frontend:** Next.js + TypeScript + Tailwind. `recharts` for time-series + distributions, `deck.gl` or `plotly` for the UMAP scatter.
 - **Persistence:** **MongoDB Atlas** — stores cached embeddings, SHAP outputs, precomputed aggregations, session filters. Pre-populate during a one-time setup script. **Grabs MLH MongoDB Atlas prize.**
-- **Domain:** **GoDaddy** free domain → **MLH GoDaddy prize.**
+- **Domain:** `smadex.cooking`, registered at **Porkbun** (paid). Apex `A → 216.150.1.1`, `CNAME www → 30e9567df3329599.vercel-dns-016.com` (Vercel). **Forfeits the MLH GoDaddy prize** — the .cooking TLD on Porkbun was worth more than the side-prize.
 - **LLM:** **Gemma 4** via Google AI Studio for Q3 rationales. Structured-data-to-prose only. **MLH Gemma 4 prize.**
 - **Deploy:** Vercel (frontend) + Render or Fly.io (FastAPI backend). Pre-warm backend before demo.
 - **Explicit skips:** ElevenLabs (voice in an ad-tech dashboard is gimmicky), Solana, hardware, JetBrains Koog.
@@ -138,7 +138,7 @@ Single-page web app, tab layout, one polished demo flow.
 | **Orchestrator** | 22–26 | Andrew | LLM agent + tool surface wrapping every Phase-2 route. Chat UI with inline tool-call cards. |
 | **Actions** | 26–28 | Andrew | In-memory `ActionLog` + pause/scale/budget endpoints as agent write-tools + "Actions taken" right-rail. |
 | **Mongo + Rationales** | 28–30 | Andrew | Mongo persistence of CLIP/SHAP/bandit. One-shot Gemma precompute of per-creative rationales. |
-| **Deploy** | 30–32 | Andrew | Vercel + Render + GoDaddy. Pre-warm. |
+| **Deploy** | 30–32 | Andrew | Vercel + Render + Porkbun (`smadex.cooking`). Pre-warm. |
 | **Rehearsal** | 32–34 | Aditya lead | Two timed dry-runs. GIF fallbacks of every demo beat. Devs fix only what Aditya flags. |
 | **Submit** | 34–36 | Aditya + devs | Devpost submission by Sunday 08:00. |
 
@@ -146,7 +146,7 @@ Single-page web app, tab layout, one polished demo flow.
 
 ## Roles
 
-- **Andrew — backend + LLM orchestrator + deploy + ad-tech framing.** Owns all backend scaffolding (FastAPI, data loading, routes, pydantic schemas), the single LLM orchestrator with tool calls, action endpoints (pause/scale/budget), the frontend panels surfacing Krish's math, deploy (Vercel + Render + GoDaddy), and DSP-accurate vocabulary in the pitch.
+- **Andrew — backend + LLM orchestrator + deploy + ad-tech framing.** Owns all backend scaffolding (FastAPI, data loading, routes, pydantic schemas), the single LLM orchestrator with tool calls, action endpoints (pause/scale/budget), the frontend panels surfacing Krish's math, deploy (Vercel + Render + Porkbun `smadex.cooking`), and DSP-accurate vocabulary in the pitch.
 - **Krish — all mathematical / ML modules (no LLM work).** Owns Q1 Bayesian shrinkage + cohort-adjusted ranking, Q2a creative stagnation / fatigue detection, Q2b CLIP + HDBSCAN + UMAP similarity clustering, Q3a LightGBM + SHAP, Q3b Thompson-sampling bandit. Also builds the minimal frontend panels that surface each module's output.
 - **Aditya — no dev work; demo ownership.** Writes and rehearses the 3-minute pitch in parallel with dev work, runs the verification checklist on every Phase-1 and Phase-2 module the devs complete, curates demo-worthy creative / advertiser IDs, prepares GIF fallbacks for each demo beat, leads the two Sunday dry-runs, carries the pitch at both expo tables (A3 HackUPC + A4 Smadex). Drives the Devpost submission form at the end.
 
@@ -160,7 +160,7 @@ Single-page web app, tab layout, one polished demo flow.
 
 **1:45–2:30 Andrew (Q3):** SHAP waterfall on the worst-performing creative: *"this one loses 41% CVR because `clutter_score=0.78` and `text_density=0.62`."* Switch to Recommendations: *"for PixelForge, test 'gameplay + power-up + green + discount_badge'. Under Thompson sampling, 71% probability of beating their current champion. Adjacent combos average 2.1× CVR. You've never run this combo; three peers in gaming have and all won."* Risk slider shifts rankings.
 
-**2:30–3:00 Aditya:** *"Built in 36 hours on Smadex's own dataset. Deployed at [domain]. Thanks."*
+**2:30–3:00 Aditya:** *"Built in 36 hours on Smadex's own dataset. Deployed at smadex.cooking. Thanks."*
 
 ## What we're deliberately not doing
 
@@ -175,5 +175,5 @@ Single-page web app, tab layout, one polished demo flow.
 - **HackUPC general** (DJI Neo / Asus screen / Lego) — HackUPC demo in A3 is mandatory anyway for travel reimbursement.
 - **MLH MongoDB Atlas** — we're using it for real.
 - **MLH Gemma 4** — rationale generation layer.
-- **MLH GoDaddy** — free domain, free prize.
+- **MLH GoDaddy** — **forfeit.** Domain is on Porkbun (`smadex.cooking`); paid TLD beat the freebie on memorability.
 - **MLH ElevenLabs / Solana** — skip. Forcing either loses more on focus than it gains in side-prize.

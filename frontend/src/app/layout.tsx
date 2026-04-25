@@ -6,8 +6,11 @@ import "./globals.css";
 import { ChatLauncher } from "@/components/design/ChatLauncher";
 import { DesktopChrome, PhoneOnly } from "@/components/design/DesktopChrome";
 import { TopBar } from "@/components/design/TopBar";
-import { TabBar } from "@/components/design/TabBar";
-import { api } from "@/lib/api";
+import {
+  getActiveAdvertiser,
+  listAdvertisersForPicker,
+} from "@/lib/advertiserScope";
+import { getActiveWeek, getDatasetBounds } from "@/lib/periodScope";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -37,13 +40,22 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const counts = await api.tabCounts();
+  const [active, advertisers, bounds, activeWeek] = await Promise.all([
+    getActiveAdvertiser(),
+    listAdvertisersForPicker(),
+    getDatasetBounds(),
+    getActiveWeek(),
+  ]);
   return (
     <html lang="en" className={`${inter.variable} ${robotoMono.variable}`}>
       <body>
         <DesktopChrome>
-          <TopBar />
-          <TabBar counts={counts} />
+          <TopBar
+            advertisers={advertisers}
+            activeAdvertiserId={active?.advertiser_id ?? null}
+            totalWeeks={bounds.total_weeks}
+            activeWeek={activeWeek}
+          />
           <main className="page-pad">{children}</main>
         </DesktopChrome>
         <PhoneOnly>{children}</PhoneOnly>

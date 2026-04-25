@@ -5,6 +5,8 @@ import { AggregatesStrip } from "@/components/design/AggregatesStrip";
 import { CreativeTable } from "@/components/design/CreativeTable";
 import { CreativeTableSkeleton } from "@/components/design/CreativeTableSkeleton";
 import { ExploreFilters } from "@/components/design/ExploreFilters";
+import { getActiveAdvertiserId } from "@/lib/advertiserScope";
+import { getActiveWindow } from "@/lib/periodScope";
 
 const PAGE_SIZE = 100;
 
@@ -33,6 +35,10 @@ export default async function ExplorePage(props: {
   const limit = clampLimit(params.limit);
   const sort = params.sort && SORTABLE.has(params.sort) ? params.sort : undefined;
   const desc = params.desc !== "false";
+  const advertiserId = (await getActiveAdvertiserId()) ?? undefined;
+  const cookieWindow = await getActiveWindow();
+  const start = params.start ?? cookieWindow?.start;
+  const end = params.end ?? cookieWindow?.end;
 
   const suspenseKey = [
     params.vertical ?? "",
@@ -45,8 +51,9 @@ export default async function ExplorePage(props: {
     sort ?? "",
     desc ? "d" : "a",
     limit,
-    params.start ?? "",
-    params.end ?? "",
+    start ?? "",
+    end ?? "",
+    advertiserId ?? "all",
   ].join("|");
 
   return (
@@ -86,7 +93,15 @@ export default async function ExplorePage(props: {
           </>
         }
       >
-        <ExploreTable params={params} sort={sort} desc={desc} limit={limit} />
+        <ExploreTable
+          params={params}
+          sort={sort}
+          desc={desc}
+          limit={limit}
+          advertiserId={advertiserId}
+          start={start}
+          end={end}
+        />
       </Suspense>
     </section>
   );
@@ -97,11 +112,17 @@ async function ExploreTable({
   sort,
   desc,
   limit,
+  advertiserId,
+  start,
+  end,
 }: {
   params: ExploreSearchParams;
   sort?: string;
   desc: boolean;
   limit: number;
+  advertiserId?: number;
+  start?: string;
+  end?: string;
 }) {
   const listing = await api.listCreatives({
     vertical: params.vertical,
@@ -114,8 +135,9 @@ async function ExploreTable({
     sort,
     desc,
     limit,
-    start: params.start,
-    end: params.end,
+    start,
+    end,
+    advertiser_id: advertiserId,
   });
   const total = listing.total;
   const shown = listing.rows.length;

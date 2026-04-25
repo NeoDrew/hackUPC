@@ -16,9 +16,28 @@ import { formatCurrency } from "@/lib/format";
  * stub). When Andrew wires real auto-scale endpoints, swap this for
  * the live aggregate.
  */
-export async function AutoScaleBanner() {
-  const counts = await api.tabCounts().catch(() => null);
-  const kpis = await api.portfolioKpis().catch(() => null);
+export async function AutoScaleBanner({
+  advertiserId,
+  campaignId,
+  start,
+  end,
+}: {
+  advertiserId?: number;
+  campaignId?: number;
+  start?: string;
+  end?: string;
+}) {
+  const scope = {
+    ...(campaignId
+      ? { campaign_id: campaignId }
+      : advertiserId
+        ? { advertiser_id: advertiserId }
+        : {}),
+    start,
+    end,
+  };
+  const counts = await api.tabCounts(scope).catch(() => null);
+  const kpis = await api.portfolioKpis(scope).catch(() => null);
   const winnerCount = Math.min(5, counts?.scale ?? 0);
   if (winnerCount === 0) return null;
 
@@ -26,6 +45,10 @@ export async function AutoScaleBanner() {
   // plausible for the demo; real allocation will be bandit-driven.
   const weeklySpend = (kpis?.total_spend_usd ?? 0) / 75 * 7;
   const reallocated = weeklySpend * 0.05;
+
+  // Link only makes sense from a campaign page (where ?tab=scale resolves
+  // to a band table). On the advertiser overview the banner is informational.
+  const linkHref = campaignId ? `/campaigns/${campaignId}?tab=scale` : null;
 
   return (
     <aside className="auto-scale-banner" role="status">
@@ -40,13 +63,15 @@ export async function AutoScaleBanner() {
           +{formatCurrency(reallocated, { compact: true })} reallocated to top performers · no action needed
         </span>
       </div>
-      <Link
-        href="/?tab=scale"
-        prefetch={false}
-        className="auto-scale-link"
-      >
-        See what we did →
-      </Link>
+      {linkHref ? (
+        <Link
+          href={linkHref}
+          prefetch={false}
+          className="auto-scale-link"
+        >
+          See what we did →
+        </Link>
+      ) : null}
     </aside>
   );
 }

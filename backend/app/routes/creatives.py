@@ -32,6 +32,14 @@ def list_creatives_flat(
     limit: int | None = Query(default=100, ge=1, le=2000),
     start: str | None = Query(default=None, description="ISO date YYYY-MM-DD"),
     end: str | None = Query(default=None, description="ISO date YYYY-MM-DD"),
+    advertiser_id: int | None = Query(
+        default=None,
+        description="Scope the listing to one advertiser (cohort math elsewhere stays portfolio-wide).",
+    ),
+    campaign_id: int | None = Query(
+        default=None,
+        description="Scope the listing to one campaign. Wins over advertiser_id when both are present.",
+    ),
 ) -> dict:
     return queries.list_creatives_flat(
         get_store(),
@@ -49,6 +57,8 @@ def list_creatives_flat(
         limit=limit,
         start=start,
         end=end,
+        advertiser_id=advertiser_id,
+        campaign_id=campaign_id,
     )
 
 

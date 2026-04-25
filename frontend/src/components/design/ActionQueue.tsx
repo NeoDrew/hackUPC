@@ -16,14 +16,42 @@ const QUEUE_SIZE = 12;
  * Ranking: top-N rescue + top-N cut by spend descending, merged and
  * re-sorted by spend so the most expensive decisions surface first.
  */
-export async function ActionQueue() {
+export async function ActionQueue({
+  advertiserId,
+  campaignId,
+  start,
+  end,
+}: {
+  advertiserId?: number;
+  campaignId?: number;
+  start?: string;
+  end?: string;
+}) {
   const half = Math.ceil(QUEUE_SIZE / 2);
   const [rescueRes, cutRes] = await Promise.all([
     api
-      .listCreatives({ tab: "rescue", sort: "spend_usd", desc: true, limit: half })
+      .listCreatives({
+        tab: "rescue",
+        sort: "spend_usd",
+        desc: true,
+        limit: half,
+        advertiser_id: advertiserId,
+        campaign_id: campaignId,
+        start,
+        end,
+      })
       .catch(() => null),
     api
-      .listCreatives({ tab: "cut", sort: "spend_usd", desc: true, limit: half })
+      .listCreatives({
+        tab: "cut",
+        sort: "spend_usd",
+        desc: true,
+        limit: half,
+        advertiser_id: advertiserId,
+        campaign_id: campaignId,
+        start,
+        end,
+      })
       .catch(() => null),
   ]);
 
@@ -70,10 +98,10 @@ export async function ActionQueue() {
           <ActionRow key={row.creative_id} kind={kind} row={row} />
         ))}
       </ol>
-      {totalRemaining > 0 ? (
+      {totalRemaining > 0 && campaignId ? (
         <footer className="action-queue-foot">
           <Link
-            href={`/?tab=${totalRescue >= totalCut ? "rescue" : "cut"}`}
+            href={`/campaigns/${campaignId}?tab=${totalRescue >= totalCut ? "rescue" : "cut"}`}
             prefetch={false}
             className="action-queue-more"
           >
