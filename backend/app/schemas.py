@@ -133,6 +133,13 @@ class PortfolioKPIs(BaseModel):
     ctr: float
     cvr: float
     attention_count: int
+    # Daily series spanning the active window (or full dataset if no window).
+    # Used to render the sparkline at the bottom of each KPI tile. Empty list
+    # is acceptable (UI degrades gracefully).
+    spend_series: list[float] = []
+    ctr_series: list[float] = []
+    cvr_series: list[float] = []
+    roas_series: list[float] = []
 
 
 class TabCounts(BaseModel):

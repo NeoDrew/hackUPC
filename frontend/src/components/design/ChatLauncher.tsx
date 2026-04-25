@@ -202,11 +202,11 @@ export function ChatLauncher() {
       <button
         type="button"
         className="chat-launcher"
-        aria-label="Ask Smadex Copilot"
+        aria-label="Open assistant"
         onClick={beginOpen}
       >
         <span className="chat-launcher-glyph">✦</span>
-        <span className="chat-launcher-label">Ask Copilot</span>
+        <span className="chat-launcher-label">Open assistant</span>
       </button>
     );
   }
@@ -215,14 +215,14 @@ export function ChatLauncher() {
     <section
       className="chat-panel"
       role="dialog"
-      aria-label="Smadex Copilot chat"
+      aria-label="Assistant"
       data-state={panelState}
       data-expanded={expanded ? "true" : undefined}
     >
       <header className="chat-panel-head">
         <span className="chat-panel-title">
           <span className="chat-launcher-glyph small">✦</span>
-          Smadex Copilot
+          Assistant
           <span className="chat-panel-sub">Gemini 2.5 Flash · grounded on portfolio data</span>
         </span>
         <div className="chat-panel-actions">

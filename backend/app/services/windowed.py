@@ -283,6 +283,32 @@ def compute_window(
         for r in rows_by_cid.values()
         if r["status_band"] in ("rescue", "cut")
     )
+    # Daily aggregates over the window for the KPI sparklines.
+    daily_agg = (
+        win.groupby("date", as_index=False)
+        .agg(
+            impressions=("impressions", "sum"),
+            clicks=("clicks", "sum"),
+            conversions=("conversions", "sum"),
+            spend_usd=("spend_usd", "sum"),
+            revenue_usd=("revenue_usd", "sum"),
+        )
+        .sort_values("date")
+    )
+    spend_series = [float(v) for v in daily_agg["spend_usd"].tolist()]
+    ctr_series = [
+        (float(c) / float(i)) if i else 0.0
+        for c, i in zip(daily_agg["clicks"], daily_agg["impressions"])
+    ]
+    cvr_series = [
+        (float(c) / float(k)) if k else 0.0
+        for c, k in zip(daily_agg["conversions"], daily_agg["clicks"])
+    ]
+    roas_series = [
+        (float(r) / float(s)) if s else 0.0
+        for r, s in zip(daily_agg["revenue_usd"], daily_agg["spend_usd"])
+    ]
+
     kpis = {
         "total_spend_usd": total_spend,
         "total_revenue_usd": total_revenue,
@@ -290,6 +316,10 @@ def compute_window(
         "ctr": (total_clicks / total_impressions) if total_impressions else 0.0,
         "cvr": (total_conversions / total_clicks) if total_clicks else 0.0,
         "attention_count": attention,
+        "spend_series": spend_series,
+        "ctr_series": ctr_series,
+        "cvr_series": cvr_series,
+        "roas_series": roas_series,
     }
 
     # Tab counts by band (windowed mode).

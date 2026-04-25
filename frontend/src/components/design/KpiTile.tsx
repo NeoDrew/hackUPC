@@ -1,12 +1,16 @@
+import { Sparkline } from "./Sparkline";
+
 export function KpiTile({
   label,
   value,
   delta,
+  series,
   urgent = false,
 }: {
   label: string;
   value: string;
   delta?: { text: string; direction: "pos" | "neg" };
+  series?: number[];
   urgent?: boolean;
 }) {
   return (
@@ -20,6 +24,11 @@ export function KpiTile({
           –
         </span>
       )}
+      {series && series.length > 1 ? (
+        <div className="kpi-spark">
+          <Sparkline series={series} width={220} height={28} />
+        </div>
+      ) : null}
     </div>
   );
 }
