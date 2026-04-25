@@ -56,9 +56,22 @@ _SYSTEM_PROMPT = (
     "   with higher engagement in the cohort'. The actual metrics for "
     "   source and winner are provided — quote those if you must "
     "   reference numbers, never invented deltas.\n"
-    "3. NEVER use raw column names like text_density, clutter_score, "
-    "   has_discount_badge. Translate to plain English: 'on-screen text', "
-    "   'visual clutter', 'discount badge'.\n"
+    "3. NEVER use raw column names. The marketer doesn't know what "
+    "   `clutter_score`, `text_density`, `cta_text`, `has_discount_badge`, "
+    "   or `faces_count` mean. Translate EVERY mention to plain English:\n"
+    "      clutter_score → visual clutter\n"
+    "      text_density → on-screen text\n"
+    "      cta_text → call-to-action wording\n"
+    "      hook_type → opening hook\n"
+    "      dominant_color → primary colour\n"
+    "      has_discount_badge → discount badge\n"
+    "      has_ugc_style → user-generated style\n"
+    "      faces_count → number of people on-screen\n"
+    "      novelty_score → how fresh the visual is\n"
+    "      duration_sec → ad length in seconds\n"
+    "      emotional_tone → emotional tone\n"
+    "   Using a column name verbatim (with or without backticks) is "
+    "   grounds for failure.\n"
     "4. Pick exactly ONE lever from the diffs list. Don't list multiple "
     "   changes — the marketer asked what's the *one* thing to try.\n"
     "\n"
@@ -70,7 +83,43 @@ _SYSTEM_PROMPT = (
 
 # Bump this when the prompt or payload shape changes so previously-cached
 # fabrications don't keep showing up after a deploy.
-_CACHE_VERSION = "v2-no-fabrication"
+_CACHE_VERSION = "v3-plain-english"
+
+# Belt-and-braces: even with the prompt forbidding column names, Gemma
+# occasionally leaks one. Run the body through these substitutions before
+# returning so the marketer never sees `clutter_score` etc.
+_COLUMN_TRANSLATIONS: list[tuple[str, str]] = [
+    # Underscore form, space-separated form (in that order so longer
+    # patterns don't get partially replaced by single-word substitutions).
+    ("clutter_score", "visual clutter"),
+    ("clutter score", "visual clutter"),
+    ("text_density", "on-screen text density"),
+    ("text density", "on-screen text density"),
+    ("cta_text", "call-to-action wording"),
+    ("hook_type", "opening hook"),
+    ("hook type", "opening hook"),
+    ("dominant_color", "primary colour"),
+    ("dominant color", "primary colour"),
+    ("has_discount_badge", "discount badge"),
+    ("has_ugc_style", "user-generated style"),
+    ("ugc style", "user-generated style"),
+    ("faces_count", "number of people on-screen"),
+    ("faces count", "number of people on-screen"),
+    ("novelty_score", "visual freshness"),
+    ("novelty score", "visual freshness"),
+    ("duration_sec", "ad length"),
+    ("emotional_tone", "emotional tone"),
+]
+
+
+def _sanitize(text: str) -> str:
+    """Replace any leaked raw column names + backtick-wrapped + space-
+    separated variants with the plain-English equivalent."""
+    out = text
+    for raw, plain in _COLUMN_TRANSLATIONS:
+        out = out.replace(f"`{raw}`", plain)
+        out = out.replace(raw, plain)
+    return out
 
 # Process-lifetime cache.
 _cache: dict[tuple[int, int], dict[str, Any]] = {}
@@ -169,8 +218,8 @@ async def generate_insight(
         return None
 
     insight = {
-        "headline": str(parsed.get("headline") or "").strip()[:120],
-        "body": str(parsed.get("body") or "").strip()[:600],
+        "headline": _sanitize(str(parsed.get("headline") or "").strip())[:120],
+        "body": _sanitize(str(parsed.get("body") or "").strip())[:600],
         "confidence": _coerce_confidence(parsed.get("confidence")),
     }
     if not insight["headline"] or not insight["body"]:
