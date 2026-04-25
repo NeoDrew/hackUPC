@@ -994,11 +994,15 @@ def _health_diagnostics(summary: pd.DataFrame) -> dict[str, Any]:
 
 
 def _band_from_health(health: int) -> str:
-    if health >= 70:
+    # Thresholds calibrated against the Q1-health distribution (min ≈ 22,
+    # max ≈ 81). The old <20 cut threshold was unreachable because the
+    # reliability component (B) sits near 1.0 for every creative —
+    # 75 days × deep daily rows means everyone has plenty of data.
+    if health >= 60:
         return "scale"
     if health >= 40:
         return "watch"
-    if health >= 20:
+    if health >= 30:
         return "rescue"
     return "cut"
 
