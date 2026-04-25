@@ -195,25 +195,25 @@ export default async function CreativeDetailPage(
         }}
       />
 
-      {status === "fatigued" && (
-        <section
-          className="col gap-2"
-          style={{
-            background: "var(--bg-1)",
-            border: "1px solid var(--line)",
-            borderRadius: 12,
-            padding: 16,
-          }}
-        >
-          <header className="row center between">
-            <h3 className="t-section">Daily CTR · fatigue signature</h3>
-            <span className="t-micro">
-              Launched day 0 · fatigue flagged day {fatigueDay ?? "–"}
-            </span>
-          </header>
-          <FatigueChart creativeId={id} fatigueDay={fatigueDay} />
-        </section>
-      )}
+      <section
+        className="col gap-2"
+        style={{
+          background: "var(--bg-1)",
+          border: "1px solid var(--line)",
+          borderRadius: 12,
+          padding: 16,
+        }}
+      >
+        <header className="row center between">
+          <h3 className="t-section">Daily CTR · 75-day trend</h3>
+          <span className="t-micro muted">
+            {fatigueDay !== null
+              ? `Fatigue flagged day ${fatigueDay}`
+              : "No fatigue flagged"}
+          </span>
+        </header>
+        <FatigueChart creativeId={id} fatigueDay={fatigueDay} />
+      </section>
 
       <section className="col gap-2">
         <h3 className="t-section">Creative attributes</h3>
