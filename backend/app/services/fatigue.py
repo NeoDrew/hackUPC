@@ -64,6 +64,163 @@ _PRE_FLOOR_MULT = 1.0
 _POST_CEILING_MULT = 0.85
 
 
+def phase1_preprocess_and_aggregate(df: pd.DataFrame) -> pd.DataFrame:
+    """Phase 1: Data Pre-Processing & Aggregation
+    
+    Aggregates daily time-series data, computes base metrics with appropriate floors 
+    to avoid division-by-zero, and sorts the result.
+    """
+    # Group by creative_id and date and sum metrics
+    agg_dict = {
+        "impressions": "sum",
+        "clicks": "sum",
+        "conversions": "sum",
+        "spend_usd": "sum",
+        "revenue_usd": "sum",
+        "video_completions": "sum",
+        "days_since_launch": "min"
+    }
+    
+    # Only aggregate columns that are present in the dataframe
+    agg_columns = {k: v for k, v in agg_dict.items() if k in df.columns}
+    # If missing days_since_launch, just group by creative_id and date
+    
+    grouped = df.groupby(["creative_id", "date"], as_index=False).agg(agg_columns)
+    
+    # Handle division-by-zero bounds
+    impr = grouped["impressions"].astype(float)
+    clk = grouped["clicks"].astype(float)
+    spend = grouped["spend_usd"].astype(float) if "spend_usd" in grouped else None
+    conv = grouped["conversions"].astype(float) if "conversions" in grouped else None
+    rev = grouped["revenue_usd"].astype(float) if "revenue_usd" in grouped else None
+    vid = grouped["video_completions"].astype(float) if "video_completions" in grouped else None
+    
+    impr_floor = np.maximum(impr, 1.0)
+    clk_floor = np.maximum(clk, 1.0)
+    
+    # Derive base logic and compute
+    grouped["ctr"] = clk / impr_floor
+    
+    if conv is not None:
+        grouped["cvr"] = conv / clk_floor
+    if spend is not None and rev is not None:
+        spend_floor = np.maximum(spend, 0.01)
+        grouped["roas"] = rev / spend_floor
+    if vid is not None:
+        grouped["vtr"] = vid / impr_floor
+        
+    # Set null CTR for zero-impression rows
+    grouped.loc[impr == 0, "ctr"] = np.nan
+    
+    # Sort the DataFrame
+    sort_cols = ["creative_id"]
+    if "days_since_launch" in grouped.columns:
+        sort_cols.append("days_since_launch")
+    else:
+        sort_cols.append("date") # Fallback
+        
+    grouped = grouped.sort_values(sort_cols, ascending=True).reset_index(drop=True)
+    
+    return grouped
+
+
+def phase2_layer1_decay_ratio(df_summary: pd.DataFrame) -> pd.DataFrame:
+    """Phase 2: Layer 1 (First/Last Window Decay Ratio)
+    
+    Reads summary data, computes ratio of decline from first 7 days to last 7 days,
+    clamps, normalizes, and flags decay.
+    """
+    df = df_summary.copy()
+    
+    # Ensure required columns are present
+    if "first_7d_ctr" not in df.columns or "last_7d_ctr" not in df.columns:
+        return df
+        
+    first_7d_ctr = df["first_7d_ctr"].astype(float)
+    last_7d_ctr = df["last_7d_ctr"].astype(float)
+    
+    # Compute: decay_ratio = (first_7d_ctr - last_7d_ctr) / max(first_7d_ctr, 1e-6)
+    denominator = np.maximum(first_7d_ctr, 1e-6)
+    decay_ratio = (first_7d_ctr - last_7d_ctr) / denominator
+    
+    # Clamp to [-1.0, 1.0]
+    decay_ratio_clamped = np.clip(decay_ratio, -1.0, 1.0)
+    
+    # Apply target min-max normalization
+    min_val = decay_ratio_clamped.min()
+    max_val = decay_ratio_clamped.max()
+    
+    if max_val > min_val:
+        l1_norm = (decay_ratio_clamped - min_val) / (max_val - min_val)
+    else:
+        l1_norm = np.zeros_like(decay_ratio_clamped)
+        
+    df["l1_norm"] = l1_norm
+    df["decay_ratio"] = decay_ratio_clamped
+    
+    # Output boolean l1_flag: decay_ratio > 0.25
+    df["l1_flag"] = decay_ratio_clamped > 0.25
+    
+    return df
+
+
+def phase4_layer3_pelt_changepoint(df: pd.DataFrame) -> dict:
+    """Phase 4: Layer 3 (Changepoint Detection - PELT)
+    
+    Interpolates null CTR values, runs PELT with RBF cost, and filters
+    for downward structural breaks to annotate timeline.
+    Expects a DataFrame for a single creative sorted by time.
+    """
+    try:
+        import ruptures as rpt
+    except ImportError:
+        log.warning("ruptures package not found. Skipping PELT changepoint detection.")
+        return {"detected_fatigue_day": None, "break_index": None}
+
+    if df.empty or "ctr" not in df.columns:
+        return {"detected_fatigue_day": None, "break_index": None}
+        
+    # Interpolate null CTR values
+    ctr_series = df["ctr"].interpolate(method="linear").bfill().ffill().to_numpy(dtype=float)
+    
+    # Require >= 14 observations
+    if len(ctr_series) < 14:
+        return {"detected_fatigue_day": None, "break_index": None}
+        
+    # Run the PELT algorithm with RBF cost
+    algo = rpt.Pelt(model="rbf").fit(ctr_series)
+    breakpoints = algo.predict(pen=3)
+    
+    # Filter structural breaks by verifying: post_break_mean_ctr < pre_break_mean_ctr
+    for bp in breakpoints:
+        if bp >= len(ctr_series):
+            continue
+            
+        pre_break = ctr_series[:bp]
+        post_break = ctr_series[bp:]
+        
+        if len(pre_break) == 0 or len(post_break) == 0:
+            continue
+            
+        pre_mean = pre_break.mean()
+        post_mean = post_break.mean()
+        
+        if post_mean < pre_mean:
+            # Output: first downward break index and mapped detected_fatigue_day
+            fatigue_day = None
+            if "days_since_launch" in df.columns:
+                fatigue_day = int(df["days_since_launch"].iloc[bp])
+            elif "date" in df.columns:
+                fatigue_day = str(df["date"].iloc[bp])
+                
+            return {
+                "break_index": int(bp),
+                "detected_fatigue_day": fatigue_day
+            }
+            
+    return {"detected_fatigue_day": None, "break_index": None}
+
+
 def prepare_fatigue_timeseries(store: Datastore, creative_id: int) -> pd.DataFrame:
     """Pull the daily impressions/clicks series for a creative and build
     a 7-day rolling CTR (sum-of-numerators / sum-of-denominators, not a
