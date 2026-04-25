@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 const DATASET_START = "2026-01-01";
@@ -43,6 +43,7 @@ export function PeriodPicker() {
   const [open, setOpen] = useState(false);
   const [customStart, setCustomStart] = useState(startParam ?? DATASET_START);
   const [customEnd, setCustomEnd] = useState(endParam ?? DATASET_END);
+  const [isPending, startTransition] = useTransition();
   const ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -77,7 +78,13 @@ export function PeriodPicker() {
     if (end) next.set("end", end);
     else next.delete("end");
     const qs = next.toString();
-    router.push(`${pathname}${qs ? `?${qs}` : ""}`);
+    // Wrap navigation in a transition so React keeps the old UI interactive
+    // until the new RSC payload arrives — the chip shows a pending dot
+    // immediately on click, the Suspense boundaries below render skeletons
+    // when data starts streaming.
+    startTransition(() => {
+      router.push(`${pathname}${qs ? `?${qs}` : ""}`);
+    });
     setOpen(false);
   }
 
@@ -93,12 +100,14 @@ export function PeriodPicker() {
     <div ref={ref} style={{ position: "relative" }}>
       <button
         type="button"
-        className={`filter-chip${open ? " active" : ""}`}
+        className={`filter-chip${open ? " active" : ""}${isPending ? " pending" : ""}`}
         onClick={() => setOpen((v) => !v)}
         style={{ cursor: "pointer" }}
+        aria-busy={isPending}
       >
         <span className="muted">Period</span>
         <strong>{summary}</strong>
+        {isPending ? <span className="period-spinner" aria-hidden /> : null}
       </button>
       {open && (
         <div className="period-popover">

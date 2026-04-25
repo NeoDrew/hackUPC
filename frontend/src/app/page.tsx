@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { api } from "@/lib/api";
 import { CreativeTable } from "@/components/design/CreativeTable";
 import { CreativeTableSkeleton } from "@/components/design/CreativeTableSkeleton";
+import { KpiStripSkeleton } from "@/components/design/KpiStripSkeleton";
 import { KpiTile } from "@/components/design/KpiTile";
 import { formatCount, formatCurrency, formatPct, formatRoas } from "@/lib/format";
 import { TAB_TO_STATUS, type TabKey } from "@/lib/status";
@@ -52,25 +53,16 @@ export default async function Cockpit(props: {
   const desc = params.desc !== "false";
   const start = params.start;
   const end = params.end;
-  // KPIs depend on the date range; tab-independent so fetched in the parent.
-  const kpis = await api.portfolioKpis({ start, end });
   const headings = TAB_HEADINGS[tab];
-  const suspenseKey = `${tab}|${sort ?? ""}|${desc ? "d" : "a"}|${limit}|${start ?? ""}|${end ?? ""}`;
+  const rangeKey = `${start ?? ""}|${end ?? ""}`;
+  const tableKey = `${tab}|${sort ?? ""}|${desc ? "d" : "a"}|${limit}|${rangeKey}`;
   return (
     <>
-      <section className="kpi-strip">
-        <KpiTile label="ROAS" value={formatRoas(kpis.roas)} />
-        <KpiTile label="Spend" value={formatCurrency(kpis.total_spend_usd, { compact: true })} />
-        <KpiTile label="CTR" value={formatPct(kpis.ctr, 2)} />
-        <KpiTile label="CVR" value={formatPct(kpis.cvr, 1)} />
-        <KpiTile
-          label="Need attention"
-          value={formatCount(kpis.attention_count)}
-          urgent
-        />
-      </section>
+      <Suspense key={rangeKey} fallback={<KpiStripSkeleton />}>
+        <KpiStrip start={start} end={end} />
+      </Suspense>
       <Suspense
-        key={suspenseKey}
+        key={tableKey}
         fallback={
           <CreativeTableSkeleton
             heading={headings.heading}
@@ -81,6 +73,23 @@ export default async function Cockpit(props: {
         <CockpitTable tab={tab} limit={limit} sort={sort} desc={desc} start={start} end={end} />
       </Suspense>
     </>
+  );
+}
+
+async function KpiStrip({ start, end }: { start?: string; end?: string }) {
+  const kpis = await api.portfolioKpis({ start, end });
+  return (
+    <section className="kpi-strip">
+      <KpiTile label="ROAS" value={formatRoas(kpis.roas)} />
+      <KpiTile label="Spend" value={formatCurrency(kpis.total_spend_usd, { compact: true })} />
+      <KpiTile label="CTR" value={formatPct(kpis.ctr, 2)} />
+      <KpiTile label="CVR" value={formatPct(kpis.cvr, 1)} />
+      <KpiTile
+        label="Need attention"
+        value={formatCount(kpis.attention_count)}
+        urgent
+      />
+    </section>
   );
 }
 
