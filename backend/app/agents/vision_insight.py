@@ -87,19 +87,22 @@ async def generate_insight(
         "winner": _trim(winner),
         "diffs": diffs,
     }
+    # Gemma doesn't support `systemInstruction` or `responseMimeType` on
+    # AI Studio yet — fold the system prompt into the user turn and parse
+    # JSON from the prose response.
     user_text = (
+        f"{_SYSTEM_PROMPT}\n\n"
         "Analyse the diffs between SOURCE (fatigued) and WINNER (cohort leader). "
-        "Pick the single most actionable lever and write the JSON insight.\n\n"
+        "Pick the single most actionable lever and respond with ONLY the JSON "
+        "object — no prose, no code fences.\n\n"
         + json.dumps(user_payload, ensure_ascii=False)
     )
 
     body = {
-        "systemInstruction": {"parts": [{"text": _SYSTEM_PROMPT}]},
         "contents": [{"role": "user", "parts": [{"text": user_text}]}],
         "generationConfig": {
             "temperature": 0.4,
             "maxOutputTokens": 256,
-            "responseMimeType": "application/json",
         },
     }
     model = os.environ.get("VISION_INSIGHT_MODEL", DEFAULT_MODEL)
