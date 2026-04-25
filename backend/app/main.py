@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .config import ASSET_ROOT
 from .datastore import init_store
-from .routes import advertisers, campaigns, creatives, portfolio
+from .routes import advertisers, agent, campaigns, creatives, portfolio
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 
@@ -25,7 +25,7 @@ app = FastAPI(title="Smadex Creative Intelligence", version="0.1.0", lifespan=li
 app.add_middleware(
     CORSMiddleware,
     allow_origin_regex=r"http://(localhost|127\.0\.0\.1):\d+",
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -35,6 +35,7 @@ app.include_router(portfolio.router, prefix="/api", tags=["portfolio"])
 app.include_router(creatives.router, prefix="/api", tags=["creatives"])
 app.include_router(advertisers.router, prefix="/api", tags=["advertisers"])
 app.include_router(campaigns.router, prefix="/api", tags=["campaigns"])
+app.include_router(agent.router, prefix="/api", tags=["agent"])
 
 
 @app.get("/healthz")
