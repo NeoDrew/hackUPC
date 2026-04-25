@@ -33,6 +33,8 @@ export type TwinSummary = components["schemas"]["TwinSummary"];
 export type TwinDiff = components["schemas"]["TwinDiff"];
 export type VisionInsight = components["schemas"]["VisionInsight"];
 export type VariantBriefResponse = components["schemas"]["VariantBriefResponse"];
+export type WinningPattern = components["schemas"]["WinningPattern"];
+export type WinningPatternsResponse = components["schemas"]["WinningPatternsResponse"];
 
 type AdvertisersResponse =
   paths["/api/advertisers"]["get"]["responses"]["200"]["content"]["application/json"];
@@ -106,6 +108,10 @@ export const api = {
   // Variant brief (Gemma-generated; falls back to template server-side).
   getVariantBrief: (id: number) =>
     fetchJSON<VariantBriefResponse>(`/api/creatives/${id}/variant-brief`),
+
+  // Cohort attribute prevalence — deterministic count, no LLM.
+  getWinningPatterns: (id: number) =>
+    fetchJSON<WinningPatternsResponse>(`/api/creatives/${id}/winning-patterns`),
 
   // Search.
   search: (q: string, limit = 8) =>

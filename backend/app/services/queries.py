@@ -198,6 +198,178 @@ def list_applied_variants(store: Datastore) -> list[dict[str, Any]]:
     return list(store.applied_variants.values())
 
 
+# --- Cohort attribute prevalence (winning patterns in this cohort) ---
+
+
+_PATTERN_ATTRS: list[tuple[str, str, str]] = [
+    # (column, "true value" check key, descriptive trait name)
+    ("has_discount_badge", "true", "Visible price / discount proof"),
+    ("has_ugc_style", "true", "User-generated style framing"),
+    ("has_gameplay", "true", "Gameplay or product-in-action shot"),
+    ("has_price", "true", "Price prominently shown"),
+]
+
+_PATTERN_CATEGORICAL: list[tuple[str, str]] = [
+    # (column, "what it means" — short label)
+    ("hook_type", "hook"),
+    ("dominant_color", "dominant colour"),
+    ("emotional_tone", "tone"),
+    ("cta_text", "CTA"),
+]
+
+
+def winning_patterns(
+    store: Datastore, creative_id: int, max_patterns: int = 3
+) -> dict[str, Any]:
+    """Compute the top attributes that distinguish *top performers* from the
+    rest within the same (vertical, format) cohort as ``creative_id``.
+
+    Lift = P(attribute | top performer) / P(attribute | other) − 1, expressed
+    as a percentage. We surface the highest-lift binary flag plus the most
+    common categorical pick (e.g. "playable runs at 30s", "primary colour
+    blue") among top performers. No LLM here — it's a deterministic count
+    over the attribute table.
+    """
+    detail = store.creative_detail.get(int(creative_id))
+    if detail is None:
+        return {"creative_id": creative_id, "segment": {}, "patterns": []}
+
+    vertical = detail.get("vertical")
+    fmt = detail.get("format")
+    if vertical is None or fmt is None:
+        return {"creative_id": creative_id, "segment": {}, "patterns": []}
+
+    creatives = store.creatives
+    summary = store.creative_summary.set_index("creative_id")["creative_status"].to_dict()
+
+    cohort = creatives[
+        (creatives["vertical"] == vertical) & (creatives["format"] == fmt)
+    ].copy()
+    if cohort.empty:
+        return {
+            "creative_id": creative_id,
+            "segment": {"vertical": vertical, "format": fmt},
+            "patterns": [],
+        }
+
+    cohort["status"] = cohort["creative_id"].map(summary)
+    winners = cohort[cohort["status"] == "top_performer"]
+    others = cohort[cohort["status"] != "top_performer"]
+    if winners.empty:
+        return {
+            "creative_id": creative_id,
+            "segment": {"vertical": vertical, "format": fmt},
+            "patterns": [],
+        }
+
+    n_winners = len(winners)
+    n_others = max(len(others), 1)
+    candidates: list[dict[str, Any]] = []
+
+    # Binary flags — easy lift signal.
+    for col, _, trait in _PATTERN_ATTRS:
+        if col not in winners.columns:
+            continue
+        win_rate = float((winners[col] == True).mean())  # noqa: E712
+        oth_rate = float((others[col] == True).mean()) if not others.empty else 0.0  # noqa: E712
+        if win_rate < 0.30:
+            # Filter out attributes that only show up sporadically in winners.
+            continue
+        lift = (win_rate / oth_rate - 1.0) if oth_rate > 0 else win_rate
+        candidates.append({
+            "trait": trait,
+            "what": _describe_binary(col, win_rate, vertical, fmt),
+            "prevalence_winners": win_rate,
+            "prevalence_others": oth_rate,
+            "lift": lift,
+            "count_winners": int((winners[col] == True).sum()),  # noqa: E712
+        })
+
+    # Categorical attributes — pick the modal value among winners and report
+    # how dominant it is.
+    for col, label in _PATTERN_CATEGORICAL:
+        if col not in winners.columns:
+            continue
+        modes = winners[col].value_counts(dropna=True)
+        if modes.empty:
+            continue
+        top_value = modes.index[0]
+        top_count = int(modes.iloc[0])
+        win_rate = top_count / n_winners
+        if win_rate < 0.35:
+            continue
+        oth_count = int((others[col] == top_value).sum()) if not others.empty else 0
+        oth_rate = oth_count / n_others
+        lift = (win_rate / oth_rate - 1.0) if oth_rate > 0 else win_rate
+        candidates.append({
+            "trait": f"{label.capitalize()}: {top_value}",
+            "what": (
+                f"{int(round(win_rate * 100))}% of top performers in this "
+                f"cohort use this {label}; {int(round(oth_rate * 100))}% of "
+                f"the rest do."
+            ),
+            "prevalence_winners": win_rate,
+            "prevalence_others": oth_rate,
+            "lift": lift,
+            "count_winners": top_count,
+        })
+
+    # Rank by lift (descending), tie-break on prevalence among winners.
+    candidates.sort(
+        key=lambda p: (round(p["lift"], 4), p["prevalence_winners"]),
+        reverse=True,
+    )
+    top_patterns = candidates[:max_patterns]
+
+    return {
+        "creative_id": int(creative_id),
+        "segment": {"vertical": str(vertical), "format": str(fmt)},
+        "cohort_size": int(len(cohort)),
+        "winner_count": int(n_winners),
+        "patterns": [
+            {
+                "trait": p["trait"],
+                "what": p["what"],
+                "lift_pct": round(p["lift"] * 100, 1),
+                "prevalence_pct": round(p["prevalence_winners"] * 100, 0),
+                "winner_count": p["count_winners"],
+            }
+            for p in top_patterns
+        ],
+    }
+
+
+def _describe_binary(col: str, win_rate: float, vertical: Any, fmt: Any) -> str:
+    pct = int(round(win_rate * 100))
+    if col == "has_discount_badge":
+        return (
+            f"Concrete value proof — {pct}% of top {fmt} ads in {vertical} "
+            "carry a visible discount badge. Where the headline lacks proof, "
+            "winners overwhelmingly substitute price."
+        )
+    if col == "has_ugc_style":
+        return (
+            f"{pct}% of winners use UGC-style framing. Reads as authentic "
+            "rather than produced; lifts attention on rewarded video and "
+            "interstitial slots."
+        )
+    if col == "has_gameplay":
+        return (
+            f"{pct}% of winners show gameplay or the product in action. "
+            "Stops the scroll because viewers can simulate the experience "
+            "before the CTA."
+        )
+    if col == "has_price":
+        return (
+            f"{pct}% of winners surface the price up front. Eliminates the "
+            "biggest dropout step in the funnel."
+        )
+    return (
+        f"{pct}% of top performers in this cohort share this attribute — "
+        "above the cohort baseline."
+    )
+
+
 # --- Variant brief (Gemma-generated, fallback to template) ---
 
 

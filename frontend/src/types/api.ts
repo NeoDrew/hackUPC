@@ -157,6 +157,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/creatives/{creative_id}/winning-patterns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Winning Patterns */
+        get: operations["get_winning_patterns_api_creatives__creative_id__winning_patterns_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/advertisers": {
         parameters: {
             query?: never;
@@ -872,6 +889,44 @@ export interface components {
             /** Confidence */
             confidence: number;
         };
+        /**
+         * WinningPattern
+         * @description One row in the cohort attribute prevalence table — a real,
+         *     deterministic count over the (vertical, format) cohort. No LLM.
+         */
+        WinningPattern: {
+            /** Trait */
+            trait: string;
+            /** What */
+            what: string;
+            /** Lift Pct */
+            lift_pct: number;
+            /** Prevalence Pct */
+            prevalence_pct: number;
+            /** Winner Count */
+            winner_count: number;
+        };
+        /** WinningPatternsResponse */
+        WinningPatternsResponse: {
+            /** Creative Id */
+            creative_id: number;
+            /** Segment */
+            segment: {
+                [key: string]: string;
+            };
+            /**
+             * Cohort Size
+             * @default 0
+             */
+            cohort_size: number;
+            /**
+             * Winner Count
+             * @default 0
+             */
+            winner_count: number;
+            /** Patterns */
+            patterns: components["schemas"]["WinningPattern"][];
+        };
     };
     responses: never;
     parameters: never;
@@ -1159,6 +1214,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["VariantBriefResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_winning_patterns_api_creatives__creative_id__winning_patterns_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                creative_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WinningPatternsResponse"];
                 };
             };
             /** @description Validation Error */

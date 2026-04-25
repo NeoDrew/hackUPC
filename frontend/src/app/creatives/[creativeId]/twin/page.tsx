@@ -6,34 +6,7 @@ import { DiffTable } from "@/components/design/DiffTable";
 import { PreviewChip } from "@/components/design/PreviewChip";
 import { TwinPanel } from "@/components/design/TwinPanel";
 import { VisionInsightCard } from "@/components/design/VisionInsightCard";
-import {
-  WinningPatternsCard,
-  type WinningPattern,
-} from "@/components/design/WinningPatternsCard";
-
-// Canned winning patterns keyed loosely on cohort. Real per-vertical aggregates
-// arrive once Krish ships Q2b clustering; for now these describe the general
-// pattern library that would emerge.
-const WINNING_PATTERNS: WinningPattern[] = [
-  {
-    lift: "+38%",
-    prevalence: "in 62% of winners",
-    trait: "Single hero product on tinted background",
-    what: "Low clutter, short time-to-comprehend. Eye lands on the offer within 1 s.",
-  },
-  {
-    lift: "+29%",
-    prevalence: "in 44% of winners",
-    trait: "Visible price / discount proof",
-    what: "Concrete value proof beats aspirational copy in this cohort, especially at low-CTR placements.",
-  },
-  {
-    lift: "+21%",
-    prevalence: "in 38% of winners",
-    trait: "Human face, one person",
-    what: "Direct eye contact with subject correlates with completion-rate lift on rewarded_video and interstitial formats.",
-  },
-];
+import { WinningPatternsCard } from "@/components/design/WinningPatternsCard";
 
 export default async function TwinPage(
   props: PageProps<"/creatives/[creativeId]/twin">,
@@ -57,9 +30,10 @@ export default async function TwinPage(
     notFound();
   }
 
-  const [source, winner] = await Promise.all([
+  const [source, winner, patterns] = await Promise.all([
     api.getCreative(twin.fatigued_id, { start, end }),
     api.getCreative(twin.winner_id, { start, end }),
+    api.getWinningPatterns(twin.fatigued_id).catch(() => null),
   ]);
 
   return (
@@ -134,9 +108,14 @@ export default async function TwinPage(
       <section className="col gap-2">
         <div className="row between center">
           <h3 className="t-section">Winning patterns in this cohort</h3>
-          <PreviewChip label="aggregate stub" />
+          {patterns ? (
+            <span className="t-micro muted">
+              {patterns.winner_count} of {patterns.cohort_size} top performers
+              · {patterns.segment.vertical} / {patterns.segment.format}
+            </span>
+          ) : null}
         </div>
-        <WinningPatternsCard patterns={WINNING_PATTERNS} />
+        <WinningPatternsCard patterns={patterns?.patterns ?? []} />
       </section>
     </section>
   );

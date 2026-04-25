@@ -9,6 +9,7 @@ from ..schemas import (
     CreativeTimeseries,
     TwinSummary,
     VariantBriefResponse,
+    WinningPatternsResponse,
 )
 from ..services import queries
 
@@ -92,3 +93,11 @@ async def get_variant_brief(creative_id: int) -> dict:
             status_code=404, detail="no twin available — can't generate variant brief"
         )
     return brief
+
+
+@router.get(
+    "/creatives/{creative_id}/winning-patterns",
+    response_model=WinningPatternsResponse,
+)
+def get_winning_patterns(creative_id: int) -> dict:
+    return queries.winning_patterns(get_store(), creative_id)

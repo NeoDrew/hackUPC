@@ -42,9 +42,13 @@ export function Lineage({
             placeItems: "center",
             color: "var(--accent)",
             fontWeight: 600,
+            fontSize: 12,
+            textAlign: "center",
+            padding: 8,
+            lineHeight: 1.2,
           }}
         >
-          SVG mock
+          Live preview
         </div>
       )}
       <span className="t-card">{caption}</span>
@@ -65,7 +69,7 @@ export function Lineage({
       {arrow("twin found")}
       {cell(creativeImageUrl(winnerId), "Winner twin", `#${winnerId}`)}
       {arrow("variant generated")}
-      {cell(null, variantLabel, "AI-templated", true)}
+      {cell(null, variantLabel, "Gemma 4", true)}
     </div>
   );
 }
