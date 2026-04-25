@@ -11,6 +11,7 @@ from typing import Any
 
 import pandas as pd
 
+from ..agents import variant_brief as variant_brief_agent
 from ..agents import vision_insight as vision_insight_agent
 from ..datastore import Datastore, _band_from_health
 from ..schemas import to_jsonable
@@ -195,6 +196,84 @@ def dequeue_variant(store: Datastore, creative_id: int) -> dict[str, Any]:
 
 def list_applied_variants(store: Datastore) -> list[dict[str, Any]]:
     return list(store.applied_variants.values())
+
+
+# --- Variant brief (Gemma-generated, fallback to template) ---
+
+
+async def get_variant_brief(
+    store: Datastore, creative_id: int
+) -> dict[str, Any] | None:
+    """Compose the brief for the next ad creative.
+
+    Reuses the same twin lookup the Twin page uses, then asks Gemma to write
+    a fresh headline / subhead / CTA / rationale grounded in the source-vs-
+    winner attribute diffs. Falls back to a deterministic template (the
+    winner's metadata + canned rationale) when Gemma is unavailable so the
+    page never breaks.
+    """
+    twin = await get_twin_stub(store, creative_id)
+    if twin is None:
+        return None
+
+    source = store.creative_detail.get(int(twin["fatigued_id"]))
+    winner = store.creative_detail.get(int(twin["winner_id"]))
+    if source is None or winner is None:
+        return None
+
+    segment = twin["segment"]
+    diffs = twin.get("diffs", [])
+
+    llm_brief = await variant_brief_agent.generate_brief(
+        source=source,
+        winner=winner,
+        diffs=diffs,
+        segment=segment,
+    )
+
+    if llm_brief is not None:
+        return {
+            "creative_id": int(twin["fatigued_id"]),
+            "winner_id": int(twin["winner_id"]),
+            "segment": segment,
+            "headline": llm_brief["headline"],
+            "subhead": llm_brief["subhead"],
+            "cta": llm_brief["cta"],
+            "dominant_color": llm_brief["dominant_color"],
+            "emotional_tone": llm_brief["emotional_tone"],
+            "rationale": llm_brief["rationale"],
+            "is_stub": False,
+        }
+
+    # Template fallback. Pulls from the winner's metadata + a few generic
+    # but truthful sentences keyed on the cohort. The marketer still sees
+    # the page; only the wording is canned.
+    fallback_rationale = [
+        f"Mirror the winner's hook type ({winner.get('hook_type') or 'direct'}). "
+        "Adjacent combos in this cohort tend to convert above the average.",
+        f"Keep visual clutter low (target {winner.get('clutter_score') or 0.3}). "
+        "Fatigued ads in this cohort drift higher.",
+        f"Run at {winner.get('duration_sec') or 15}s — the winning duration "
+        f"ceiling in {segment.get('format', '')} ads.",
+    ]
+    if winner.get("has_discount_badge"):
+        fallback_rationale.append(
+            "Restate the discount proof — it's the single biggest CVR driver "
+            "in this vertical."
+        )
+
+    return {
+        "creative_id": int(twin["fatigued_id"]),
+        "winner_id": int(twin["winner_id"]),
+        "segment": segment,
+        "headline": str(winner.get("headline") or source.get("headline") or "New variant"),
+        "subhead": str(winner.get("subhead") or source.get("subhead") or ""),
+        "cta": str(winner.get("cta_text") or "Try now"),
+        "dominant_color": str(winner.get("dominant_color") or "purple"),
+        "emotional_tone": str(winner.get("emotional_tone") or "urgent"),
+        "rationale": fallback_rationale,
+        "is_stub": True,
+    }
 
 
 def search_creatives(

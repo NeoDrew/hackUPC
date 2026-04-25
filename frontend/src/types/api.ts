@@ -38,6 +38,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/portfolio/health-diagnostics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Health Diagnostics */
+        get: operations["get_health_diagnostics_api_portfolio_health_diagnostics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/search": {
         parameters: {
             query?: never;
@@ -115,6 +132,23 @@ export interface paths {
         };
         /** Get Twin */
         get: operations["get_twin_api_creatives__creative_id__twin_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/creatives/{creative_id}/variant-brief": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Variant Brief */
+        get: operations["get_variant_brief_api_creatives__creative_id__variant_brief_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -242,6 +276,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/creatives/{creative_id}/apply-variant": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apply Variant */
+        post: operations["apply_variant_api_creatives__creative_id__apply_variant_post"];
+        /** Undo Variant */
+        delete: operations["undo_variant_api_creatives__creative_id__apply_variant_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/applied-variants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Applied */
+        get: operations["list_applied_api_applied_variants_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -273,6 +342,39 @@ export interface components {
             vertical: string;
             /** Hq Region */
             hq_region: string;
+        };
+        /**
+         * AppliedVariant
+         * @description A queued variant application. The dataset is read-only, so this is a
+         *     process-lifetime queue — the entry stays until the user undoes it or the
+         *     service restarts. Carried purely so the UI can render a "queued" banner
+         *     and let the user undo without losing what they applied.
+         */
+        AppliedVariant: {
+            /** Creative Id */
+            creative_id: number;
+            /** Rationale */
+            rationale?: string | null;
+            /** Queued At */
+            queued_at: string;
+            /**
+             * Eta Hours
+             * @default 24
+             */
+            eta_hours: number;
+        };
+        /** ApplyRequest */
+        ApplyRequest: {
+            /** Rationale */
+            rationale?: string | null;
+        };
+        /** ApplyResponse */
+        ApplyResponse: {
+            /** Creative Id */
+            creative_id: number;
+            /** Queued */
+            queued: boolean;
+            entry?: components["schemas"]["AppliedVariant"] | null;
         };
         /** Campaign */
         Campaign: {
@@ -540,11 +642,26 @@ export interface components {
             cvr: number;
             /** Attention Count */
             attention_count: number;
-            /** Daily KPI series for sparklines (one entry per day in active window) */
-            spend_series?: number[];
-            ctr_series?: number[];
-            cvr_series?: number[];
-            roas_series?: number[];
+            /**
+             * Spend Series
+             * @default []
+             */
+            spend_series: number[];
+            /**
+             * Ctr Series
+             * @default []
+             */
+            ctr_series: number[];
+            /**
+             * Cvr Series
+             * @default []
+             */
+            cvr_series: number[];
+            /**
+             * Roas Series
+             * @default []
+             */
+            roas_series: number[];
         };
         /**
          * Quadrant
@@ -712,6 +829,40 @@ export interface components {
             /** Context */
             ctx?: Record<string, never>;
         };
+        /**
+         * VariantBriefResponse
+         * @description Brief for the next ad creative — generated by Gemma 4 from the
+         *     source/winner/diff context. Falls back to a deterministic template
+         *     keyed on the winner's metadata when the LLM is unavailable; in that
+         *     case ``is_stub`` is True and the UI keeps a [preview] chip.
+         */
+        VariantBriefResponse: {
+            /** Creative Id */
+            creative_id: number;
+            /** Winner Id */
+            winner_id: number;
+            /** Segment */
+            segment: {
+                [key: string]: string;
+            };
+            /** Headline */
+            headline: string;
+            /** Subhead */
+            subhead: string;
+            /** Cta */
+            cta: string;
+            /** Dominant Color */
+            dominant_color: string;
+            /** Emotional Tone */
+            emotional_tone: string;
+            /** Rationale */
+            rationale: string[];
+            /**
+             * Is Stub
+             * @default false
+             */
+            is_stub: boolean;
+        };
         /** VisionInsight */
         VisionInsight: {
             /** Headline */
@@ -732,7 +883,12 @@ export type $defs = Record<string, never>;
 export interface operations {
     get_portfolio_kpis_api_portfolio_kpis_get: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description ISO date YYYY-MM-DD */
+                start?: string | null;
+                /** @description ISO date YYYY-MM-DD */
+                end?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -748,11 +904,23 @@ export interface operations {
                     "application/json": components["schemas"]["PortfolioKPIs"];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     get_tab_counts_api_portfolio_tab_counts_get: {
         parameters: {
-            query?: never;
+            query?: {
+                start?: string | null;
+                end?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -766,6 +934,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TabCounts"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -834,6 +1011,10 @@ export interface operations {
                 sort?: string | null;
                 desc?: boolean;
                 limit?: number | null;
+                /** @description ISO date YYYY-MM-DD */
+                start?: string | null;
+                /** @description ISO date YYYY-MM-DD */
+                end?: string | null;
             };
             header?: never;
             path?: never;
@@ -863,7 +1044,10 @@ export interface operations {
     };
     get_creative_api_creatives__creative_id__get: {
         parameters: {
-            query?: never;
+            query?: {
+                start?: string | null;
+                end?: string | null;
+            };
             header?: never;
             path: {
                 creative_id: number;
@@ -925,7 +1109,10 @@ export interface operations {
     };
     get_twin_api_creatives__creative_id__twin_get: {
         parameters: {
-            query?: never;
+            query?: {
+                start?: string | null;
+                end?: string | null;
+            };
             header?: never;
             path: {
                 creative_id: number;
@@ -941,6 +1128,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TwinSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_variant_brief_api_creatives__creative_id__variant_brief_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                creative_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VariantBriefResponse"];
                 };
             };
             /** @description Validation Error */
@@ -1149,6 +1367,92 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+        };
+    };
+    apply_variant_api_creatives__creative_id__apply_variant_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                creative_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ApplyRequest"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    undo_variant_api_creatives__creative_id__apply_variant_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                creative_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_applied_api_applied_variants_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppliedVariant"][];
                 };
             };
         };

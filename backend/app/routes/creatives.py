@@ -3,7 +3,13 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Query
 
 from ..datastore import get_store
-from ..schemas import CreativeDetail, CreativeListResponse, CreativeTimeseries, TwinSummary
+from ..schemas import (
+    CreativeDetail,
+    CreativeListResponse,
+    CreativeTimeseries,
+    TwinSummary,
+    VariantBriefResponse,
+)
 from ..services import queries
 
 router = APIRouter()
@@ -73,3 +79,16 @@ async def get_twin(
             status_code=404, detail="no cohort-leader twin found"
         )
     return twin
+
+
+@router.get(
+    "/creatives/{creative_id}/variant-brief",
+    response_model=VariantBriefResponse,
+)
+async def get_variant_brief(creative_id: int) -> dict:
+    brief = await queries.get_variant_brief(get_store(), creative_id)
+    if brief is None:
+        raise HTTPException(
+            status_code=404, detail="no twin available — can't generate variant brief"
+        )
+    return brief

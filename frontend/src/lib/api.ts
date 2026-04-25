@@ -32,6 +32,7 @@ export type HealthDiagnostics = components["schemas"]["HealthDiagnostics"];
 export type TwinSummary = components["schemas"]["TwinSummary"];
 export type TwinDiff = components["schemas"]["TwinDiff"];
 export type VisionInsight = components["schemas"]["VisionInsight"];
+export type VariantBriefResponse = components["schemas"]["VariantBriefResponse"];
 
 type AdvertisersResponse =
   paths["/api/advertisers"]["get"]["responses"]["200"]["content"]["application/json"];
@@ -101,6 +102,10 @@ export const api = {
   // Twin.
   getTwin: (id: number, range: DateRange = {}) =>
     fetchJSON<TwinSummary>(`/api/creatives/${id}/twin${buildQuery(range)}`),
+
+  // Variant brief (Gemma-generated; falls back to template server-side).
+  getVariantBrief: (id: number) =>
+    fetchJSON<VariantBriefResponse>(`/api/creatives/${id}/variant-brief`),
 
   // Search.
   search: (q: string, limit = 8) =>
