@@ -1086,6 +1086,24 @@ a:focus-visible {
   display: block;
 }
 
+/* Period picker — pending spinner */
+.period-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-left: 4px;
+  border: 2px solid var(--line-strong);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: period-spin 0.7s linear infinite;
+}
+@keyframes period-spin {
+  to { transform: rotate(360deg); }
+}
+.filter-chip.pending {
+  opacity: 0.85;
+}
+
 /* Period picker popover */
 .period-popover {
   position: absolute;
