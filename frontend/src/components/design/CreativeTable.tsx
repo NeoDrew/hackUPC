@@ -74,6 +74,7 @@ export function CreativeTable({
           <SortableHeader label="Days" sortState={sortState} />
           <span className="num-cell">7d trend</span>
           <SortableHeader label="Health" sortState={sortState} />
+          <span className="action-cell-head">Action</span>
         </div>
         {rows.length === 0 ? (
           <div style={{ padding: 32, textAlign: "center" }} className="t-body muted">

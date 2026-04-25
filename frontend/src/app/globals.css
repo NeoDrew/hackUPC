@@ -795,7 +795,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
 }
 .creative-thead {
   display: grid;
-  grid-template-columns: 64px minmax(0, 2fr) 76px 76px 76px 76px 80px 148px 110px;
+  grid-template-columns: 64px minmax(0, 2fr) 76px 76px 76px 76px 80px 148px 110px 110px;
   padding: 10px 16px;
   font-size: 10px;
   font-weight: 600;
@@ -804,6 +804,9 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   color: var(--t-3);
   background: var(--bg-1);
   border-bottom: 1px solid var(--line);
+}
+.creative-thead .action-cell-head {
+  text-align: right;
 }
 .creative-thead .num-cell {
   text-align: right;
@@ -830,7 +833,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
 }
 .creative-row {
   display: grid;
-  grid-template-columns: 64px minmax(0, 2fr) 76px 76px 76px 76px 80px 148px 110px;
+  grid-template-columns: 64px minmax(0, 2fr) 76px 76px 76px 76px 80px 148px 110px 110px;
   align-items: center;
   padding: 0 16px;
   min-height: 96px;
@@ -838,6 +841,47 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   background: var(--bg-1);
   cursor: pointer;
   transition: background var(--t-fast) var(--ease-out);
+}
+.creative-row .action-cell {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+.row-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg-1);
+  color: var(--t-1);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  transition:
+    background var(--t-fast) var(--ease-out),
+    border-color var(--t-fast) var(--ease-out),
+    color var(--t-fast) var(--ease-out);
+}
+.row-action:hover {
+  border-color: var(--line-strong);
+  background: var(--bg-2);
+}
+.row-action.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.row-action.primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+.row-action-arrow {
+  font-size: 11px;
+  line-height: 1;
 }
 /* Push the sparkline cell's contents right so the line doesn't kiss the
    Days value in the previous column. */

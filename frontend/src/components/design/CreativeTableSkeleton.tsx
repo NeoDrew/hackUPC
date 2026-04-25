@@ -31,6 +31,7 @@ export function CreativeTableSkeleton({
           <span className="num-cell">Days</span>
           <span className="num-cell">7d trend</span>
           <span className="num-cell">Health</span>
+          <span className="action-cell-head">Action</span>
         </div>
         {Array.from({ length: rows }).map((_, i) => (
           <SkeletonRow key={i} />
@@ -60,6 +61,9 @@ function SkeletonRow() {
       </div>
       <div style={{ display: "flex", justifyContent: "flex-end" }}>
         <div className="skeleton" style={{ height: 20, width: 20, borderRadius: 999 }} />
+      </div>
+      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <div className="skeleton" style={{ height: 28, width: 80, borderRadius: 6 }} />
       </div>
     </div>
   );
