@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { api } from "@/lib/api";
+import { CockpitInbox } from "@/components/design/CockpitInbox";
 import { CreativeTable } from "@/components/design/CreativeTable";
 import { CreativeTableSkeleton } from "@/components/design/CreativeTableSkeleton";
 import { KpiStripSkeleton } from "@/components/design/KpiStripSkeleton";
@@ -64,6 +65,9 @@ export default async function Cockpit(props: {
     <>
       <Suspense key={`hero|${rangeKey}`} fallback={null}>
         <CockpitHero />
+      </Suspense>
+      <Suspense key={`inbox|${rangeKey}`} fallback={null}>
+        <CockpitInbox />
       </Suspense>
       <Suspense key={rangeKey} fallback={<KpiStripSkeleton />}>
         <KpiStrip start={start} end={end} />
