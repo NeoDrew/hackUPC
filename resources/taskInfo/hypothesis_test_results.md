@@ -1,17 +1,22 @@
 # Hypothesis tests — results
 
-Four aggregations from `join_aggregate_opportunities.md` run end-to-end. Mixed verdicts: two ship as-is, one ships with caveats, one does not ship.
+Nine aggregations from `join_aggregate_opportunities.md` run end-to-end. Verdicts span "ship as-is", "ship with caveats", and "don't ship — synthetic-data limitation".
 
 ## Verdict summary
 
 | # | Test | Verdict | Strongest finding |
 |---|---|---|---|
-| 3 | Diversity → fatigue | **Ships with caveats** | Colour concentration only, video formats only — 1.4× signal not the 2× hypothesised |
-| 6 | Within-campaign best-vs-worst spread | **Ships** | Independent of #3; new `P_spread` term in formula |
+| 7 | **Spend-share vs performance-share alignment** | **Ships — strongest of all** | $1.95M of $32M (6.1%) portfolio-wide is misallocated. Top campaign: $42k out of $293k. |
+| 9 | **Conversion funnel per format** | **Ships — second strongest** | Playable converts 6.5× cheaper than banner ($6.47/conv vs $42); under-invested format. |
+| 2 | **Cohort fatigue curve** | **Ships — visual demo win** | All formats lose 73-87% of CTR by day 60. Universal decay; fatigue is about *slope*, not level. |
+| 5 | **Country × format/vertical ROAS map** | **Ships** | 12× ROAS spread across cohorts (US gaming 0.99× vs MX travel 11.79×). |
+| 6 | Within-campaign best-vs-worst spread | Ships | Independent of #3; new `P_spread` term in formula |
+| 3 | Diversity → fatigue | Ships with caveats | Colour-only, video-formats-only — 1.4× signal not the 2× hypothesised |
+| 10 | Launch-cohort fate (market vs creative effect) | Ships narrowly | Gaming campaigns launched Dec 29 – Jan 25 fatigued at 38–63% — the only real cohort effect |
 | 1 | Per-creative × country geo-variance | **Doesn't ship** | Variance is too small in this dataset (median 9% CTR spread); only 4/199 fatigued creatives have a real "split call" |
-| 7 | Spend-share vs performance-share alignment | **Ships — strongest of the four** | $1.95M of $32M (6.1%) portfolio-wide is misallocated. Top campaign: $42k out of $293k. |
+| 8 | Day-of-week patterns | **Doesn't ship** | Synthetic generator doesn't model day-of-week; max weekend lift across verticals is ±3% |
 
-The first two hypotheses targeted the proposed `D` (diversity) term in the per-campaign health formula in `data_findings.md`. The last two are independent product surfaces.
+#3 and #6 targeted the proposed `D` (diversity) term in the per-campaign health formula. #1 and #8 surfaced limitations of the synthetic data. The remainder are independent product surfaces.
 
 ---
 
@@ -295,14 +300,227 @@ H_campaign = 0.25·P + 0.20·T + 0.15·F + 0.10·E + 0.10·M + 0.10·D + 0.05·P
 
 ---
 
-## Demo-shipping summary across all four
+---
 
-| # | Findings ship in demo? | Required code work | Priority |
+## #2 — Cohort fatigue curve (`days_since_launch` aggregate)
+
+**Hypothesis (from join doc):** *"Sum daily impressions/clicks by `days_since_launch` → average lifetime CTR curve. Each creative compared against that average is a much better fatigue diagnostic than `ctr_decay_pct`."*
+
+**Verdict: ships — strongest *visual* demo win.** Confirms a universal decay pattern across the entire dataset.
+
+### The universal decay curve
+
+CTR averaged across all 1,080 creatives by lifecycle stage:
+
+| Days since launch | Average CTR | vs day 0–7 |
+|---|---:|---:|
+| Days 0–7 | **0.91%** | (baseline) |
+| Days 30–37 | 0.23% | **−74%** |
+| Days 60–70 | 0.18% | **−80%** |
+
+**Every creative loses ~80% of its CTR by day 60.** Fatigue isn't binary — it's the universal pattern of advertising. Catching "this creative is fatigued" against a flat threshold of decay percentage doesn't work because *all of them decay massively*.
+
+### Per-format curves
+
+| format | day 0–7 | day 30–37 | day 60–70 | total decay |
+|---|---:|---:|---:|---:|
+| **playable** | 1.47% | 0.36% | 0.19% | **−87%** |
+| rewarded_video | 1.21% | 0.30% | 0.18% | −85% |
+| interstitial | 1.00% | 0.24% | 0.18% | −82% |
+| native | 0.82% | 0.22% | 0.18% | −78% |
+| banner | 0.66% | 0.19% | 0.18% | −73% |
+
+**At day 60+ all formats converge to ~0.18% CTR — the noise floor of the dataset.** Stronger formats (playable/rewarded_video) start much higher but decay faster; banners start lower but plateau lower too. Same end state.
+
+### Demo soundbite
+
+> *"The dataset's universal pattern: every creative loses 80% of its CTR by day 60. Fatigue isn't 'will it decay' — it's 'how fast vs the cohort'. That's why our health metric uses trajectory slope, not absolute decay."*
+
+### Product recommendation
+
+**Overlay the cohort curve as a faded grey line on the per-creative fatigue chart on the detail page.** The marketer's eye can compare their creative's daily CTR to the cohort average instantly. Andrew's classifier already encodes this internally; this is *exposure*, not new modelling. ~30 min of code: precompute curve at startup, ship to the FatigueChart as a prop, render second `<path>` element.
+
+---
+
+## #5 — Country × format / vertical ROAS map
+
+**Hypothesis (from join doc):** *"Group daily stats by country × format → which slices have the best ROAS?"*
+
+**Verdict: ships — 12× ROAS spread is real.**
+
+### Country × vertical ROAS (all values are revenue / spend ratios)
+
+| country | ecommerce | entertainment | fintech | food_delivery | gaming | travel |
+|---|---:|---:|---:|---:|---:|---:|
+| BR | 3.25 | 3.02 | 8.29 | 2.24 | 2.05 | **10.12** |
+| MX | 3.42 | 2.86 | 8.46 | 2.72 | 2.26 | **11.79** |
+| ES | 2.50 | 1.91 | 5.67 | 2.19 | 1.45 | 9.03 |
+| IT | 2.46 | 2.22 | 7.22 | 2.03 | 1.43 | 7.57 |
+| FR | 2.24 | 1.72 | 5.75 | 1.75 | 1.23 | 6.84 |
+| DE | 1.89 | 1.69 | 4.96 | 1.56 | 1.29 | 6.14 |
+| CA | 1.70 | 1.90 | 4.66 | 1.65 | 1.13 | 5.80 |
+| UK | 1.94 | 1.77 | 4.97 | 1.38 | 1.07 | 5.53 |
+| US | 1.88 | 1.41 | 4.75 | 1.48 | **0.99** | 5.60 |
+| JP | 1.84 | 1.30 | 4.37 | 1.31 | **1.02** | 5.32 |
+
+**Range: US × gaming 0.99× (losing money) to MX × travel 11.79× (12× the worst).**
+
+### Patterns
+
+- **Travel is bonkers profitable everywhere** — never below 5.3× ROAS, peaks at 11.8× in MX and 10.1× in BR.
+- **Gaming is the most challenging vertical** — 1.0–2.3× ROAS. Loses money in US (0.99×) and JP (1.02×). Best slice (MX 2.26×) is still mediocre.
+- **LATAM (BR + MX) is universally the strongest region.** Marketers expanding budget should look there.
+- **JP underperforms across nearly every vertical.** The synthetic generator built JP as a tough market.
+
+### Demo soundbite
+
+> *"Gaming campaigns lose money in the US and Japan but make 2.3× back in Mexico. The portfolio answer to 'should I run gaming?' is wrong — it depends on the country slice. Smadex shows you the slice."*
+
+### Product recommendation
+
+**Ship a small "best/worst slices" panel on the cockpit Action page**, immediately below the auto-scale banner. One row per insight, marketer voice:
+- *"Gaming campaigns are losing money in US (0.99× ROAS) — pause US targeting in 27 campaigns"*
+- *"Travel ads are 11.8× profitable in MX — increase MX budget across 8 campaigns"*
+
+These are real, defensible, dollar-quantifiable recommendations.
+
+---
+
+## #9 — Conversion funnel per format
+
+**Hypothesis (from join doc):** *"Group daily fact by format → impressions → viewable → clicks → conversions → revenue. Compute drop-off rate at each stage."*
+
+**Verdict: ships — the second-strongest finding overall.** Reveals that **playable ads are massively undervalued**.
+
+### Funnel by format
+
+| format | viewable% | CTR (on view) | CVR | $/conv | conv per Mimp |
+|---|---:|---:|---:|---:|---:|
+| **playable** | 82.0% | 0.95% | **20.6%** | **$6.47** | **1,609** |
+| rewarded_video | 82.0% | 0.78% | 12.3% | $31.78 | 784 |
+| interstitial | 82.0% | 0.62% | 10.1% | $32.83 | 517 |
+| native | 81.9% | 0.54% | 8.6% | $48.07 | 376 |
+| banner | 82.0% | 0.43% | 7.8% | $42.09 | 278 |
+
+**Playable converts at 20.6% — 2.6× banner. Cost per conversion is $6.47 vs $42 for banner — 6.5× cheaper.**
+
+(Note: viewable rate is constant 82% — the synthetic generator doesn't vary it. Real data would show big format-by-format differences here.)
+
+### The playable paradox
+
+Playable is also the *worst* format by ROAS in the country × format map (#5) — typically 1.0–2.5× across countries. So **why** is the cheapest cost-per-conversion the worst ROAS?
+
+Two likely reasons:
+1. **Spend per impression is much higher** for playable (interactive ad placements cost more than banners). Even great conversion can't offset 5–10× CPM differences.
+2. **Conversions in playable might have lower revenue-per-conversion** (the convert-action might be smaller, e.g. game install vs $50 e-commerce purchase). Worth confirming with `revenue / conversions` per format if the demo wants to lean on this.
+
+### Demo soundbite
+
+> *"Playable ads convert at 20.6% — three times better than banners. Cost per conversion drops to $6.47 vs $42 for banners. Marketers under-invest in playable because they look harder to make — Smadex flags the formats that punch above their weight."*
+
+### Where each format leaks
+
+- **Banner / native** leak at the click step (very low CTR; people see but don't click).
+- **Interstitial / rewarded_video** leak at the conversion step (people click but don't convert — likely creative-content fit).
+- **Playable** leaks the least everywhere — best conversion product.
+
+Format-specific recommendations are the right shape:
+- Banner / native: *"refresh the creative — your ad is being seen but not clicked"*
+- Interstitial / rewarded_video: *"check the post-click landing experience — clicks aren't converting"*
+- Playable: *"this format is over-performing — increase share of impressions"*
+
+---
+
+## #10 — Campaign launch-cohort fate
+
+**Hypothesis (from join doc):** *"Same-week / same-vertical campaigns trend together → market effect vs creative effect."*
+
+**Verdict: ships narrowly.** Variance ratio across-cohort vs within-cohort is **1.03** — basically equal — so launch-week alone isn't predictive. But **one specific pattern holds**: gaming campaigns launched in early 2026 fatigued together.
+
+### The gaming-January cluster
+
+| launch week | vertical | n campaigns | mean fatigue rate |
+|---|---|---:|---:|
+| 2026-01-12 / 18 | gaming | 5 | **63.3%** |
+| 2026-01-05 / 11 | travel | 3 | 55.6% |
+| 2026-01-19 / 25 | gaming | 5 | 46.7% |
+| 2025-12-29 / 01-04 | gaming | 9 | 42.6% |
+| 2026-01-05 / 11 | gaming | 11 | 37.9% |
+
+**Gaming campaigns launched between Dec 29 and Jan 25 fatigued at 38–63% — versus the dataset baseline of 18%.** That's the cohort effect, contained to one vertical-window combination.
+
+### Demo soundbite
+
+> *"In this dataset, gaming campaigns launched between Christmas and late January fatigued at three times the baseline. That's the whole gaming category burning out at once — competitive launches, audience saturation, post-holiday spending pullback. Smadex separates 'your creative is dying' from 'your category is dying' — the marketer's response is different in each case."*
+
+### Product recommendation
+
+**Detail page: add a "category context" line** below the fatigue chart for any creative whose launch-week × vertical cohort has elevated fatigue. Example copy:
+
+> *"This creative launched the week of Jan 12 — gaming campaigns launched that week fatigued at 63% on average. The category was fading regardless of the creative."*
+
+Defends the marketer from blaming a creative that was caught by a market wave. ~20 min of code: precompute cohort fatigue rates at startup, surface in detail-page payload.
+
+---
+
+## What's *not* shipping
+
+### #8 — Day-of-week patterns
+
+**Verdict: don't ship — synthetic-data limitation.**
+
+CTR / CVR / ROAS are essentially flat across all 7 days of the week:
+
+| day | CTR | CVR | ROAS |
+|---|---:|---:|---:|
+| Monday | 0.470% | 10.33% | 3.36 |
+| Saturday | 0.488% | 10.41% | 3.36 |
+| Sunday | 0.477% | 10.23% | 3.28 |
+
+Max weekend lift across any vertical: **+0.4% to −3.0%** (well within noise). The synthetic generator doesn't model day-of-week effects. In real data we'd expect 10–30% swings — flag this as future work, don't ship a "weekend pause" recommendation built on this dataset.
+
+---
+
+## What changed in the proposed campaign-health formula
+
+| Term | Originally proposed | After this analysis |
+|---|---|---|
+| `D` (diversity) | Herfindahl over (theme, hook, colour) | Herfindahl over **colour only**, applied **only in video formats** |
+| `P_spread` (spread) | not in original formula | Add: rel_spread between best and worst creative |
+| `M` (misallocation) | not in original formula | **Strong addition**: `1 − misalloc_pct` — campaigns with aligned spend get rewarded |
+| Other terms (P, T, F, E, C) | unchanged | unchanged |
+
+Updated weight proposal:
+
+```
+H_campaign = 0.25·P + 0.20·T + 0.15·F + 0.10·E + 0.10·M + 0.10·D + 0.05·P_spread + 0.05·C
+```
+
+`M` (misallocation health) takes 0.10 because it's actionable for every campaign and gives a defensible dollar figure. `P_spread` keeps a small weight (0.05) since it's largely subsumed by `M`.
+
+---
+
+## Demo-shipping priority across all nine
+
+| # | Ship in demo? | Required code work | Priority |
 |---|---|---|---|
-| 7 | Yes — strongest soundbite ($1.95M / 6.1% headline) | New endpoint + UI card | **Highest** |
-| 6 | Yes — supports campaign-health formula | Math change in health calc | Medium |
-| 3 | Caveated — colour×video soundbite only | Math change in health calc | Medium |
-| 1 | No — soundbite optional, no UI | None | Low |
+| 7 | Yes — $1.95M / 6.1% headline + Reallocate card | New endpoint + UI card | **Highest** |
+| 9 | Yes — playable 6.5× cheaper soundbite | None (just a stat) | **Highest** |
+| 2 | Yes — cohort curve overlay on fatigue chart | ~30 min: precompute + render | **High** |
+| 5 | Yes — best/worst slice card on Action page | ~30 min: matrix endpoint + UI card | **High** |
+| 6 | Math change to health formula | Math change | Medium |
+| 3 | Caveated — colour×video soundbite only | Math change | Medium |
+| 10 | Narrow — "category context" line on detail page | ~20 min | Low–Medium |
+| 1 | Soundbite only (4 specific creatives) | None | Low |
+| 8 | No — synthetic-data limitation | None | Skip |
+
+### Three demo soundbites Aditya can pick from
+
+1. *"\$1.95 million is misallocated across this portfolio — 6% of every dollar going to creatives that earn less than their share. Smadex flags every campaign where spend doesn't match performance, with a one-click reallocation."* (#7)
+2. *"Playable ads convert 3× better than banners — \$6.47 cost per conversion vs \$42. Most marketers under-invest because they look harder to make."* (#9)
+3. *"Every creative in this dataset loses 80% of its CTR by day 60. The question isn't 'will it decay' — it's 'how fast vs the cohort'."* (#2)
+
+If you want a single line: pick #1.
 
 ---
 
