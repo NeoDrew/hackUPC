@@ -503,7 +503,223 @@ a:focus-visible {
 }
 
 /* ──────────────────────────────────────────────────────────────
-   Cockpit "today's inbox" — 3 highest-leverage decisions
+   Action page — auto-scale banner + ranked decision queue
+   ────────────────────────────────────────────────────────────── */
+.auto-scale-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 24px 0;
+  padding: 10px 14px;
+  background: var(--status-top-soft);
+  border: 1px solid rgba(23, 124, 99, 0.25);
+  border-radius: 8px;
+}
+.auto-scale-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: var(--bg-1);
+  color: var(--status-top);
+  border: 1px solid rgba(23, 124, 99, 0.3);
+}
+.auto-scale-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+.auto-scale-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--t-1);
+}
+.auto-scale-sub {
+  font-size: 12px;
+  color: var(--t-2);
+}
+.auto-scale-link {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--status-top);
+  white-space: nowrap;
+}
+.auto-scale-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.action-queue {
+  margin: 16px 24px 24px;
+  background: var(--bg-1);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.action-queue.empty {
+  padding: 32px 24px;
+  text-align: center;
+}
+.action-queue-head {
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.action-queue-head .t-section {
+  margin: 0 0 2px;
+}
+.action-queue-head .t-body {
+  margin: 0;
+  font-size: 12px;
+}
+.action-queue-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.action-row {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--bg-1);
+  transition: background var(--t-fast) var(--ease-out);
+}
+.action-row:last-child {
+  border-bottom: none;
+}
+.action-row:hover {
+  background: var(--bg-2);
+}
+.action-row-rescue {
+  border-left: 2px solid var(--status-fatigued);
+}
+.action-row-cut {
+  border-left: 2px solid var(--status-cut);
+}
+.action-row-thumb {
+  display: block;
+  width: 44px;
+  height: 78px;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+}
+.action-row-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.action-row-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.action-row-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.action-row-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.action-row-tag .action-row-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+}
+.action-row-tag-rescue {
+  color: var(--status-fatigued);
+}
+.action-row-tag-cut {
+  color: var(--status-cut);
+}
+.action-row-cohort {
+  font-size: 11px;
+  color: var(--t-3);
+}
+.action-row-headline {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--t-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.action-row-headline:hover {
+  color: var(--accent);
+}
+.action-row-line {
+  margin: 0;
+  font-size: 12px;
+  color: var(--t-2);
+  line-height: 1.4;
+}
+.action-row-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg-1);
+  color: var(--t-1);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition:
+    background var(--t-fast) var(--ease-out),
+    border-color var(--t-fast) var(--ease-out),
+    color var(--t-fast) var(--ease-out);
+}
+.action-row-cta:hover {
+  border-color: var(--line-strong);
+  background: var(--bg-2);
+}
+.action-row-cta.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.action-row-cta.primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+.action-queue-foot {
+  padding: 10px 16px;
+  border-top: 1px solid var(--line-soft);
+  background: var(--bg-2);
+  text-align: center;
+}
+.action-queue-more {
+  font-size: 12px;
+  color: var(--t-2);
+  font-weight: 500;
+}
+.action-queue-more:hover {
+  color: var(--accent);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Cockpit "today's inbox" — legacy 3-card strip (deprecated;
+   superseded by Action page above)
    ────────────────────────────────────────────────────────────── */
 .cockpit-inbox {
   display: grid;

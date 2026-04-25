@@ -1,7 +1,8 @@
 import { Suspense } from "react";
 
 import { api } from "@/lib/api";
-import { CockpitInbox } from "@/components/design/CockpitInbox";
+import { ActionQueue } from "@/components/design/ActionQueue";
+import { AutoScaleBanner } from "@/components/design/AutoScaleBanner";
 import { CreativeTable } from "@/components/design/CreativeTable";
 import { CreativeTableSkeleton } from "@/components/design/CreativeTableSkeleton";
 import { KpiStripSkeleton } from "@/components/design/KpiStripSkeleton";
@@ -50,7 +51,6 @@ export default async function Cockpit(props: {
   searchParams: Promise<CockpitSearchParams>;
 }) {
   const params = await props.searchParams;
-  const tab = normalizeTab(params.tab);
   const limit = clampLimit(params.limit);
   const sort = params.sort && SORTABLE.has(params.sort) ? params.sort : undefined;
   const desc = params.desc !== "false";
@@ -58,16 +58,36 @@ export default async function Cockpit(props: {
   const end = params.end;
   const vertical = params.vertical;
   const format = params.format;
-  const headings = TAB_HEADINGS[tab];
   const rangeKey = `${start ?? ""}|${end ?? ""}`;
+
+  // No `tab` param means the new Action page is the landing surface —
+  // an inbox of decisions that need a human, ranked by spend at risk.
+  // Per-band drill-downs (?tab=scale|watch|rescue|cut) keep rendering
+  // the existing KPI strip + table cockpit unchanged.
+  const tabParam = params.tab;
+  if (!tabParam || !["scale", "watch", "rescue", "cut"].includes(tabParam)) {
+    return (
+      <>
+        <Suspense key={`hero|${rangeKey}`} fallback={null}>
+          <CockpitHero />
+        </Suspense>
+        <Suspense key={`autoscale|${rangeKey}`} fallback={null}>
+          <AutoScaleBanner />
+        </Suspense>
+        <Suspense key={`queue|${rangeKey}`} fallback={null}>
+          <ActionQueue />
+        </Suspense>
+      </>
+    );
+  }
+
+  const tab = tabParam as TabKey;
+  const headings = TAB_HEADINGS[tab];
   const tableKey = `${tab}|${sort ?? ""}|${desc ? "d" : "a"}|${limit}|${rangeKey}|${vertical ?? ""}|${format ?? ""}`;
   return (
     <>
       <Suspense key={`hero|${rangeKey}`} fallback={null}>
         <CockpitHero />
-      </Suspense>
-      <Suspense key={`inbox|${rangeKey}`} fallback={null}>
-        <CockpitInbox />
       </Suspense>
       <Suspense key={rangeKey} fallback={<KpiStripSkeleton />}>
         <KpiStrip start={start} end={end} />
@@ -262,14 +282,6 @@ function clampLimit(raw: string | undefined): number {
   const n = raw ? Number(raw) : PAGE_SIZE;
   if (!Number.isFinite(n) || n < 1) return PAGE_SIZE;
   return Math.min(2000, Math.max(PAGE_SIZE, n));
-}
-
-function normalizeTab(value: string | undefined): TabKey {
-  if (value && (value === "scale" || value === "watch" || value === "rescue" || value === "cut")) {
-    return value;
-  }
-  if (value === "explore") return "explore";
-  return "scale";
 }
 
 // Make TAB_TO_STATUS importable for trees that might want it.
