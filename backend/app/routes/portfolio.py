@@ -18,8 +18,11 @@ def get_portfolio_kpis(
 
 
 @router.get("/portfolio/tab-counts", response_model=TabCounts)
-def get_tab_counts() -> dict:
-    return queries.tab_counts(get_store())
+def get_tab_counts(
+    start: str | None = Query(default=None),
+    end: str | None = Query(default=None),
+) -> dict:
+    return queries.tab_counts(get_store(), start=start, end=end)
 
 
 @router.get("/portfolio/health-diagnostics", response_model=HealthDiagnostics)

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { api } from "@/lib/api";
+import { api, type HealthBreakdown } from "@/lib/api";
 import { creativeImageUrl } from "@/lib/assetUrl";
 import { HealthRing } from "@/components/design/HealthRing";
 import { MetadataPills } from "@/components/design/MetadataPills";
@@ -76,11 +76,6 @@ export default async function CreativeDetailPage(
         <h1 className="t-page" style={{ margin: 0 }}>
           {(data.headline as string) || `Creative ${creative.creative_id}`}
         </h1>
-        <div className="row center gap-2" style={{ flexWrap: "wrap" }}>
-          <BandPill band={band} health={health} />
-          <StatusPill status={status} dense />
-          <span className="t-micro muted">{bandVsLabel(band, status)}</span>
-        </div>
         <div className="t-body muted">
           {String(data.advertiser_name ?? "")} · {String(data.vertical ?? "")} ·{" "}
           {String(data.format ?? "")} · {String(data.language ?? "")}
@@ -156,33 +151,7 @@ export default async function CreativeDetailPage(
       </div>
 
       <HealthBreakdownCard
-        breakdown={
-          data.health_breakdown as
-            | {
-                health?: number;
-                status_band?: string;
-                objective_mode?: string;
-                kpi_goal?: string | null;
-                components?: {
-                  S?: number;
-                  C?: number;
-                  T?: number;
-                  R?: number;
-                  E?: number;
-                  B?: number;
-                } | null;
-                weights?: Record<string, number>;
-                contributions?: Record<string, number>;
-                cohort?: {
-                  level?: string;
-                  size?: number;
-                  keys?: Record<string, unknown>;
-                };
-                raw?: Record<string, unknown>;
-              }
-            | null
-            | undefined
-        }
+        breakdown={data.health_breakdown as HealthBreakdown | null | undefined}
       />
 
       {status === "fatigued" && (

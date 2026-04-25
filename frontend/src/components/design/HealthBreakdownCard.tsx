@@ -1,19 +1,5 @@
-import type { HealthBreakdown } from "@/lib/api";
+import type { HealthBreakdown, HealthComponents } from "@/lib/api";
 import { formatPct } from "@/lib/format";
-
-type HealthComponents = HealthBreakdown["components"];
-
-type HealthBreakdownCardData = Omit<
-  HealthBreakdown,
-  "cohort" | "components"
-> & {
-  components?: HealthComponents | null;
-  cohort?: {
-    level?: string;
-    size?: number;
-    keys?: Record<string, unknown>;
-  };
-};
 
 const COMPONENTS: Array<{
   key: keyof HealthComponents;
@@ -62,12 +48,14 @@ const COMPONENTS: Array<{
 export function HealthBreakdownCard({
   breakdown,
 }: {
-  breakdown?: HealthBreakdownCardData | null;
+  breakdown?: HealthBreakdown | null;
 }) {
   if (!breakdown?.components) return null;
 
   const objective = breakdown.objective_mode?.toUpperCase() ?? "OBJECTIVE";
-  const cohort = breakdown.cohort;
+  const cohort = breakdown.cohort as
+    | { level?: string; size?: number; keys?: Record<string, unknown> }
+    | undefined;
   const cohortKeys = cohort?.keys
     ? Object.values(cohort.keys)
         .filter(
