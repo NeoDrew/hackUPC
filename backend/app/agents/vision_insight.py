@@ -40,14 +40,37 @@ GENAI_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 
 _SYSTEM_PROMPT = (
     "You are a senior creative strategist on a mobile-advertising team. "
-    "Given a fatigued creative and its winning twin in the same vertical and "
-    "format, plus structured attribute diffs, write a tight insight that "
-    "names the single most actionable lever the marketer can pull. Output "
-    "JSON only, no prose, no code fences. Schema: {\"headline\": string "
-    "(<= 8 words), \"body\": string (<= 60 words), \"confidence\": number "
-    "between 0 and 1}. Speak in DSP-native terms: cite specific attributes, "
-    "name the trade-off, recommend a concrete next step."
+    "Given a fatigued creative, its winning twin, and the structured "
+    "attribute differences, write a tight customer-facing insight that "
+    "names the single most actionable lever the marketer can pull.\n"
+    "\n"
+    "HARD RULES — these matter, the marketer will read every word:\n"
+    "1. The diffs array contains EVERY attribute that differs between "
+    "   source and winner. If an attribute is NOT in diffs, source and "
+    "   winner have IDENTICAL values for it — DO NOT mention it, DO NOT "
+    "   invent a delta, DO NOT make up a value. Talking about a "
+    "   non-differing attribute is grounds for failure.\n"
+    "2. NEVER predict CTR / CVR / ROAS lift percentages. You have not "
+    "   been given any lift data. Phrases like '+86% CTR' or 'lift of 23%' "
+    "   are forbidden. Speak qualitatively: 'this attribute correlates "
+    "   with higher engagement in the cohort'. The actual metrics for "
+    "   source and winner are provided — quote those if you must "
+    "   reference numbers, never invented deltas.\n"
+    "3. NEVER use raw column names like text_density, clutter_score, "
+    "   has_discount_badge. Translate to plain English: 'on-screen text', "
+    "   'visual clutter', 'discount badge'.\n"
+    "4. Pick exactly ONE lever from the diffs list. Don't list multiple "
+    "   changes — the marketer asked what's the *one* thing to try.\n"
+    "\n"
+    "Output JSON ONLY, no prose, no code fences. Schema:\n"
+    "  {\"headline\": string (<= 8 words),\n"
+    "   \"body\": string (<= 60 words, plain English),\n"
+    "   \"confidence\": number between 0 and 1}\n"
 )
+
+# Bump this when the prompt or payload shape changes so previously-cached
+# fabrications don't keep showing up after a deploy.
+_CACHE_VERSION = "v2-no-fabrication"
 
 # Process-lifetime cache.
 _cache: dict[tuple[int, int], dict[str, Any]] = {}
@@ -72,7 +95,11 @@ async def generate_insight(
     LLM is unavailable / errored. Caller should fall back to templates on
     None."""
 
-    cache_key = (int(source.get("creative_id", -1)), int(winner.get("creative_id", -1)))
+    cache_key = (
+        _CACHE_VERSION,
+        int(source.get("creative_id", -1)),
+        int(winner.get("creative_id", -1)),
+    )
     cached = _cache.get(cache_key)
     if cached:
         return cached
@@ -81,27 +108,38 @@ async def generate_insight(
     if not api_key:
         return None
 
+    # Send ONLY:
+    #   - the cohort segment
+    #   - actual measured metrics for each side (so the LLM can quote real
+    #     numbers instead of inventing them)
+    #   - the diffs list (every attribute that actually differs).
+    # We deliberately do NOT send the full source/winner objects — that
+    # invited the LLM to "compare" identical fields and fabricate deltas.
     user_payload = {
         "segment": segment,
-        "source": _trim(source),
-        "winner": _trim(winner),
+        "source_metrics": _metrics(source),
+        "winner_metrics": _metrics(winner),
         "diffs": diffs,
+        "diff_field_names_present": sorted({d.get("field") for d in diffs if d.get("field")}),
     }
     # Gemma doesn't support `systemInstruction` or `responseMimeType` on
     # AI Studio yet — fold the system prompt into the user turn and parse
     # JSON from the prose response.
     user_text = (
         f"{_SYSTEM_PROMPT}\n\n"
-        "Analyse the diffs between SOURCE (fatigued) and WINNER (cohort leader). "
-        "Pick the single most actionable lever and respond with ONLY the JSON "
-        "object — no prose, no code fences.\n\n"
+        "Below is the structured comparison between SOURCE (fatigued) and "
+        "WINNER (cohort leader). The `diffs` array is exhaustive — every "
+        "attribute not in it is identical between the two. The "
+        "`*_metrics` objects contain the real, measured CTR/CVR/ROAS for "
+        "each side; you may quote those directly. Pick exactly ONE lever "
+        "from the diffs and respond with ONLY the JSON object.\n\n"
         + json.dumps(user_payload, ensure_ascii=False)
     )
 
     body = {
         "contents": [{"role": "user", "parts": [{"text": user_text}]}],
         "generationConfig": {
-            "temperature": 0.4,
+            "temperature": 0.2,  # tight — we want grounded output, not creative
             "maxOutputTokens": 256,
         },
     }
@@ -175,30 +213,16 @@ def _coerce_confidence(v: Any) -> float:
     return max(0.0, min(1.0, f))
 
 
-def _trim(creative: dict[str, Any]) -> dict[str, Any]:
-    """Drop bulky fields before sending to the LLM."""
+def _metrics(creative: dict[str, Any]) -> dict[str, Any]:
+    """Just the measured performance numbers for one side. Used so the LLM
+    can quote real CTR/CVR/ROAS without seeing — and pattern-matching on —
+    the full attribute payload."""
     keep = {
         "creative_id",
-        "advertiser_name",
-        "headline",
-        "subhead",
-        "vertical",
-        "format",
-        "theme",
-        "hook_type",
-        "cta_text",
-        "dominant_color",
-        "emotional_tone",
-        "duration_sec",
-        "text_density",
-        "clutter_score",
-        "novelty_score",
-        "has_discount_badge",
-        "has_ugc_style",
-        "faces_count",
         "overall_ctr",
         "overall_cvr",
-        "creative_status",
+        "overall_roas",
         "ctr_decay_pct",
+        "total_days_active",
     }
     return {k: v for k, v in creative.items() if k in keep}
