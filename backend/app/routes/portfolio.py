@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Query
 
 from ..datastore import get_store
-from ..schemas import HealthDiagnostics, PortfolioKPIs, TabCounts
+from ..schemas import HealthDiagnostics, PortfolioKPIs, SearchResponse, TabCounts
 from ..services import queries
 
 router = APIRouter()
@@ -28,3 +28,12 @@ def get_tab_counts(
 @router.get("/portfolio/health-diagnostics", response_model=HealthDiagnostics)
 def get_health_diagnostics() -> dict:
     return queries.health_diagnostics(get_store())
+
+
+@router.get("/search", response_model=SearchResponse)
+def search(
+    q: str = Query(..., description="Search query"),
+    limit: int = Query(default=8, ge=1, le=20),
+) -> dict:
+    hits = queries.search_creatives(get_store(), q, limit=limit)
+    return {"query": q, "hits": hits}
