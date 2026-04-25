@@ -16,10 +16,11 @@ Two-stage system:
    ``creative_status == 'fatigued'`` column — used here as supervised
    ground truth, NOT as a runtime input.
 
-The classifier is fit once at startup over the 1080 creatives in
-~50 ms. At prediction time we extract the same features, score, and
-threshold at the F1-maximizing decision boundary computed from the
-training fit.
+The classifier is **trained offline** by ``scripts/train_fatigue.py``,
+serialized with joblib to ``backend/models/fatigue_classifier.joblib``
+and committed to the repo. ``Datastore`` loads this artifact at startup;
+training only re-runs if the artifact is missing (first boot on a
+fresh checkout, or after the dataset changes).
 
 The dataset's ``fatigue_day`` column is never used.
 """
@@ -27,6 +28,7 @@ The dataset's ``fatigue_day`` column is never used.
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -35,6 +37,11 @@ import pandas as pd
 from ..datastore import Datastore
 
 log = logging.getLogger(__name__)
+
+MODEL_VERSION = "v1"
+MODEL_PATH = (
+    Path(__file__).resolve().parents[2] / "models" / f"fatigue_classifier_{MODEL_VERSION}.joblib"
+)
 
 
 # Minimum days a creative must have run before we'll attempt fatigue
@@ -253,6 +260,57 @@ def train_classifier(
         len(y),
     )
     return pipe, best_t
+
+
+def save_classifier(pipe: Any, threshold: float, feature_names: list[str]) -> Path:
+    """Persist the trained pipeline + threshold + feature schema to
+    ``MODEL_PATH``. The schema is bundled with the model so a future
+    refactor can reject a stale artifact instead of mis-aligning
+    features at inference time."""
+    import joblib
+
+    MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
+    artifact = {
+        "model_version": MODEL_VERSION,
+        "pipeline": pipe,
+        "threshold": float(threshold),
+        "feature_names": list(feature_names),
+    }
+    joblib.dump(artifact, MODEL_PATH)
+    return MODEL_PATH
+
+
+def load_classifier() -> tuple[Any | None, float]:
+    """Load the trained pipeline + threshold from ``MODEL_PATH``.
+    Returns ``(None, 0.5)`` if the artifact is missing, the version
+    doesn't match, or the feature schema has drifted (so the caller
+    can fall back to retraining)."""
+    if not MODEL_PATH.exists():
+        log.info("fatigue model artifact not found at %s — caller must train", MODEL_PATH)
+        return None, 0.5
+    try:
+        import joblib
+
+        artifact = joblib.load(MODEL_PATH)
+    except Exception as e:  # noqa: BLE001
+        log.warning("failed to load fatigue model: %s", e)
+        return None, 0.5
+    if artifact.get("model_version") != MODEL_VERSION:
+        log.info(
+            "fatigue model version mismatch (artifact=%s, code=%s) — retraining",
+            artifact.get("model_version"),
+            MODEL_VERSION,
+        )
+        return None, 0.5
+    if artifact.get("feature_names") != _FEATURE_NAMES:
+        log.info("fatigue model feature schema drifted — retraining")
+        return None, 0.5
+    log.info(
+        "loaded fatigue classifier from %s (threshold=%.2f)",
+        MODEL_PATH,
+        artifact["threshold"],
+    )
+    return artifact["pipeline"], float(artifact["threshold"])
 
 
 def identify_fatigue_changepoint(

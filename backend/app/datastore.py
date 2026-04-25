@@ -130,6 +130,50 @@ class Datastore:
         self._compute_portfolio_aggregates()
         self._verify_counts()
 
+    def _train_fatigue_classifier_inline(
+        self,
+        fatigue_module: Any,
+        cohort_first_median: dict[tuple[Any, Any], float],
+        cohort_last_p25: dict[tuple[Any, Any], float],
+    ) -> tuple[Any, float]:
+        """Fit and persist the fatigue classifier when the saved
+        artifact is missing. Same code path as
+        ``scripts/train_fatigue.py``, just runs in-process."""
+        feature_rows: list[dict[str, float]] = []
+        labels: list[int] = []
+        creative_status_lookup = self.creative_summary.set_index("creative_id")[
+            "creative_status"
+        ].to_dict()
+        for cid in self.creative_detail.keys():
+            d = self.creative_detail.get(int(cid)) or {}
+            key = (d.get("vertical"), d.get("format"))
+            df_ts = fatigue_module.prepare_fatigue_timeseries(self, int(cid))
+            feats = fatigue_module.extract_features(
+                df_ts,
+                cohort_first_median=cohort_first_median.get(key, 0.0),
+                cohort_last_p25=cohort_last_p25.get(key, 0.0),
+            )
+            if feats is None:
+                continue
+            feature_rows.append(feats)
+            labels.append(
+                1 if creative_status_lookup.get(int(cid)) == "fatigued" else 0
+            )
+        if not feature_rows or not any(labels):
+            log.warning("no training data for fatigue classifier — using None")
+            return None, 0.5
+        classifier, threshold = fatigue_module.train_classifier(
+            feature_rows, labels
+        )
+        try:
+            saved = fatigue_module.save_classifier(
+                classifier, threshold, fatigue_module._FEATURE_NAMES
+            )
+            log.info("persisted fallback-trained fatigue model to %s", saved)
+        except Exception as e:  # noqa: BLE001
+            log.warning("failed to persist fatigue model: %s", e)
+        return classifier, threshold
+
     def _compute_fatigue_predictions(self) -> None:
         """Run our changepoint-based fatigue detector on every creative.
 
@@ -175,56 +219,28 @@ class Datastore:
             k: float(np.percentile(v, 25)) for k, v in last_groups.items()
         }
 
-        # Train the supervised classifier. Pass 1 over every creative
-        # builds (features, label) pairs; we then fit a class-balanced
-        # logistic regression with an F1-maximizing decision threshold.
-        # The dataset's ``creative_status`` column is the supervised
-        # target — used here for *training only*, not as a runtime
-        # input. The classifier runs at inference time on its own
-        # learned weights.
-        feature_rows: list[dict[str, float]] = []
-        labels: list[int] = []
-        df_cache: dict[int, pd.DataFrame] = {}
-        creative_status_lookup = self.creative_summary.set_index("creative_id")[
-            "creative_status"
-        ].to_dict()
-        for cid in self.creative_detail.keys():
-            d = self.creative_detail.get(int(cid)) or {}
-            key = (d.get("vertical"), d.get("format"))
-            df_ts = fatigue_module.prepare_fatigue_timeseries(self, int(cid))
-            df_cache[int(cid)] = df_ts
-            feats = fatigue_module.extract_features(
-                df_ts,
-                cohort_first_median=cohort_first_median.get(key, 0.0),
-                cohort_last_p25=cohort_last_p25.get(key, 0.0),
+        # Try to load the persisted classifier first. The model is
+        # trained offline by scripts/train_fatigue.py and committed to
+        # the repo as backend/models/fatigue_classifier_<ver>.joblib.
+        # If it's missing (e.g. fresh checkout pre-training) we fall
+        # back to fitting in-process so the system never boots without
+        # a model.
+        classifier, threshold = fatigue_module.load_classifier()
+        if classifier is None:
+            log.info("fatigue model missing — fitting in-process as fallback")
+            classifier, threshold = self._train_fatigue_classifier_inline(
+                fatigue_module, cohort_first_median, cohort_last_p25
             )
-            if feats is None:
-                continue
-            feature_rows.append(feats)
-            labels.append(
-                1 if creative_status_lookup.get(int(cid)) == "fatigued" else 0
-            )
-
-        if feature_rows and any(labels):
-            classifier, threshold = fatigue_module.train_classifier(
-                feature_rows, labels
-            )
-        else:
-            classifier, threshold = None, 0.5
         self.fatigue_classifier = classifier
         self.fatigue_threshold = threshold
 
-        # Pass 2: score each creative with the trained classifier.
+        # Score every creative with the loaded classifier.
         self.predicted_fatigue: dict[int, dict[str, Any]] = {}
         for cid in self.creative_detail.keys():
             try:
                 d = self.creative_detail.get(int(cid)) or {}
                 key = (d.get("vertical"), d.get("format"))
-                df_ts = df_cache.get(int(cid))
-                if df_ts is None:
-                    df_ts = fatigue_module.prepare_fatigue_timeseries(
-                        self, int(cid)
-                    )
+                df_ts = fatigue_module.prepare_fatigue_timeseries(self, int(cid))
                 verdict = fatigue_module.identify_fatigue_changepoint(
                     df_ts,
                     cohort_first_median=cohort_first_median.get(key, 0.0),
