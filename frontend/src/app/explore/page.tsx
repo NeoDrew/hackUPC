@@ -33,6 +33,8 @@ interface ExploreSearchParams {
   sort?: string;
   desc?: string;
   limit?: string;
+  start?: string;
+  end?: string;
 }
 
 export default async function ExplorePage(props: {
@@ -56,7 +58,7 @@ export default async function ExplorePage(props: {
     return `/explore${s ? `?${s}` : ""}`;
   };
 
-  const suspenseKey = `${params.vertical ?? ""}|${params.format ?? ""}|${params.status ?? ""}|${sort ?? ""}|${desc ? "d" : "a"}|${limit}`;
+  const suspenseKey = `${params.vertical ?? ""}|${params.format ?? ""}|${params.status ?? ""}|${sort ?? ""}|${desc ? "d" : "a"}|${limit}|${params.start ?? ""}|${params.end ?? ""}`;
 
   return (
     <section className="col gap-4" style={{ paddingTop: 16 }}>
@@ -141,6 +143,8 @@ async function ExploreTable({
     sort,
     desc,
     limit,
+    start: params.start,
+    end: params.end,
   });
   const total = listing.total;
   const shown = listing.rows.length;
@@ -161,6 +165,7 @@ async function ExploreTable({
       <CreativeTable
         rows={listing.rows}
         from="explore"
+        range={{ start: params.start, end: params.end }}
         sortState={{
           sort,
           desc,

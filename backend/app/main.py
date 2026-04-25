@@ -22,9 +22,25 @@ async def lifespan(app: FastAPI):  # noqa: ARG001
 
 app = FastAPI(title="Smadex Creative Intelligence", version="0.1.0", lifespan=lifespan)
 
+# Allow:
+#   - http://(localhost|127.0.0.1):<any port>   (local dev)
+#   - https://*.vercel.app                       (Vercel preview + prod)
+#   - any FRONTEND_ORIGIN env value (e.g. custom GoDaddy domain)
+import os as _os  # noqa: E402
+
+_extra_origin = _os.environ.get("FRONTEND_ORIGIN", "").rstrip("/")
+_origin_regex_parts = [
+    r"http://(localhost|127\.0\.0\.1):\d+",
+    r"https://[a-zA-Z0-9-]+\.vercel\.app",
+]
+if _extra_origin:
+    import re as _re  # noqa: E402
+
+    _origin_regex_parts.append(_re.escape(_extra_origin))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"http://(localhost|127\.0\.0\.1):\d+",
+    allow_origin_regex="|".join(f"({p})" for p in _origin_regex_parts),
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )

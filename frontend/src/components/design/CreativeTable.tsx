@@ -27,6 +27,7 @@ export function CreativeTable({
   heading,
   subcopy,
   from,
+  range,
   footer,
   sortState,
 }: {
@@ -34,6 +35,7 @@ export function CreativeTable({
   heading?: string;
   subcopy?: string;
   from?: string;
+  range?: { start?: string; end?: string };
   footer?: React.ReactNode;
   sortState?: SortState;
 }) {
@@ -64,7 +66,9 @@ export function CreativeTable({
             No creatives in this view.
           </div>
         ) : (
-          rows.map((row) => <CreativeRow key={row.creative_id} row={row} from={from} />)
+          rows.map((row) => (
+            <CreativeRow key={row.creative_id} row={row} from={from} range={range} />
+          ))
         )}
       </div>
       {footer}

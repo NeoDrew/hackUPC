@@ -12,8 +12,9 @@ from typing import Any
 import pandas as pd
 
 from ..agents import vision_insight as vision_insight_agent
-from ..datastore import Datastore
+from ..datastore import Datastore, _band_from_health
 from ..schemas import to_jsonable
+from . import windowed
 
 
 def list_advertisers(store: Datastore) -> list[dict[str, Any]]:
@@ -65,11 +66,51 @@ def list_creatives_for_campaign(
 
 
 def get_creative_detail(
-    store: Datastore, creative_id: int
+    store: Datastore,
+    creative_id: int,
+    *,
+    start: str | None = None,
+    end: str | None = None,
 ) -> dict[str, Any] | None:
     record = store.creative_detail.get(creative_id)
     if record is None:
         return None
+    record = dict(record)  # shallow copy so we don't mutate the cached dict
+    if not windowed.is_full_range(store, start, end):
+        s, e = windowed.normalize_window(store, start, end)
+        win_row = windowed.compute_window(store, s, e)["rows_by_cid"].get(
+            creative_id
+        )
+        if win_row is not None:
+            # Override the perf-bearing fields with the windowed values; keep
+            # all metadata (theme, hook_type, asset_file, fatigue_day...)
+            # untouched since those are creative-intrinsic.
+            for k in (
+                "ctr",
+                "cvr",
+                "roas",
+                "spend_usd",
+                "impressions",
+                "clicks",
+                "conversions",
+                "revenue_usd",
+                "days_active",
+                "health",
+                "status_band",
+            ):
+                if k in win_row:
+                    record[k] = win_row[k]
+            # Map windowed flat-row keys back onto the detail-shaped names
+            # the frontend reads.
+            record["overall_ctr"] = win_row["ctr"]
+            record["overall_cvr"] = win_row["cvr"]
+            record["overall_roas"] = win_row["roas"]
+            record["total_spend_usd"] = win_row["spend_usd"]
+            record["total_impressions"] = win_row["impressions"]
+            record["total_clicks"] = win_row["clicks"]
+            record["total_conversions"] = win_row["conversions"]
+            record["total_revenue_usd"] = win_row["revenue_usd"]
+            record["total_days_active"] = win_row["days_active"]
     return to_jsonable(record)
 
 
@@ -106,12 +147,22 @@ _ROW_SORTABLE = {
 }
 
 
-def portfolio_kpis(store: Datastore) -> dict[str, Any]:
-    return store.portfolio_kpis
+def portfolio_kpis(
+    store: Datastore, *, start: str | None = None, end: str | None = None
+) -> dict[str, Any]:
+    if windowed.is_full_range(store, start, end):
+        return store.portfolio_kpis
+    s, e = windowed.normalize_window(store, start, end)
+    return windowed.compute_window(store, s, e)["kpis"]
 
 
-def tab_counts(store: Datastore) -> dict[str, int]:
-    return store.tab_counts
+def tab_counts(
+    store: Datastore, *, start: str | None = None, end: str | None = None
+) -> dict[str, int]:
+    if windowed.is_full_range(store, start, end):
+        return store.tab_counts
+    s, e = windowed.normalize_window(store, start, end)
+    return windowed.compute_window(store, s, e)["tab_counts"]
 
 
 def search_creatives(
@@ -200,20 +251,32 @@ def list_creatives_flat(
     sort: str | None = None,
     desc: bool = True,
     limit: int | None = None,
+    start: str | None = None,
+    end: str | None = None,
 ) -> dict[str, Any]:
     """Flat creative list, wrapped with pre-pagination ``total``.
 
-    ``tab`` filters by our computed ``status_band`` (scale/watch/rescue/cut).
-    ``explore`` (or no tab) returns the whole portfolio. ``status`` filters by
-    the dataset's raw ``creative_status`` label — used only by debug paths.
+    Lifetime mode (no window): tab filters via ``creative_status`` →
+    ``_STATUS_TAB_MAP``. Windowed mode: tab filters by our computed
+    ``status_band`` directly, since the dataset's lifetime label can't
+    speak to a sub-window it didn't see.
     """
-    rows = list(store.flat_row_by_creative.values())
+    if windowed.is_full_range(store, start, end):
+        rows = list(store.flat_row_by_creative.values())
+        windowed_mode = False
+    else:
+        s, e = windowed.normalize_window(store, start, end)
+        rows = list(windowed.compute_window(store, s, e)["rows_by_cid"].values())
+        windowed_mode = True
 
     if tab and tab != "explore":
-        target = _STATUS_TAB_MAP.get(tab)
-        if target is None:
-            return {"rows": [], "total": 0, "limit": limit}
-        rows = [r for r in rows if r["status"] == target]
+        if windowed_mode:
+            rows = [r for r in rows if r["status_band"] == tab]
+        else:
+            target = _STATUS_TAB_MAP.get(tab)
+            if target is None:
+                return {"rows": [], "total": 0, "limit": limit}
+            rows = [r for r in rows if r["status"] == target]
     elif status:
         rows = [r for r in rows if r["status"] == status]
 
@@ -296,15 +359,23 @@ _TWIN_FIELDS: list[str] = [
 ]
 
 
-async def get_twin_stub(store: Datastore, creative_id: int) -> dict[str, Any] | None:
-    """Pick the *most attribute-similar* top_performer within the same
+async def get_twin_stub(
+    store: Datastore,
+    creative_id: int,
+    *,
+    start: str | None = None,
+    end: str | None = None,
+) -> dict[str, Any] | None:
+    """Pick the *most attribute-similar* top performer within the same
     (vertical, format) cohort using cosine similarity over a per-creative
     feature vector (one-hot categoricals + normalised numerics + binary
     flags). Returns the real similarity score in ``similarity``.
 
-    The diff table is computed on the picked twin's attributes vs the
-    source. Vision insight comes from Gemma when configured; otherwise
-    falls back to a 3-template body keyed on the largest diff.
+    Lifetime mode: winner pool = creatives with ``creative_status ==
+    'top_performer'``. Windowed mode: winner pool = creatives whose
+    *windowed* ``status_band == 'scale'`` (the lifetime label can't speak
+    to a sub-window it didn't see). Cosine vectors themselves are built
+    from creative metadata, so they don't recompute.
     """
     import numpy as np
 
@@ -312,34 +383,59 @@ async def get_twin_stub(store: Datastore, creative_id: int) -> dict[str, Any] | 
     if source is None:
         return None
 
-    summary = store.creative_summary
-    cohort = summary[
-        (summary["vertical"] == source["vertical"])
-        & (summary["format"] == source["format"])
-        & (summary["creative_status"] == "top_performer")
-        & (summary["creative_id"] != creative_id)
-    ]
-    if cohort.empty:
-        # Fall back to any top performer in the same vertical.
+    if windowed.is_full_range(store, start, end):
+        summary = store.creative_summary
         cohort = summary[
             (summary["vertical"] == source["vertical"])
+            & (summary["format"] == source["format"])
             & (summary["creative_status"] == "top_performer")
             & (summary["creative_id"] != creative_id)
         ]
-    if cohort.empty:
+        if cohort.empty:
+            cohort = summary[
+                (summary["vertical"] == source["vertical"])
+                & (summary["creative_status"] == "top_performer")
+                & (summary["creative_id"] != creative_id)
+            ]
+        cohort_ids = [int(c) for c in cohort["creative_id"].tolist()]
+    else:
+        s, e = windowed.normalize_window(store, start, end)
+        rows_by_cid = windowed.compute_window(store, s, e)["rows_by_cid"]
+        # Tight filter first: same (vertical, format) + scale band. Then
+        # progressively widen — in narrower windows entire cohorts can be
+        # empty of scale-band creatives, so we accept watch and finally any
+        # vertical, rather than 404.
+        def find_pool(*, by_cohort: bool, by_vertical: bool, bands: tuple[str, ...]) -> list[int]:
+            return [
+                cid
+                for cid, r in rows_by_cid.items()
+                if cid != creative_id
+                and r["status_band"] in bands
+                and (not by_vertical or r["vertical"] == source["vertical"])
+                and (not by_cohort or r["format"] == source["format"])
+            ]
+
+        cohort_ids = find_pool(by_cohort=True, by_vertical=True, bands=("scale",))
+        if not cohort_ids:
+            cohort_ids = find_pool(by_cohort=False, by_vertical=True, bands=("scale",))
+        if not cohort_ids:
+            cohort_ids = find_pool(by_cohort=True, by_vertical=True, bands=("scale", "watch"))
+        if not cohort_ids:
+            cohort_ids = find_pool(by_cohort=False, by_vertical=True, bands=("scale", "watch"))
+        if not cohort_ids:
+            cohort_ids = find_pool(by_cohort=False, by_vertical=False, bands=("scale", "watch"))
+    if not cohort_ids:
         return None
 
     source_vec = store.creative_vectors.get(creative_id)
     if source_vec is None:
-        # Vector unavailable for some reason — fall back to the cohort leader.
-        winner_row = cohort.sort_values("perf_score", ascending=False).iloc[0]
-        winner_id = int(winner_row["creative_id"])
+        # Vector unavailable for some reason — fall back to the first cohort member.
+        winner_id = cohort_ids[0]
         similarity = 0.0
     else:
         best_id: int | None = None
         best_sim = -1.0
-        for cid in cohort["creative_id"]:
-            cid_int = int(cid)
+        for cid_int in cohort_ids:
             v = store.creative_vectors.get(cid_int)
             if v is None:
                 continue

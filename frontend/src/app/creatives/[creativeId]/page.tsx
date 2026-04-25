@@ -4,8 +4,6 @@ import { notFound } from "next/navigation";
 import { api } from "@/lib/api";
 import { creativeImageUrl } from "@/lib/assetUrl";
 import { HealthRing } from "@/components/design/HealthRing";
-import { StatusPill } from "@/components/design/StatusPill";
-import { BandPill } from "@/components/design/BandPill";
 import { MetadataPills } from "@/components/design/MetadataPills";
 import { PerformanceGrid } from "@/components/design/PerformanceGrid";
 import { FatigueChart } from "@/components/design/FatigueChart";
@@ -23,19 +21,28 @@ export default async function CreativeDetailPage(
   const sp = await props.searchParams;
   const rawFrom = typeof sp?.from === "string" ? sp.from : undefined;
   const from = rawFrom && VALID_FROM.has(rawFrom) ? rawFrom : undefined;
-  const backHref =
+  const start = typeof sp?.start === "string" ? sp.start : undefined;
+  const end = typeof sp?.end === "string" ? sp.end : undefined;
+  const rangeQs = new URLSearchParams();
+  if (start) rangeQs.set("start", start);
+  if (end) rangeQs.set("end", end);
+  const rangeSuffix = rangeQs.toString();
+  const backBase =
     from === "explore" ? "/explore" : from ? `/?tab=${from}` : "/";
+  const backHref = rangeSuffix
+    ? `${backBase}${backBase.includes("?") ? "&" : "?"}${rangeSuffix}`
+    : backBase;
+  const twinSuffix = rangeSuffix ? `?${rangeSuffix}` : "";
 
   let creative;
   try {
-    creative = await api.getCreative(id);
+    creative = await api.getCreative(id, { start, end });
   } catch {
     notFound();
   }
   const data = creative as unknown as Record<string, number | string | null | undefined>;
   const health = (creative.health as number | null) ?? 0;
   const status = (data.creative_status as string | null) ?? null;
-  const band = (creative.status_band as string | null) ?? null;
   const fatigueDay = (data.fatigue_day as number | null) ?? null;
 
   return (
@@ -45,7 +52,7 @@ export default async function CreativeDetailPage(
           ← Back
         </Link>
         {status === "fatigued" && (
-          <Link href={`/creatives/${id}/twin`} className="btn dense primary">
+          <Link href={`/creatives/${id}/twin${twinSuffix}`} className="btn dense primary">
             Why is this losing?
           </Link>
         )}
@@ -56,13 +63,6 @@ export default async function CreativeDetailPage(
         <h1 className="t-page" style={{ margin: 0 }}>
           {(data.headline as string) || `Creative ${creative.creative_id}`}
         </h1>
-        <div className="row center gap-2" style={{ flexWrap: "wrap" }}>
-          <BandPill band={band} health={health} />
-          <StatusPill status={status} dense />
-          <span className="t-micro muted">
-            {bandVsLabel(band, status)}
-          </span>
-        </div>
         <div className="t-body muted">
           {String(data.advertiser_name ?? "")} · {String(data.vertical ?? "")} ·{" "}
           {String(data.format ?? "")} · {String(data.language ?? "")}
@@ -169,19 +169,4 @@ export default async function CreativeDetailPage(
 
 function cohortBarWidth(pct: number): number {
   return Math.max(5, Math.min(100, pct));
-}
-
-function bandVsLabel(band: string | null, status: string | null): string {
-  if (!band || !status) return "";
-  const expected: Record<string, string> = {
-    top_performer: "scale",
-    stable: "watch",
-    fatigued: "rescue",
-    underperformer: "cut",
-  };
-  const expectedBand = expected[status];
-  if (!expectedBand) return "";
-  return band === expectedBand
-    ? "✓ our trajectory band agrees with Smadex's label"
-    : "✗ diverges from Smadex's label · talking point";
 }

@@ -18,6 +18,8 @@ def list_creatives_flat(
     sort: str | None = Query(default=None),
     desc: bool = Query(default=True),
     limit: int | None = Query(default=100, ge=1, le=2000),
+    start: str | None = Query(default=None, description="ISO date YYYY-MM-DD"),
+    end: str | None = Query(default=None, description="ISO date YYYY-MM-DD"),
 ) -> dict:
     return queries.list_creatives_flat(
         get_store(),
@@ -28,12 +30,18 @@ def list_creatives_flat(
         sort=sort,
         desc=desc,
         limit=limit,
+        start=start,
+        end=end,
     )
 
 
 @router.get("/creatives/{creative_id}", response_model=CreativeDetail)
-def get_creative(creative_id: int) -> dict:
-    detail = queries.get_creative_detail(get_store(), creative_id)
+def get_creative(
+    creative_id: int,
+    start: str | None = Query(default=None),
+    end: str | None = Query(default=None),
+) -> dict:
+    detail = queries.get_creative_detail(get_store(), creative_id, start=start, end=end)
     if detail is None:
         raise HTTPException(status_code=404, detail="creative not found")
     return detail
@@ -54,8 +62,12 @@ def get_timeseries(creative_id: int) -> dict:
     "/creatives/{creative_id}/twin",
     response_model=TwinSummary,
 )
-async def get_twin(creative_id: int) -> dict:
-    twin = await queries.get_twin_stub(get_store(), creative_id)
+async def get_twin(
+    creative_id: int,
+    start: str | None = Query(default=None),
+    end: str | None = Query(default=None),
+) -> dict:
+    twin = await queries.get_twin_stub(get_store(), creative_id, start=start, end=end)
     if twin is None:
         raise HTTPException(
             status_code=404, detail="no cohort-leader twin found"

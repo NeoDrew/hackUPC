@@ -1,0 +1,24 @@
+# Render Blueprint — single FastAPI service for the Smadex backend.
+# Connect this repo in the Render dashboard and import as a Blueprint;
+# it will create the web service with the settings below.
+services:
+  - type: web
+    name: smadex-backend
+    runtime: python
+    plan: free
+    rootDir: backend
+    pythonVersion: "3.12"
+    buildCommand: |
+      pip install uv
+      uv sync --frozen
+    startCommand: uv run uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      # Frontend origin (set after the Vercel deploy lands; until then the
+      # *.vercel.app regex in main.py covers preview URLs).
+      - key: FRONTEND_ORIGIN
+        sync: false
+      # Gemma 4 / Gemini API key — set in the Render dashboard, do NOT commit.
+      - key: GEMINI_API_KEY
+        sync: false

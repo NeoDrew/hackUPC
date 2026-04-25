@@ -10,13 +10,19 @@ router = APIRouter()
 
 
 @router.get("/portfolio/kpis", response_model=PortfolioKPIs)
-def get_portfolio_kpis() -> dict:
-    return queries.portfolio_kpis(get_store())
+def get_portfolio_kpis(
+    start: str | None = Query(default=None, description="ISO date YYYY-MM-DD"),
+    end: str | None = Query(default=None, description="ISO date YYYY-MM-DD"),
+) -> dict:
+    return queries.portfolio_kpis(get_store(), start=start, end=end)
 
 
 @router.get("/portfolio/tab-counts", response_model=TabCounts)
-def get_tab_counts() -> dict:
-    return queries.tab_counts(get_store())
+def get_tab_counts(
+    start: str | None = Query(default=None),
+    end: str | None = Query(default=None),
+) -> dict:
+    return queries.tab_counts(get_store(), start=start, end=end)
 
 
 @router.get("/search", response_model=SearchResponse)

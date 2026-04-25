@@ -35,6 +35,8 @@ interface CockpitSearchParams {
   limit?: string;
   sort?: string;
   desc?: string;
+  start?: string;
+  end?: string;
 }
 
 const PAGE_SIZE = 100;
@@ -48,12 +50,12 @@ export default async function Cockpit(props: {
   const limit = clampLimit(params.limit);
   const sort = params.sort && SORTABLE.has(params.sort) ? params.sort : undefined;
   const desc = params.desc !== "false";
-  // KPIs don't depend on the tab — fetch in the parent so the strip
-  // renders instantly. Table moves into a Suspense below so tab clicks
-  // swap the rows without flashing the whole page.
-  const kpis = await api.portfolioKpis();
+  const start = params.start;
+  const end = params.end;
+  // KPIs depend on the date range; tab-independent so fetched in the parent.
+  const kpis = await api.portfolioKpis({ start, end });
   const headings = TAB_HEADINGS[tab];
-  const suspenseKey = `${tab}|${sort ?? ""}|${desc ? "d" : "a"}|${limit}`;
+  const suspenseKey = `${tab}|${sort ?? ""}|${desc ? "d" : "a"}|${limit}|${start ?? ""}|${end ?? ""}`;
   return (
     <>
       <section className="kpi-strip">
@@ -76,7 +78,7 @@ export default async function Cockpit(props: {
           />
         }
       >
-        <CockpitTable tab={tab} limit={limit} sort={sort} desc={desc} />
+        <CockpitTable tab={tab} limit={limit} sort={sort} desc={desc} start={start} end={end} />
       </Suspense>
     </>
   );
@@ -87,13 +89,17 @@ async function CockpitTable({
   limit,
   sort,
   desc,
+  start,
+  end,
 }: {
   tab: TabKey;
   limit: number;
   sort?: string;
   desc: boolean;
+  start?: string;
+  end?: string;
 }) {
-  const listing = await api.listCreatives({ tab, limit, sort, desc });
+  const listing = await api.listCreatives({ tab, limit, sort, desc, start, end });
   const headings = TAB_HEADINGS[tab];
   const total = listing.total;
   const shown = listing.rows.length;
@@ -108,6 +114,8 @@ async function CockpitTable({
       next.sort = key;
       next.desc = "true";
     }
+    if (start) next.start = start;
+    if (end) next.end = end;
     const qp = new URLSearchParams(next).toString();
     return `/?${qp}`;
   };
@@ -117,6 +125,7 @@ async function CockpitTable({
       heading={headings.heading}
       subcopy={headings.subcopy}
       from={tab}
+      range={{ start, end }}
       sortState={{ sort, desc, buildHref: buildSortHref }}
       footer={
         shown < total ? (
@@ -127,6 +136,8 @@ async function CockpitTable({
             currentLimit={limit}
             sort={sort}
             desc={desc}
+            start={start}
+            end={end}
           />
         ) : (
           <p className="t-micro muted" style={{ padding: "10px 16px" }}>
@@ -145,6 +156,8 @@ function ShowMoreFooter({
   currentLimit,
   sort,
   desc,
+  start,
+  end,
 }: {
   tab: TabKey;
   shown: number;
@@ -152,6 +165,8 @@ function ShowMoreFooter({
   currentLimit: number;
   sort?: string;
   desc: boolean;
+  start?: string;
+  end?: string;
 }) {
   const next = Math.min(currentLimit + PAGE_SIZE, total);
   const params: Record<string, string> = { tab, limit: String(next) };
@@ -159,6 +174,8 @@ function ShowMoreFooter({
     params.sort = sort;
     params.desc = desc ? "true" : "false";
   }
+  if (start) params.start = start;
+  if (end) params.end = end;
   const href = `/?${new URLSearchParams(params).toString()}`;
   return (
     <div

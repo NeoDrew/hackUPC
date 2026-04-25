@@ -1,3 +1,4 @@
+import { PeriodPicker } from "./PeriodPicker";
 import { SearchInput } from "./SearchInput";
 
 export function TopBar() {
@@ -10,10 +11,7 @@ export function TopBar() {
       </div>
       <SearchInput />
       <div className="right">
-        <span className="filter-chip">
-          <span className="muted">Period</span>
-          <strong>Last 75 days</strong>
-        </span>
+        <PeriodPicker />
         <span className="avatar" title="Maya Tanaka">MT</span>
       </div>
     </header>

@@ -44,9 +44,18 @@ export interface ListCreativesArgs {
   sort?: string;
   desc?: boolean;
   limit?: number;
+  start?: string;
+  end?: string;
 }
 
-function buildQuery(params: Record<string, string | number | boolean | undefined>): string {
+export interface DateRange {
+  start?: string;
+  end?: string;
+}
+
+function buildQuery(
+  params: Record<string, string | number | boolean | undefined> | object,
+): string {
   const out = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) {
     if (v === undefined || v === null || v === "") continue;
@@ -67,20 +76,24 @@ export const api = {
     fetchJSON<CampaignCreativesResponse>(`/api/campaigns/${campaignId}/creatives`),
 
   // Cockpit / portfolio.
-  portfolioKpis: () => fetchJSON<PortfolioKPIs>("/api/portfolio/kpis"),
-  tabCounts: () => fetchJSON<TabCounts>("/api/portfolio/tab-counts"),
+  portfolioKpis: (range: DateRange = {}) =>
+    fetchJSON<PortfolioKPIs>(`/api/portfolio/kpis${buildQuery(range)}`),
+  tabCounts: (range: DateRange = {}) =>
+    fetchJSON<TabCounts>(`/api/portfolio/tab-counts${buildQuery(range)}`),
   listCreatives: (args: ListCreativesArgs = {}) =>
     fetchJSON<CreativeListResponse>(
       `/api/creatives${buildQuery(args as Record<string, string | number | boolean | undefined>)}`,
     ),
 
   // Drawer / detail.
-  getCreative: (id: number) => fetchJSON<CreativeDetail>(`/api/creatives/${id}`),
+  getCreative: (id: number, range: DateRange = {}) =>
+    fetchJSON<CreativeDetail>(`/api/creatives/${id}${buildQuery(range)}`),
   getCreativeTimeseries: (id: number) =>
     fetchJSON<CreativeTimeseries>(`/api/creatives/${id}/timeseries`),
 
   // Twin.
-  getTwin: (id: number) => fetchJSON<TwinSummary>(`/api/creatives/${id}/twin`),
+  getTwin: (id: number, range: DateRange = {}) =>
+    fetchJSON<TwinSummary>(`/api/creatives/${id}/twin${buildQuery(range)}`),
 
   // Search.
   search: (q: string, limit = 8) =>
