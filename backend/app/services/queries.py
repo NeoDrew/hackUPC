@@ -274,13 +274,12 @@ def list_creatives_flat(
         windowed_mode = True
 
     if tab and tab != "explore":
-        if windowed_mode:
-            rows = [r for r in rows if r["status_band"] == tab]
-        else:
-            target = _STATUS_TAB_MAP.get(tab)
-            if target is None:
-                return {"rows": [], "total": 0, "limit": limit}
-            rows = [r for r in rows if r["status"] == target]
+        if tab not in _STATUS_BANDS:
+            return {"rows": [], "total": 0, "limit": limit}
+        # Both lifetime and windowed paths now filter on the computed
+        # status_band — the lifetime band is set by the Q1 health score,
+        # so it's the same axis in both modes.
+        rows = [r for r in rows if r.get("status_band") == tab]
     elif status:
         rows = [r for r in rows if r["status"] == status]
 
