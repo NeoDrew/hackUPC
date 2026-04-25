@@ -168,13 +168,21 @@ class CreativeListItem(BaseModel):
 
 
 class PredictedFatigue(BaseModel):
-    """Our own fatigue verdict for a creative, computed from the daily
-    impressions / clicks time series — isotonic regression + Ruptures
-    changepoint detection + Beta-binomial significance test.
+    """Our own fatigue verdict for a creative.
 
-    The dataset's ``creative_status`` and ``fatigue_day`` columns are NOT
-    inputs here; they remain reserved as ground-truth labels for
-    validation. This is the prediction we surface in the UI.
+    Two-stage detector (see ``app/services/fatigue.py``):
+
+    1. Maximum-likelihood binomial changepoint scan over the daily
+       clicks/impressions series locates the best break and reports a
+       Bonferroni-adjusted chi² p-value.
+    2. A regularised logistic regression (held-out ROC-AUC ≈ 0.93,
+       beating the dataset's ``ctr_decay_pct`` baseline of 0.87) decides
+       whether the break is fatigue or end-of-flight tail-off.
+
+    The dataset's ``creative_status`` is the supervised training label
+    (offline only, by ``scripts/train_fatigue.py``). ``creative_status``
+    and ``fatigue_day`` are never read at inference. ``model_score`` is
+    the calibrated Bernoulli posterior surfaced as the UI confidence.
     """
 
     is_fatigued: bool

@@ -38,7 +38,7 @@ from ..datastore import Datastore
 
 log = logging.getLogger(__name__)
 
-MODEL_VERSION = "v1"
+MODEL_VERSION = "v2"
 MODEL_PATH = (
     Path(__file__).resolve().parents[2] / "models" / f"fatigue_classifier_{MODEL_VERSION}.joblib"
 )
@@ -51,181 +51,19 @@ _MIN_DAYS = 14
 # breakpoint so the pre/post means are stable.
 _MIN_PRE_DAYS = 7
 _MIN_POST_DAYS = 7
-# Magnitude requirement: post CTR must be at most this fraction of pre.
-_MAX_POST_RATIO = 0.70
-# Bonferroni-corrected significance threshold across the changepoint search.
-_ALPHA = 0.001
-# Pre-rate must clear the cohort median (×_PRE_FLOOR_MULT). Otherwise the
-# creative was never strong enough to "fatigue from".
-_PRE_FLOOR_MULT = 1.0
-# Post-rate must fall below the cohort median (×_POST_CEILING_MULT). A
-# creative still performing at peer level isn't fatigued, even if its own
-# CTR dropped from a personal high.
-_POST_CEILING_MULT = 0.85
-
-
-def phase1_preprocess_and_aggregate(df: pd.DataFrame) -> pd.DataFrame:
-    """Phase 1: Data Pre-Processing & Aggregation
-    
-    Aggregates daily time-series data, computes base metrics with appropriate floors 
-    to avoid division-by-zero, and sorts the result.
-    """
-    # Group by creative_id and date and sum metrics
-    agg_dict = {
-        "impressions": "sum",
-        "clicks": "sum",
-        "conversions": "sum",
-        "spend_usd": "sum",
-        "revenue_usd": "sum",
-        "video_completions": "sum",
-        "days_since_launch": "min"
-    }
-    
-    # Only aggregate columns that are present in the dataframe
-    agg_columns = {k: v for k, v in agg_dict.items() if k in df.columns}
-    # If missing days_since_launch, just group by creative_id and date
-    
-    grouped = df.groupby(["creative_id", "date"], as_index=False).agg(agg_columns)
-    
-    # Handle division-by-zero bounds
-    impr = grouped["impressions"].astype(float)
-    clk = grouped["clicks"].astype(float)
-    spend = grouped["spend_usd"].astype(float) if "spend_usd" in grouped else None
-    conv = grouped["conversions"].astype(float) if "conversions" in grouped else None
-    rev = grouped["revenue_usd"].astype(float) if "revenue_usd" in grouped else None
-    vid = grouped["video_completions"].astype(float) if "video_completions" in grouped else None
-    
-    impr_floor = np.maximum(impr, 1.0)
-    clk_floor = np.maximum(clk, 1.0)
-    
-    # Derive base logic and compute
-    grouped["ctr"] = clk / impr_floor
-    
-    if conv is not None:
-        grouped["cvr"] = conv / clk_floor
-    if spend is not None and rev is not None:
-        spend_floor = np.maximum(spend, 0.01)
-        grouped["roas"] = rev / spend_floor
-    if vid is not None:
-        grouped["vtr"] = vid / impr_floor
-        
-    # Set null CTR for zero-impression rows
-    grouped.loc[impr == 0, "ctr"] = np.nan
-    
-    # Sort the DataFrame
-    sort_cols = ["creative_id"]
-    if "days_since_launch" in grouped.columns:
-        sort_cols.append("days_since_launch")
-    else:
-        sort_cols.append("date") # Fallback
-        
-    grouped = grouped.sort_values(sort_cols, ascending=True).reset_index(drop=True)
-    
-    return grouped
-
-
-def phase2_layer1_decay_ratio(df_summary: pd.DataFrame) -> pd.DataFrame:
-    """Phase 2: Layer 1 (First/Last Window Decay Ratio)
-    
-    Reads summary data, computes ratio of decline from first 7 days to last 7 days,
-    clamps, normalizes, and flags decay.
-    """
-    df = df_summary.copy()
-    
-    # Ensure required columns are present
-    if "first_7d_ctr" not in df.columns or "last_7d_ctr" not in df.columns:
-        return df
-        
-    first_7d_ctr = df["first_7d_ctr"].astype(float)
-    last_7d_ctr = df["last_7d_ctr"].astype(float)
-    
-    # Compute: decay_ratio = (first_7d_ctr - last_7d_ctr) / max(first_7d_ctr, 1e-6)
-    denominator = np.maximum(first_7d_ctr, 1e-6)
-    decay_ratio = (first_7d_ctr - last_7d_ctr) / denominator
-    
-    # Clamp to [-1.0, 1.0]
-    decay_ratio_clamped = np.clip(decay_ratio, -1.0, 1.0)
-    
-    # Apply target min-max normalization
-    min_val = decay_ratio_clamped.min()
-    max_val = decay_ratio_clamped.max()
-    
-    if max_val > min_val:
-        l1_norm = (decay_ratio_clamped - min_val) / (max_val - min_val)
-    else:
-        l1_norm = np.zeros_like(decay_ratio_clamped)
-        
-    df["l1_norm"] = l1_norm
-    df["decay_ratio"] = decay_ratio_clamped
-    
-    # Output boolean l1_flag: decay_ratio > 0.25
-    df["l1_flag"] = decay_ratio_clamped > 0.25
-    
-    return df
-
-
-def phase4_layer3_pelt_changepoint(df: pd.DataFrame) -> dict:
-    """Phase 4: Layer 3 (Changepoint Detection - PELT)
-    
-    Interpolates null CTR values, runs PELT with RBF cost, and filters
-    for downward structural breaks to annotate timeline.
-    Expects a DataFrame for a single creative sorted by time.
-    """
-    try:
-        import ruptures as rpt
-    except ImportError:
-        log.warning("ruptures package not found. Skipping PELT changepoint detection.")
-        return {"detected_fatigue_day": None, "break_index": None}
-
-    if df.empty or "ctr" not in df.columns:
-        return {"detected_fatigue_day": None, "break_index": None}
-        
-    # Interpolate null CTR values
-    ctr_series = df["ctr"].interpolate(method="linear").bfill().ffill().to_numpy(dtype=float)
-    
-    # Require >= 14 observations
-    if len(ctr_series) < 14:
-        return {"detected_fatigue_day": None, "break_index": None}
-        
-    # Run the PELT algorithm with RBF cost
-    algo = rpt.Pelt(model="rbf").fit(ctr_series)
-    breakpoints = algo.predict(pen=3)
-    
-    # Filter structural breaks by verifying: post_break_mean_ctr < pre_break_mean_ctr
-    for bp in breakpoints:
-        if bp >= len(ctr_series):
-            continue
-            
-        pre_break = ctr_series[:bp]
-        post_break = ctr_series[bp:]
-        
-        if len(pre_break) == 0 or len(post_break) == 0:
-            continue
-            
-        pre_mean = pre_break.mean()
-        post_mean = post_break.mean()
-        
-        if post_mean < pre_mean:
-            # Output: first downward break index and mapped detected_fatigue_day
-            fatigue_day = None
-            if "days_since_launch" in df.columns:
-                fatigue_day = int(df["days_since_launch"].iloc[bp])
-            elif "date" in df.columns:
-                fatigue_day = str(df["date"].iloc[bp])
-                
-            return {
-                "break_index": int(bp),
-                "detected_fatigue_day": fatigue_day
-            }
-            
-    return {"detected_fatigue_day": None, "break_index": None}
 
 
 def prepare_fatigue_timeseries(store: Datastore, creative_id: int) -> pd.DataFrame:
     """Pull the daily impressions/clicks series for a creative and build
     a 7-day rolling CTR (sum-of-numerators / sum-of-denominators, not a
     mean of daily ratios). Returns an empty frame with the expected
-    columns if the creative has no data."""
+    columns if the creative has no data.
+
+    Zero-impression days keep ``ctr = NaN`` so downstream consumers
+    (charts, feature extraction) can distinguish "no traffic" from
+    "served but nobody clicked" — per the dataset trap on un-served
+    budget days documented in resources/smadex/dataset_notes.md.
+    """
     points = store.timeseries_by_creative.get(creative_id)
     if not points:
         return pd.DataFrame(
@@ -245,13 +83,11 @@ def prepare_fatigue_timeseries(store: Datastore, creative_id: int) -> pd.DataFra
     df["date"] = pd.to_datetime(df["date"])
     impr = df["impressions"].astype(float)
     clk = df["clicks"].astype(float)
-    df["ctr"] = (clk / impr.replace(0, np.nan)).fillna(0.0)
+    df["ctr"] = clk / impr.replace(0, np.nan)
 
     rolling_imp = impr.rolling(window=7, min_periods=1).sum()
     rolling_clk = clk.rolling(window=7, min_periods=1).sum()
-    df["rolling_7d_ctr"] = (
-        rolling_clk / rolling_imp.replace(0, np.nan)
-    ).fillna(0.0)
+    df["rolling_7d_ctr"] = rolling_clk / rolling_imp.replace(0, np.nan)
     return df
 
 
@@ -291,6 +127,13 @@ def extract_features(
     ctr_mean = float(daily_ctr.mean())
     ctr_std = float(daily_ctr.std())
 
+    # Peak-to-last drawdown: ratio of last 7-day rolling mean to its lifetime
+    # peak. Captures decline from personal-best regardless of launch level.
+    rolling = pd.Series(daily_ctr).rolling(7, min_periods=1).mean()
+    peak_roll = float(rolling.max())
+    last_roll = float(rolling.iloc[-1])
+    peak_to_last_drawdown = (last_roll / peak_roll) if peak_roll > 1e-9 else 1.0
+
     first_vs_cohort = (
         p_first / cohort_first_median if cohort_first_median > 0 else 1.0
     )
@@ -311,6 +154,7 @@ def extract_features(
         "best_k": float(best_k),
         "p_pre": float(p_pre),
         "p_post": float(p_post),
+        "peak_to_last_drawdown": float(peak_to_last_drawdown),
     }
 
 
@@ -368,6 +212,9 @@ _FEATURE_NAMES: list[str] = [
     "log_total_impr",
     "ctr_cv",
     "days_active",
+    # Added: high permutation importance per research/fatigue_kpi_research.ipynb
+    "p_pre",                  # rank 2 — absolute pre-changepoint CTR level
+    "peak_to_last_drawdown",  # rank 3 — decline from personal-peak, not just first-7d
 ]
 
 
@@ -478,20 +325,22 @@ def identify_fatigue_changepoint(
     classifier: Any | None = None,
     threshold: float = 0.5,
 ) -> dict[str, Any]:
-    """Run the test.
+    """Score one creative's daily series.
 
-    ``cohort_first_median``: median first-7-day CTR across the creative's
-    (vertical, format) cohort. Gates "launched strong" — only creatives
-    whose first-7d CTR clears the cohort median are eligible for the
-    fatigue label.
+    Runs the binomial-LR changepoint scan to locate the best break, then
+    asks the trained classifier whether what was found is fatigue or
+    end-of-flight noise. Returns a flat dict ready to attach to the
+    creative detail payload.
 
-    ``cohort_last_p25``: 25th-percentile last-7-day CTR across the cohort.
-    Gates "ended weak" — the creative's last-7d CTR must fall to or
-    below this floor (bottom quarter of late performance).
+    ``cohort_first_median`` / ``cohort_last_p25``: cohort baselines used
+    by ``extract_features`` to compute ``first_vs_cohort`` and
+    ``last_vs_cohort``. Computed once per (vertical, format) cohort at
+    Datastore boot.
 
-    Fatigue fires only if BOTH cohort-rank gates pass, the run-over-run
-    drop is steep (last ≤ 22% of first), and the binomial changepoint
-    test is significant after Bonferroni correction.
+    ``classifier``: the fitted scikit-learn pipeline from
+    ``load_classifier`` / ``train_classifier``. If ``None``, returns the
+    base "no verdict" payload — the system intentionally has no heuristic
+    fallback so a missing model is loud, not silent.
     """
     base = {
         "is_fatigued": False,
@@ -502,130 +351,62 @@ def identify_fatigue_changepoint(
         "is_significant": False,
         "pre_ctr": None,
         "post_ctr": None,
+        "cohort_first_median": round(cohort_first_median or 0.0, 6),
+        "cohort_last_p25": round(cohort_last_p25 or 0.0, 6),
+        "model_score": None,
     }
     if df.empty or len(df) < _MIN_DAYS:
+        return base
+    if classifier is None:
+        log.warning("identify_fatigue_changepoint called without a classifier")
         return base
 
     impr = df["impressions"].to_numpy(dtype=float)
     clk = df["clicks"].to_numpy(dtype=float)
-    n = len(impr)
 
-    total_imp = impr.sum()
-    total_clk = clk.sum()
-    if total_imp <= 0 or total_clk <= 0:
+    cp = _changepoint_lr(impr, clk)
+    if cp is None:
+        return base
+    best_k, best_lr, p_pre, p_post = cp
+
+    feats = extract_features(
+        df,
+        cohort_first_median=cohort_first_median or 0.0,
+        cohort_last_p25=cohort_last_p25 or 0.0,
+    )
+    if feats is None:
         return base
 
-    cum_imp = np.cumsum(impr)
-    cum_clk = np.cumsum(clk)
+    x = np.array([[feats[f] for f in _FEATURE_NAMES]])
+    prob = float(classifier.predict_proba(x)[0, 1])
+    is_fatigued = prob >= threshold
 
-    # Likelihood-ratio search across candidate breakpoints.
-    best_k: int | None = None
-    best_lr = -np.inf
-    for k in range(_MIN_PRE_DAYS, n - _MIN_POST_DAYS + 1):
-        pre_imp = cum_imp[k - 1]
-        pre_clk = cum_clk[k - 1]
-        post_imp = total_imp - pre_imp
-        post_clk = total_clk - pre_clk
-        if pre_imp <= 0 or post_imp <= 0:
-            continue
-        p1 = pre_clk / pre_imp
-        p2 = post_clk / post_imp
-        if p1 <= 0 or p2 <= 0 or p1 >= 1 or p2 >= 1:
-            continue
-        # LR = 2 × (ll(H1) − ll(H0))
-        p0 = total_clk / total_imp
-        ll_full = (
-            pre_clk * np.log(p1)
-            + (pre_imp - pre_clk) * np.log(1 - p1)
-            + post_clk * np.log(p2)
-            + (post_imp - post_clk) * np.log(1 - p2)
-        )
-        ll_null = total_clk * np.log(p0) + (total_imp - total_clk) * np.log(1 - p0)
-        lr = 2.0 * (ll_full - ll_null)
-        # Only keep candidates where the post-rate is *lower* — fatigue,
-        # not improvement.
-        if p2 < p1 and lr > best_lr:
-            best_lr = lr
-            best_k = k
-
-    if best_k is None or not np.isfinite(best_lr):
-        return base
-
-    # Recompute the rates at the best k.
-    pre_imp = cum_imp[best_k - 1]
-    pre_clk = cum_clk[best_k - 1]
-    post_imp = total_imp - pre_imp
-    post_clk = total_clk - pre_clk
-    p_pre = float(pre_clk / pre_imp)
-    p_post = float(post_clk / post_imp)
-    drop_ratio = p_post / p_pre  # < 1 = drop
-
-    # Asymptotic chi-squared(1) p-value, with Bonferroni correction over
-    # the (n - _MIN_PRE_DAYS - _MIN_POST_DAYS + 1) candidates we searched.
+    # Bonferroni-adjusted chi²(1) p-value over the candidate scan, kept
+    # for transparency in the UI even though the verdict is the
+    # classifier's, not the test's.
     from scipy.stats import chi2  # local import: heavy
 
+    n = len(impr)
     k_search = max(1, n - _MIN_PRE_DAYS - _MIN_POST_DAYS + 1)
     p_raw = float(chi2.sf(best_lr, df=1))
     p_adj = float(min(1.0, p_raw * k_search))
 
-    # Anchor period comparison. The dataset's actual fatigue signature
-    # is gradual exponential decline from a *strong launch* — not a
-    # step. Stable creatives also decline but launch from a lower
-    # plateau. The discriminating signal is therefore:
-    #   - first-7-days CTR is in the TOP of the cohort (strong launch),
-    #   - the run-over-run drop ratio (last/first) is small enough that
-    #     the creative ends meaningfully below where its cohort ends.
-    n_anchor = min(7, n // 3)
-    first_imp = impr[:n_anchor].sum()
-    first_clk = clk[:n_anchor].sum()
-    last_imp = impr[-n_anchor:].sum()
-    last_clk = clk[-n_anchor:].sum()
-    p_first = float(first_clk / first_imp) if first_imp > 0 else 0.0
-    p_last = float(last_clk / last_imp) if last_imp > 0 else 0.0
-    last_over_first = (p_last / p_first) if p_first > 0 else 1.0
-
-    first_median = cohort_first_median if cohort_first_median is not None else 0.0
-    last_p25 = cohort_last_p25 if cohort_last_p25 is not None else 0.0
-
-    # Trained classifier verdict. We require a fitted model — if none is
-    # passed (e.g. before training has run), we fall back to a permissive
-    # heuristic so the system degrades gracefully.
-    if classifier is not None:
-        feats = extract_features(
-            df,
-            cohort_first_median=first_median,
-            cohort_last_p25=last_p25,
-        )
-        if feats is None:
-            return base
-        x = np.array([[feats[f] for f in _FEATURE_NAMES]])
-        prob = float(classifier.predict_proba(x)[0, 1])
-        is_sig = prob >= threshold
-    else:
-        # Heuristic fallback: cohort-relative gates + significance.
-        launched_strong = p_first >= first_median
-        ended_weak = p_last <= last_p25 if last_p25 > 0 else True
-        decayed_hard = last_over_first <= 0.22
-        magnitude_ok = launched_strong and decayed_hard and ended_weak
-        is_sig = p_adj < _ALPHA and magnitude_ok
-        prob = None
-
     predicted_date = (
         pd.Timestamp(df.iloc[best_k]["date"]).strftime("%Y-%m-%d")
-        if is_sig
+        if is_fatigued
         else None
     )
 
     return {
-        "is_fatigued": bool(is_sig),
-        "predicted_fatigue_day": int(best_k) if is_sig else None,
+        "is_fatigued": bool(is_fatigued),
+        "predicted_fatigue_day": int(best_k) if is_fatigued else None,
         "predicted_fatigue_date": predicted_date,
-        "fatigue_ctr_drop": float(1.0 - last_over_first) if is_sig else None,
+        "fatigue_ctr_drop": float(1.0 - (p_post / p_pre)) if is_fatigued and p_pre > 0 else None,
         "p_value": p_adj,
-        "is_significant": bool(is_sig),
-        "pre_ctr": round(p_first, 6),
-        "post_ctr": round(p_last, 6),
-        "cohort_first_median": round(first_median, 6),
-        "cohort_last_p25": round(last_p25, 6),
-        "model_score": round(prob, 4) if prob is not None else None,
+        "is_significant": bool(is_fatigued),
+        "pre_ctr": round(p_pre, 6),
+        "post_ctr": round(p_post, 6),
+        "cohort_first_median": round(cohort_first_median or 0.0, 6),
+        "cohort_last_p25": round(cohort_last_p25 or 0.0, 6),
+        "model_score": round(prob, 4),
     }
