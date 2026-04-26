@@ -22,7 +22,7 @@ from dotenv import load_dotenv
 
 from ..datastore import Datastore
 from ..services import queries
-from ._llm_retry import post_with_retry
+from ._llm_retry import post_with_retry, scrub_keys
 
 log = logging.getLogger(__name__)
 
@@ -681,8 +681,9 @@ async def stream_chat(
                 resp.raise_for_status()
                 data = resp.json()
         except httpx.HTTPError as e:
-            log.warning("chat orchestrator call failed: %s", e)
-            yield _sse_event("error", {"message": f"LLM error: {e}"})
+            err = scrub_keys(str(e))
+            log.warning("chat orchestrator call failed: %s", err)
+            yield _sse_event("error", {"message": f"LLM error: {err}"})
             yield _sse_event("done", {})
             return
 

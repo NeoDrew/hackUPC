@@ -24,6 +24,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import random
+import re
 from typing import Any, Callable
 
 import httpx
@@ -31,6 +32,16 @@ import httpx
 from ._key_pool import get_pool
 
 log = logging.getLogger(__name__)
+
+_KEY_QS_RE = re.compile(r"([?&])key=[^&\s'\"]+")
+
+
+def scrub_keys(s: str) -> str:
+    """Redact ``?key=...`` / ``&key=...`` query params from any string.
+    Use on httpx error messages before returning them to clients — httpx
+    exceptions stringify with the full request URL, which embeds the
+    Google AI Studio API key."""
+    return _KEY_QS_RE.sub(r"\1key=REDACTED", s)
 
 # Backoff schedule in seconds. Total worst-case wait ~7s (1+2+4) before the
 # final attempt; chat turn budget is 30s per request × 6 loop turns so this
