@@ -7,7 +7,14 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://127.0.0.1:3000)",
       "Bash(pnpm install *)",
       "Bash(curl -s -o /tmp/page.html -w \"HTTP %{http_code}\\\\n\" http://127.0.0.1:3000/creatives/500001)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(git pull *)",
+      "Bash(git stash *)",
+      "Bash(curl -s http://127.0.0.1:8001/api/creatives/500001)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\)['predicted_fatigue']; print\\(f'tier={d[\\\\\"fatigue_tier\\\\\"]} score={d[\\\\\"model_score\\\\\"]} day={d[\\\\\"predicted_fatigue_day\\\\\"]} drop={d[\\\\\"fatigue_ctr_drop\\\\\"]}'\\)\")",
+      "Bash(curl -s http://127.0.0.1:8001/api/creatives/500023)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\)['predicted_fatigue']; print\\(f'tier={d[\\\\\"fatigue_tier\\\\\"]} score={d[\\\\\"model_score\\\\\"]} day={d[\\\\\"predicted_fatigue_day\\\\\"]} is_fatigued={d[\\\\\"is_fatigued\\\\\"]}'\\)\")",
+      "Bash(curl -s http://127.0.0.1:8001/api/creatives/500000)"
     ]
   }
 }

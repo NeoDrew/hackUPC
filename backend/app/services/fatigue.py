@@ -52,6 +52,20 @@ _MIN_DAYS = 14
 _MIN_PRE_DAYS = 7
 _MIN_POST_DAYS = 7
 
+# Cap for the runtime "is_fatigued" verdict threshold. The persisted
+# F1-max threshold (~0.73) optimises for accuracy on a balanced loss,
+# but for the cockpit demo we prefer recall: catching 90% of true
+# fatigue at the cost of more "moderate" false-positive flags reads
+# better than silently missing 25% of decay cases. The frontend renders
+# a three-tier display (strong / moderate / none), so a borderline FP
+# shows as "moderate signal — monitor" rather than a hard verdict.
+DEMO_THRESHOLD_CAP = 0.50
+
+# Watch tier — below the verdict threshold but above this floor still
+# warrants surfacing the score and changepoint marker as a moderate
+# signal. Below this we say "no fatigue detected".
+WATCH_FLOOR = 0.30
+
 
 def prepare_fatigue_timeseries(store: Datastore, creative_id: int) -> pd.DataFrame:
     """Pull the daily impressions/clicks series for a creative and build
@@ -344,6 +358,7 @@ def identify_fatigue_changepoint(
     """
     base = {
         "is_fatigued": False,
+        "fatigue_tier": "none",
         "predicted_fatigue_day": None,
         "predicted_fatigue_date": None,
         "fatigue_ctr_drop": None,
@@ -354,6 +369,7 @@ def identify_fatigue_changepoint(
         "cohort_first_median": round(cohort_first_median or 0.0, 6),
         "cohort_last_p25": round(cohort_last_p25 or 0.0, 6),
         "model_score": None,
+        "verdict_threshold": round(min(threshold, DEMO_THRESHOLD_CAP), 4),
     }
     if df.empty or len(df) < _MIN_DAYS:
         return base
@@ -379,7 +395,8 @@ def identify_fatigue_changepoint(
 
     x = np.array([[feats[f] for f in _FEATURE_NAMES]])
     prob = float(classifier.predict_proba(x)[0, 1])
-    is_fatigued = prob >= threshold
+    effective_threshold = min(threshold, DEMO_THRESHOLD_CAP)
+    is_fatigued = prob >= effective_threshold
 
     # Bonferroni-adjusted chi²(1) p-value over the candidate scan, kept
     # for transparency in the UI even though the verdict is the
@@ -391,17 +408,26 @@ def identify_fatigue_changepoint(
     p_raw = float(chi2.sf(best_lr, df=1))
     p_adj = float(min(1.0, p_raw * k_search))
 
-    predicted_date = (
-        pd.Timestamp(df.iloc[best_k]["date"]).strftime("%Y-%m-%d")
-        if is_fatigued
-        else None
-    )
+    # Always surface the changepoint location and CTR drop, regardless of
+    # the binary verdict. The chart marker and "break detected" text are
+    # diagnostic, not a verdict — hiding them on borderline scores made
+    # the calibrated model look silent.
+    predicted_date = pd.Timestamp(df.iloc[best_k]["date"]).strftime("%Y-%m-%d")
+    ctr_drop = float(1.0 - (p_post / p_pre)) if p_pre > 0 else None
+
+    if prob >= effective_threshold:
+        tier = "strong"
+    elif prob >= WATCH_FLOOR:
+        tier = "watch"
+    else:
+        tier = "none"
 
     return {
         "is_fatigued": bool(is_fatigued),
-        "predicted_fatigue_day": int(best_k) if is_fatigued else None,
+        "fatigue_tier": tier,
+        "predicted_fatigue_day": int(best_k),
         "predicted_fatigue_date": predicted_date,
-        "fatigue_ctr_drop": float(1.0 - (p_post / p_pre)) if is_fatigued and p_pre > 0 else None,
+        "fatigue_ctr_drop": ctr_drop,
         "p_value": p_adj,
         "is_significant": bool(is_fatigued),
         "pre_ctr": round(p_pre, 6),
@@ -409,4 +435,5 @@ def identify_fatigue_changepoint(
         "cohort_first_median": round(cohort_first_median or 0.0, 6),
         "cohort_last_p25": round(cohort_last_p25 or 0.0, 6),
         "model_score": round(prob, 4),
+        "verdict_threshold": round(effective_threshold, 4),
     }

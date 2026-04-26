@@ -67,6 +67,7 @@ export default async function CreativeDetailPage(
   // never read here — predictions only.
   const predictedFatigue = (creative.predicted_fatigue ?? null) as {
     is_fatigued: boolean;
+    fatigue_tier?: "strong" | "watch" | "none";
     predicted_fatigue_day: number | null;
     predicted_fatigue_date: string | null;
     fatigue_ctr_drop: number | null;
@@ -75,7 +76,9 @@ export default async function CreativeDetailPage(
     model_score: number | null;
   } | null;
   const fatigueDay = predictedFatigue?.predicted_fatigue_day ?? null;
-  const fatiguePredicted = predictedFatigue?.is_fatigued ?? false;
+  const fatigueTier = predictedFatigue?.fatigue_tier ?? "none";
+  const fatigueScore = predictedFatigue?.model_score ?? null;
+  const fatigueDrop = predictedFatigue?.fatigue_ctr_drop ?? null;
 
   return (
     <section
@@ -245,18 +248,17 @@ export default async function CreativeDetailPage(
       >
         <header className="row center between">
           <h3 className="t-section">Daily CTR · 75-day trend</h3>
-          <span className="t-micro muted">
-            {fatiguePredicted && fatigueDay !== null
-              ? `Our model flags fatigue from day ${fatigueDay}${
-                  predictedFatigue?.model_score !== null &&
-                  predictedFatigue?.model_score !== undefined
-                    ? ` (confidence ${Math.round(predictedFatigue.model_score * 100)}%)`
-                    : ""
-                }`
-              : "Our model: no fatigue detected"}
-          </span>
+          <FatigueVerdict
+            tier={fatigueTier}
+            score={fatigueScore}
+            day={fatigueDay}
+            ctrDrop={fatigueDrop}
+          />
         </header>
-        <FatigueChart creativeId={id} fatigueDay={fatigueDay} />
+        <FatigueChart
+          creativeId={id}
+          fatigueDay={fatigueTier === "none" ? null : fatigueDay}
+        />
       </section>
 
       <section className="col gap-2">
@@ -273,4 +275,40 @@ export default async function CreativeDetailPage(
 
 function cohortBarWidth(pct: number): number {
   return Math.max(5, Math.min(100, pct));
+}
+
+function FatigueVerdict({
+  tier,
+  score,
+  day,
+  ctrDrop,
+}: {
+  tier: "strong" | "watch" | "none";
+  score: number | null;
+  day: number | null;
+  ctrDrop: number | null;
+}) {
+  if (score === null) {
+    return <span className="t-micro muted">Model: insufficient data</span>;
+  }
+  const pct = Math.round(score * 100);
+  const dropPct = ctrDrop !== null ? Math.round(ctrDrop * 100) : null;
+  const dayBit = day !== null ? `day ${day}` : null;
+  const dropBit = dropPct !== null ? `CTR −${dropPct}%` : null;
+  const detail = [dayBit, dropBit].filter(Boolean).join(", ");
+  if (tier === "strong") {
+    return (
+      <span className="t-micro" style={{ color: "var(--status-cut)", fontWeight: 600 }}>
+        Strong fatigue · {pct}%{detail ? ` · break ${detail}` : ""}
+      </span>
+    );
+  }
+  if (tier === "watch") {
+    return (
+      <span className="t-micro" style={{ color: "var(--t-3)" }}>
+        Moderate signal · {pct}%{detail ? ` · break ${detail}` : ""}
+      </span>
+    );
+  }
+  return <span className="t-micro muted">No fatigue signal · {pct}%</span>;
 }

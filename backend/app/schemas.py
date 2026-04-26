@@ -186,6 +186,10 @@ class PredictedFatigue(BaseModel):
     """
 
     is_fatigued: bool
+    # "strong" (>= verdict_threshold) | "watch" (>= 0.30) | "none". Lets the UI
+    # render a graded display instead of a binary on/off, since the model is
+    # well-calibrated even on borderline cases.
+    fatigue_tier: str = "none"
     predicted_fatigue_day: int | None = None
     predicted_fatigue_date: str | None = None
     fatigue_ctr_drop: float | None = None
@@ -196,6 +200,7 @@ class PredictedFatigue(BaseModel):
     cohort_first_median: float | None = None
     cohort_last_p25: float | None = None
     model_score: float | None = None
+    verdict_threshold: float | None = None
 
 
 class CreativeDetail(BaseModel):
