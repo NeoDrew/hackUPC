@@ -640,6 +640,13 @@ export interface components {
             sparkline: number[];
             /** Fatigue Day */
             fatigue_day?: number | null;
+            /**
+             * Is Fatigued
+             * @default false
+             */
+            is_fatigued?: boolean;
+            /** Fatigue Score */
+            fatigue_score?: number | null;
             /** Asset File */
             asset_file: string;
         };
