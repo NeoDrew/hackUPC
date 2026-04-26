@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif">
+  <defs>
+    <style>
+      .h1 { font-size: 32px; font-weight: 700; fill: #15131a; letter-spacing: -0.015em; }
+      .h2 { font-size: 16px; font-weight: 500; fill: #5f5a69; }
+      .layer { font-size: 11px; font-weight: 700; fill: #8a8496; letter-spacing: 0.12em; text-transform: uppercase; }
+      .box-title { font-size: 15px; font-weight: 600; fill: #15131a; }
+      .box-sub { font-size: 12px; fill: #5f5a69; }
+      .box-mono { font-size: 11px; fill: #5f5a69; font-family: 'Roboto Mono', ui-monospace, Menlo, monospace; }
+      .accent { fill: #7e2c8c; }
+      .footer { font-size: 11px; fill: #8a8496; }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#b4afbf"/>
+    </marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#7e2c8c"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1600" height="1000" fill="#ffffff"/>
+
+  <!-- Header -->
+  <text x="80" y="60" class="h1">Smadex Creative Twin Copilot</text>
+  <text x="80" y="86" class="h2">System architecture · smadex.cooking</text>
+  <line x1="80" y1="105" x2="1520" y2="105" stroke="#e7e5ec" stroke-width="1"/>
+
+  <!-- ============================================== -->
+  <!-- LAYER 1 — User -->
+  <!-- ============================================== -->
+  <text x="80" y="148" class="layer">User</text>
+  <g>
+    <rect x="80" y="160" width="1080" height="64" rx="8" fill="#fbfbfd" stroke="#e7e5ec"/>
+    <circle cx="124" cy="192" r="18" fill="#7e2c8c"/>
+    <text x="124" y="197" font-size="14" font-weight="600" fill="#ffffff" text-anchor="middle">M</text>
+    <text x="158" y="188" class="box-title">Maya — creative-strategy lead</text>
+    <text x="158" y="208" class="box-sub">CraveLoop · ~30 live ads · $800k weekly spend</text>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- LAYER 2 — Frontend (Next.js / Vercel) -->
+  <!-- ============================================== -->
+  <text x="80" y="266" class="layer">Frontend · Next.js · Vercel</text>
+
+  <!-- Action page -->
+  <g>
+    <rect x="80" y="280" width="200" height="84" rx="8" fill="#ffffff" stroke="#7e2c8c" stroke-width="1.5"/>
+    <text x="96" y="306" class="box-title accent">/actions</text>
+    <text x="96" y="328" class="box-sub">Advisor inbox</text>
+    <text x="96" y="348" class="box-mono">50 actions · $11k/day</text>
+  </g>
+
+  <!-- Cockpit -->
+  <g>
+    <rect x="295" y="280" width="200" height="84" rx="8" fill="#ffffff" stroke="#e7e5ec"/>
+    <text x="311" y="306" class="box-title">/</text>
+    <text x="311" y="328" class="box-sub">Cockpit · Campaigns</text>
+    <text x="311" y="348" class="box-mono">5 campaigns, ranked</text>
+  </g>
+
+  <!-- Creative -->
+  <g>
+    <rect x="510" y="280" width="200" height="84" rx="8" fill="#ffffff" stroke="#e7e5ec"/>
+    <text x="526" y="306" class="box-title">/creatives/{id}</text>
+    <text x="526" y="328" class="box-sub">Detail · Fatigue chart</text>
+    <text x="526" y="348" class="box-mono">TODAY · IF UNCHANGED</text>
+  </g>
+
+  <!-- Twin -->
+  <g>
+    <rect x="725" y="280" width="200" height="84" rx="8" fill="#ffffff" stroke="#e7e5ec"/>
+    <text x="741" y="306" class="box-title">/twin</text>
+    <text x="741" y="328" class="box-sub">Diff · Vision Insight</text>
+    <text x="741" y="348" class="box-mono">winner vs your ad</text>
+  </g>
+
+  <!-- Variant -->
+  <g>
+    <rect x="940" y="280" width="200" height="84" rx="8" fill="#ffffff" stroke="#e7e5ec"/>
+    <text x="956" y="306" class="box-title">/variant</text>
+    <text x="956" y="328" class="box-sub">Generated · Apply</text>
+    <text x="956" y="348" class="box-mono">+18% predicted ROAS</text>
+  </g>
+
+  <!-- Assistant -->
+  <g>
+    <rect x="1180" y="280" width="200" height="84" rx="8" fill="#fbfbfd" stroke="#e7e5ec" stroke-dasharray="3 3"/>
+    <text x="1196" y="306" class="box-title">Assistant</text>
+    <text x="1196" y="328" class="box-sub">Chat · tool-calling</text>
+    <text x="1196" y="348" class="box-mono">grounded · cites IDs</text>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- LAYER 3 — API (FastAPI / Render) -->
+  <!-- ============================================== -->
+  <text x="80" y="412" class="layer">API · FastAPI · Render</text>
+  <g>
+    <rect x="80" y="424" width="1300" height="80" rx="8" fill="#fbfbfd" stroke="#e7e5ec"/>
+    <text x="100" y="448" class="box-title">REST endpoints</text>
+    <text x="100" y="476" class="box-mono">/portfolio · /creatives · /advertisers · /campaigns · /agent/chat · /actions/recommendations · /creatives/{id}/twin · /creatives/{id}/variant-brief · /creatives/{id}/apply-variant</text>
+  </g>
+
+  <!-- Connecting lines: UI → API -->
+  <line x1="180" y1="364" x2="180" y2="424" stroke="#b4afbf" stroke-width="1" marker-end="url(#arrow)"/>
+  <line x1="395" y1="364" x2="395" y2="424" stroke="#b4afbf" stroke-width="1" marker-end="url(#arrow)"/>
+  <line x1="610" y1="364" x2="610" y2="424" stroke="#b4afbf" stroke-width="1" marker-end="url(#arrow)"/>
+  <line x1="825" y1="364" x2="825" y2="424" stroke="#b4afbf" stroke-width="1" marker-end="url(#arrow)"/>
+  <line x1="1040" y1="364" x2="1040" y2="424" stroke="#b4afbf" stroke-width="1" marker-end="url(#arrow)"/>
+  <line x1="1280" y1="364" x2="1280" y2="424" stroke="#b4afbf" stroke-width="1" marker-end="url(#arrow)"/>
+
+  <!-- ============================================== -->
+  <!-- LAYER 4 — Services / ML -->
+  <!-- ============================================== -->
+  <text x="80" y="546" class="layer">Services · ML / Analytics</text>
+
+  <!-- Health metric -->
+  <g>
+    <rect x="80" y="560" width="240" height="120" rx="8" fill="#ffffff" stroke="#e7e5ec"/>
+    <text x="96" y="588" class="box-title">Health metric</text>
+    <text x="96" y="608" class="box-sub">6 components, 0–100</text>
+    <text x="96" y="628" class="box-mono">cohort-relative ranking</text>
+    <text x="96" y="648" class="box-mono">by (vertical, format)</text>
+    <rect x="96" y="660" width="36" height="10" rx="2" fill="#177c63"/>
+    <rect x="138" y="660" width="36" height="10" rx="2" fill="#a56a00"/>
+    <rect x="180" y="660" width="36" height="10" rx="2" fill="#b5475c"/>
+  </g>
+
+  <!-- Fatigue classifier -->
+  <g>
+    <rect x="335" y="560" width="240" height="120" rx="8" fill="#ffffff" stroke="#e7e5ec"/>
+    <text x="351" y="588" class="box-title">Fatigue classifier</text>
+    <text x="351" y="608" class="box-sub">Trained · persisted</text>
+    <text x="351" y="628" class="box-mono">logistic regression</text>
+    <text x="351" y="648" class="box-mono">ROC-AUC 0.93 held-out</text>
+    <text x="351" y="668" class="box-mono accent">+0.06 vs baseline</text>
+  </g>
+
+  <!-- Twin matching -->
+  <g>
+    <rect x="590" y="560" width="240" height="120" rx="8" fill="#ffffff" stroke="#e7e5ec"/>
+    <text x="606" y="588" class="box-title">Twin matching</text>
+    <text x="606" y="608" class="box-sub">Closest-winner finder</text>
+    <text x="606" y="628" class="box-mono">94-dim attribute vector</text>
+    <text x="606" y="648" class="box-mono">cosine · same cohort</text>
+  </g>
+
+  <!-- Slice advisor -->
+  <g>
+    <rect x="845" y="560" width="240" height="120" rx="8" fill="#ffffff" stroke="#7e2c8c" stroke-width="1.5"/>
+    <text x="861" y="588" class="box-title accent">Slice Advisor</text>
+    <text x="861" y="608" class="box-sub">8 deterministic rules</text>
+    <text x="861" y="628" class="box-mono">creative × country × OS</text>
+    <text x="861" y="648" class="box-mono">$ per recommendation</text>
+    <text x="861" y="668" class="box-mono accent">Pause · Rotate · Scale · Shift · Refresh</text>
+  </g>
+
+  <!-- Vision Insight -->
+  <g>
+    <rect x="1100" y="560" width="280" height="120" rx="8" fill="#ffffff" stroke="#e7e5ec"/>
+    <text x="1116" y="588" class="box-title">Vision Insight</text>
+    <text x="1116" y="608" class="box-sub">Gemma 4 + post-processing</text>
+    <text x="1116" y="628" class="box-mono">stripped DB columns</text>
+    <text x="1116" y="648" class="box-mono">no fabricated numbers</text>
+    <text x="1116" y="668" class="box-mono">grounded in diff</text>
+  </g>
+
+  <!-- API → Services -->
+  <line x1="200" y1="504" x2="200" y2="560" stroke="#b4afbf" stroke-width="1" marker-end="url(#arrow)"/>
+  <line x1="455" y1="504" x2="455" y2="560" stroke="#b4afbf" stroke-width="1" marker-end="url(#arrow)"/>
+  <line x1="710" y1="504" x2="710" y2="560" stroke="#b4afbf" stroke-width="1" marker-end="url(#arrow)"/>
+  <line x1="965" y1="504" x2="965" y2="560" stroke="#b4afbf" stroke-width="1" marker-end="url(#arrow)"/>
+  <line x1="1240" y1="504" x2="1240" y2="560" stroke="#b4afbf" stroke-width="1" marker-end="url(#arrow)"/>
+
+  <!-- ============================================== -->
+  <!-- LAYER 5 — Data -->
+  <!-- ============================================== -->
+  <text x="80" y="722" class="layer">Data</text>
+
+  <!-- Datastore -->
+  <g>
+    <rect x="80" y="736" width="640" height="100" rx="8" fill="#fbfbfd" stroke="#e7e5ec"/>
+    <text x="100" y="762" class="box-title">In-memory Datastore (pandas)</text>
+    <text x="100" y="784" class="box-sub">Loaded once at startup · joined · cached aggregates · sub-second lookups</text>
+    <text x="100" y="812" class="box-mono">creative_detail · timeseries_by_creative · flat_row_by_creative · health_by_creative · creative_vectors · applied_variants</text>
+  </g>
+
+  <!-- Raw files -->
+  <g>
+    <rect x="740" y="736" width="320" height="100" rx="8" fill="#fbfbfd" stroke="#e7e5ec"/>
+    <text x="760" y="762" class="box-title">Smadex dataset</text>
+    <text x="760" y="784" class="box-sub">7 CSVs + 1,080 PNG creative assets</text>
+    <text x="760" y="812" class="box-mono">192,000 daily fact rows · 75-day range</text>
+  </g>
+
+  <!-- Action queue (process-lifetime) -->
+  <g>
+    <rect x="1080" y="736" width="300" height="100" rx="8" fill="#fbfbfd" stroke="#e7e5ec" stroke-dasharray="3 3"/>
+    <text x="1100" y="762" class="box-title">Action queue</text>
+    <text x="1100" y="784" class="box-sub">Process-lifetime, in-memory</text>
+    <text x="1100" y="812" class="box-mono">applied_variants · scaled_creatives</text>
+  </g>
+
+  <!-- Services → Data lines -->
+  <line x1="200" y1="680" x2="200" y2="736" stroke="#b4afbf" stroke-width="1" marker-end="url(#arrow)"/>
+  <line x1="455" y1="680" x2="455" y2="736" stroke="#b4afbf" stroke-width="1" marker-end="url(#arrow)"/>
+  <line x1="710" y1="680" x2="710" y2="736" stroke="#b4afbf" stroke-width="1" marker-end="url(#arrow)"/>
+  <line x1="965" y1="680" x2="965" y2="736" stroke="#b4afbf" stroke-width="1" marker-end="url(#arrow)"/>
+  <line x1="1180" y1="680" x2="1180" y2="736" stroke="#b4afbf" stroke-width="1" marker-end="url(#arrow)"/>
+
+  <!-- ============================================== -->
+  <!-- External (right column) — LLM providers -->
+  <!-- ============================================== -->
+  <text x="1430" y="266" class="layer">External LLMs</text>
+
+  <!-- Gemini for chat -->
+  <g>
+    <rect x="1410" y="280" width="170" height="84" rx="8" fill="#fbfbfd" stroke="#e7e5ec"/>
+    <text x="1426" y="306" class="box-title">Gemini 2.5</text>
+    <text x="1426" y="328" class="box-sub">Flash · chat agent</text>
+    <text x="1426" y="348" class="box-mono">tool-calling</text>
+  </g>
+
+  <!-- Gemma for vision insight -->
+  <g>
+    <rect x="1410" y="600" width="170" height="84" rx="8" fill="#fbfbfd" stroke="#e7e5ec"/>
+    <text x="1426" y="626" class="box-title">Gemma 4</text>
+    <text x="1426" y="648" class="box-sub">Vision Insight</text>
+    <text x="1426" y="668" class="box-mono">explanations</text>
+  </g>
+
+  <!-- External arrows -->
+  <line x1="1380" y1="322" x2="1410" y2="322" stroke="#7e2c8c" stroke-width="1.5" marker-end="url(#arrow-purple)"/>
+  <line x1="1380" y1="640" x2="1410" y2="640" stroke="#7e2c8c" stroke-width="1.5" marker-end="url(#arrow-purple)"/>
+
+  <!-- ============================================== -->
+  <!-- Footer / deploy / capability map -->
+  <!-- ============================================== -->
+  <line x1="80" y1="880" x2="1520" y2="880" stroke="#e7e5ec"/>
+
+  <text x="80" y="912" class="layer">Capability mapping (brief)</text>
+  <g font-size="12" fill="#5f5a69">
+    <text x="80" y="940">
+      <tspan font-weight="600" fill="#15131a">Q1 Bayesian ranking</tspan>  → Health metric
+      <tspan dx="20" font-weight="600" fill="#15131a">Q2a Fatigue</tspan>  → Fatigue classifier
+      <tspan dx="20" font-weight="600" fill="#15131a">Q2b Similarity</tspan>  → Twin matching
+    </text>
+    <text x="80" y="960">
+      <tspan font-weight="600" fill="#15131a">Q3a Explainability</tspan>  → Vision Insight
+      <tspan dx="20" font-weight="600" fill="#15131a">Q3b Recommendation</tspan>  → Slice Advisor
+    </text>
+  </g>
+
+  <!-- Deploy footer -->
+  <text x="1520" y="940" class="footer" text-anchor="end">Deploy: Vercel (frontend) · Render (backend) · GoDaddy domain</text>
+  <text x="1520" y="960" class="footer" text-anchor="end">Generated 2026-04-26</text>
+</svg>
