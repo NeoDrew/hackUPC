@@ -24,9 +24,11 @@ from __future__ import annotations
 import asyncio
 import logging
 import random
-from typing import Any
+from typing import Any, Callable
 
 import httpx
+
+from ._key_pool import get_pool
 
 log = logging.getLogger(__name__)
 
@@ -37,27 +39,61 @@ _DEFAULT_DELAYS = (1.0, 2.0, 4.0)
 _MAX_RETRY_AFTER_S = 8.0
 
 
+def _default_key_extractor(url: str) -> str | None:
+    """Pull the ``key=`` query parameter out of a Google AI Studio URL.
+    Returns ``None`` if the URL doesn't carry one (e.g. test stub)."""
+    if "key=" not in url:
+        return None
+    tail = url.split("key=", 1)[1]
+    # Stop at next query-param separator.
+    for sep in ("&", "#"):
+        if sep in tail:
+            tail = tail.split(sep, 1)[0]
+            break
+    return tail or None
+
+
 async def post_with_retry(
     client: httpx.AsyncClient,
-    url: str,
+    url_or_factory: str | Callable[[], str],
     *,
     json: dict[str, Any] | None = None,
     delays: tuple[float, ...] = _DEFAULT_DELAYS,
     label: str = "LLM",
+    key_for_url: Callable[[str], str | None] | None = _default_key_extractor,
 ) -> httpx.Response:
-    """POST with exponential backoff. Returns the final ``Response``
-    (raised on the last attempt's failure) or raises the underlying
-    exception.
+    """POST with exponential backoff and (optional) rotating-key swap.
+
+    ``url_or_factory`` is either a single URL string (legacy), or a
+    zero-arg callable returning a fresh URL each retry. Use the callable
+    form to opt into key rotation: each retry asks the factory for a URL
+    with the next-best key from the global pool. On 429 the prior key is
+    banned in the pool for ~60s, then the factory delivers a different
+    key.
+
+    ``key_for_url`` extracts the key from a URL so the wrapper can ban
+    it on 429 (for the legacy single-URL path). Defaults to parsing
+    ``?key=...`` query params.
 
     ``label`` is prefixed to retry log lines so a tail of the backend log
     distinguishes Gemini chat retries from Gemma polish retries.
     """
+    is_factory = callable(url_or_factory)
+
+    def _next_url() -> str:
+        if is_factory:
+            return url_or_factory()  # type: ignore[operator]
+        return url_or_factory  # type: ignore[return-value]
+
+    pool = get_pool()
     last_exc: Exception | None = None
+
     for attempt, delay in enumerate([0.0, *delays]):
         if delay > 0:
-            # Jitter in [0, 0.5s) so concurrent callers don't synchronise.
             jitter = random.random() * 0.5
             await asyncio.sleep(delay + jitter)
+
+        url = _next_url()
 
         try:
             resp = await client.post(url, json=json)
@@ -75,20 +111,28 @@ async def post_with_retry(
         if resp.status_code < 400:
             return resp
 
-        # Decide whether the failure is retryable.
         retryable = resp.status_code == 429 or 500 <= resp.status_code < 600
         if not retryable:
-            # Surface the body for non-retryable 4xx so the caller can log.
             return resp
 
+        # On 429, ban the offending key in the pool so the next factory
+        # call returns a different one. Even with a single key this is
+        # harmless — the pool falls back to the one banned-longest.
+        if resp.status_code == 429 and key_for_url is not None:
+            try:
+                used_key = key_for_url(url)
+            except Exception:  # noqa: BLE001
+                used_key = None
+            if used_key:
+                pool.ban(used_key)
+
         if attempt >= len(delays):
-            # Out of retries; return the final failed response so the
-            # caller's existing raise_for_status() / parse path runs.
             log.warning(
-                "%s POST giving up after %d attempts (status=%d)",
+                "%s POST giving up after %d attempts (status=%d) pool=%s",
                 label,
                 attempt + 1,
                 resp.status_code,
+                pool.status(),
             )
             return resp
 
@@ -109,15 +153,14 @@ async def post_with_retry(
                 pass
 
         log.info(
-            "%s POST attempt %d/%d → %d, will retry",
+            "%s POST attempt %d/%d → %d, will retry%s",
             label,
             attempt + 1,
             len(delays) + 1,
             resp.status_code,
+            " (rotating key)" if is_factory and pool.size > 1 else "",
         )
 
-    # Shouldn't reach here, but if we do (transport failures all the way
-    # through), surface the last exception.
     if last_exc is not None:
         raise last_exc
     raise RuntimeError(f"{label} POST failed without a captured response")

@@ -1,3 +1,4 @@
+import { Acronym } from "./Acronym";
 import { Sparkline } from "./Sparkline";
 
 export function KpiTile({
@@ -15,7 +16,9 @@ export function KpiTile({
 }) {
   return (
     <div className={`kpi-tile${urgent ? " urgent" : ""}`}>
-      <span className="kpi-label">{label}</span>
+      <span className="kpi-label">
+        <Acronym>{label}</Acronym>
+      </span>
       <span className="kpi-value">{value}</span>
       {delta ? (
         <span className={`kpi-delta ${delta.direction}`}>{delta.text}</span>

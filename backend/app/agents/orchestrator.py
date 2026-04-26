@@ -598,6 +598,15 @@ def is_configured() -> bool:
 
 
 def _api_key() -> str | None:
+    """Pull a key from the rotating pool. Falls through to single-key
+    legacy env vars when the pool is empty. The pool is round-robin
+    across whatever ``GEMINI_API_KEYS`` / ``GEMINI_API_KEY_N`` /
+    ``GEMINI_API_KEY`` provides."""
+    from ._key_pool import get_pool
+
+    k = get_pool().next_key()
+    if k:
+        return k
     return os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
 
 
@@ -642,7 +651,11 @@ async def stream_chat(
         contents.append({"role": role, "parts": [{"text": m.get("content", "")}]})
 
     model = os.environ.get("CHAT_MODEL", DEFAULT_MODEL)
-    url = f"{GENAI_BASE}/{model}:generateContent?key={api_key}"
+
+    def _url_factory() -> str:
+        # Fresh key per attempt — on 429 the wrapper bans the prior key
+        # in the pool so the next factory call returns a different one.
+        return f"{GENAI_BASE}/{model}:generateContent?key={_api_key()}"
 
     for turn in range(MAX_LOOP_TURNS):
         body = {
@@ -662,7 +675,9 @@ async def stream_chat(
         }
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
-                resp = await post_with_retry(client, url, json=body, label="gemini-chat")
+                resp = await post_with_retry(
+                    client, _url_factory, json=body, label="gemini-chat"
+                )
                 resp.raise_for_status()
                 data = resp.json()
         except httpx.HTTPError as e:

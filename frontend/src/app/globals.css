@@ -158,41 +158,41 @@ a:focus-visible {
   color: var(--t-1);
 }
 .t-card {
-  font-size: 13px;
+  font-size: 19px;
   font-weight: 600;
-  line-height: 18px;
+  line-height: 26px;
   color: var(--t-1);
 }
 .t-body {
-  font-size: 14px;
+  font-size: 21px;
   font-weight: 400;
-  line-height: 20px;
+  line-height: 30px;
   color: var(--t-2);
 }
 .t-micro {
-  font-size: 12px;
+  font-size: 18px;
   font-weight: 500;
-  line-height: 16px;
+  line-height: 24px;
   color: var(--t-3);
 }
 .t-overline {
-  font-size: 11px;
+  font-size: 16px;
   font-weight: 600;
-  line-height: 14px;
+  line-height: 21px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--t-3);
 }
 .t-th {
-  font-size: 11px;
+  font-size: 16px;
   font-weight: 600;
-  line-height: 14px;
+  line-height: 21px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--t-3);
 }
 .t-td {
-  font-size: 13px;
+  font-size: 19px;
   font-weight: 450;
   line-height: 18px;
 }
@@ -290,12 +290,12 @@ a:focus-visible {
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-size: 11px;
+  font-size: 16px;
   font-weight: 700;
 }
 .topbar .crumb {
   color: var(--t-3);
-  font-size: 12px;
+  font-size: 18px;
 }
 .topbar .search-wrap {
   position: relative;
@@ -309,7 +309,7 @@ a:focus-visible {
   border-radius: 8px;
   padding: 7px 12px;
   font: inherit;
-  font-size: 13px;
+  font-size: 19px;
   color: var(--t-1);
   transition:
     border-color var(--t-fast) var(--ease-out),
@@ -317,7 +317,7 @@ a:focus-visible {
 }
 .topbar .search::placeholder {
   color: var(--t-3);
-  font-size: 13px;
+  font-size: 19px;
 }
 .topbar .search:hover {
   border-color: var(--t-4);
@@ -349,7 +349,7 @@ a:focus-visible {
 .search-empty {
   padding: 14px 16px;
   color: var(--t-3);
-  font-size: 13px;
+  font-size: 19px;
 }
 
 .search-row {
@@ -386,7 +386,7 @@ a:focus-visible {
   min-width: 0;
 }
 .search-row-headline {
-  font-size: 13px;
+  font-size: 19px;
   font-weight: 500;
   color: var(--t-1);
   white-space: nowrap;
@@ -394,7 +394,7 @@ a:focus-visible {
   text-overflow: ellipsis;
 }
 .search-row-meta {
-  font-size: 11px;
+  font-size: 16px;
   color: var(--t-3);
   white-space: nowrap;
   overflow: hidden;
@@ -414,7 +414,7 @@ a:focus-visible {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--accent);
 }
@@ -431,7 +431,7 @@ a:focus-visible {
 }
 .tab {
   padding: 12px 14px 10px;
-  font-size: 13px;
+  font-size: 19px;
   font-weight: 500;
   letter-spacing: -0.005em;
   color: var(--t-2);
@@ -453,7 +453,7 @@ a:focus-visible {
 }
 .tab .count {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 16px;
   font-weight: 600;
   padding: 1px 6px;
   border-radius: 4px;
@@ -497,7 +497,7 @@ a:focus-visible {
 }
 .cockpit-hero-sub {
   margin: 0;
-  font-size: 13px;
+  font-size: 19px;
   color: var(--t-3);
   letter-spacing: -0.005em;
 }
@@ -572,7 +572,7 @@ a:focus-visible {
   min-width: 0;
 }
 .campaign-card-app {
-  font-size: 13px;
+  font-size: 19px;
   font-weight: 600;
   color: var(--t-1);
   white-space: nowrap;
@@ -581,7 +581,7 @@ a:focus-visible {
   letter-spacing: -0.005em;
 }
 .campaign-card-theme {
-  font-size: 11px;
+  font-size: 16px;
   color: var(--t-3);
   text-transform: capitalize;
 }
@@ -627,7 +627,7 @@ a:focus-visible {
   padding: 2px 6px 2px 4px;
   border-radius: 999px;
   background: var(--bg-2);
-  font-size: 11px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--t-2);
   font-family: var(--font-mono);
@@ -652,7 +652,7 @@ a:focus-visible {
   gap: 6px;
   margin: 12px 24px 0;
   padding: 4px 8px;
-  font-size: 12px;
+  font-size: 18px;
   font-weight: 500;
   color: var(--t-3);
   text-decoration: none;
@@ -704,7 +704,7 @@ a:focus-visible {
 .campaign-health-score.tone-bad { color: var(--status-cut); }
 .campaign-health-score-out {
   color: var(--t-3);
-  font-size: 11px;
+  font-size: 16px;
   font-family: var(--font-mono);
   letter-spacing: 0.02em;
 }
@@ -734,12 +734,12 @@ a:focus-visible {
   background: var(--bg-2);
 }
 .campaign-health-row-label {
-  font-size: 12px;
+  font-size: 18px;
   color: var(--t-2);
 }
 .campaign-health-row-raw {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 18px;
   font-weight: 600;
   color: var(--t-1);
   text-align: right;
@@ -789,7 +789,7 @@ a:focus-visible {
   border-radius: 999px;
   background: var(--bg-3);
   color: var(--accent);
-  font-size: 10px;
+  font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.02em;
   display: inline-flex;
@@ -811,7 +811,7 @@ a:focus-visible {
   font-weight: 600;
 }
 .profile-name {
-  font-size: 12px;
+  font-size: 18px;
   font-weight: 600;
   color: var(--t-1);
   white-space: nowrap;
@@ -890,7 +890,7 @@ a:focus-visible {
   font-weight: 600;
 }
 .week-stepper-value {
-  font-size: 12px;
+  font-size: 18px;
   font-weight: 600;
   color: var(--t-1);
   font-family: var(--font-mono);
@@ -899,7 +899,7 @@ a:focus-visible {
 .week-stepper-reset {
   margin-left: 4px;
   padding: 4px 8px;
-  font-size: 11px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--t-3);
   background: transparent;
@@ -944,16 +944,16 @@ a:focus-visible {
   min-width: 0;
 }
 .auto-scale-title {
-  font-size: 13px;
+  font-size: 19px;
   font-weight: 600;
   color: var(--t-1);
 }
 .auto-scale-sub {
-  font-size: 12px;
+  font-size: 18px;
   color: var(--t-2);
 }
 .auto-scale-link {
-  font-size: 12px;
+  font-size: 18px;
   font-weight: 500;
   color: var(--status-top);
   white-space: nowrap;
@@ -983,7 +983,7 @@ a:focus-visible {
 }
 .action-queue-head .t-body {
   margin: 0;
-  font-size: 12px;
+  font-size: 18px;
 }
 .action-queue-list {
   margin: 0;
@@ -1043,7 +1043,7 @@ a:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 10px;
+  font-size: 15px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1061,7 +1061,7 @@ a:focus-visible {
   color: var(--status-cut);
 }
 .action-row-cohort {
-  font-size: 11px;
+  font-size: 16px;
   color: var(--t-3);
 }
 .action-row-headline {
@@ -1077,7 +1077,7 @@ a:focus-visible {
 }
 .action-row-line {
   margin: 0;
-  font-size: 12px;
+  font-size: 18px;
   color: var(--t-2);
   line-height: 1.4;
 }
@@ -1091,7 +1091,7 @@ a:focus-visible {
   border-radius: 6px;
   background: var(--bg-1);
   color: var(--t-1);
-  font-size: 13px;
+  font-size: 19px;
   font-weight: 500;
   white-space: nowrap;
   transition:
@@ -1119,7 +1119,7 @@ a:focus-visible {
   text-align: center;
 }
 .action-queue-more {
-  font-size: 12px;
+  font-size: 18px;
   color: var(--t-2);
   font-weight: 500;
 }
@@ -1187,7 +1187,7 @@ a:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 10px;
+  font-size: 15px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1209,7 +1209,7 @@ a:focus-visible {
   color: var(--status-top);
 }
 .inbox-headline {
-  font-size: 13px;
+  font-size: 19px;
   font-weight: 600;
   color: var(--t-1);
   white-space: nowrap;
@@ -1218,7 +1218,7 @@ a:focus-visible {
 }
 .inbox-line {
   margin: 0;
-  font-size: 12px;
+  font-size: 18px;
   color: var(--t-2);
   line-height: 1.35;
   display: -webkit-box;
@@ -1236,7 +1236,7 @@ a:focus-visible {
   border-radius: 6px;
   background: var(--bg-1);
   color: var(--t-1);
-  font-size: 12px;
+  font-size: 18px;
   font-weight: 500;
   white-space: nowrap;
   transition:
@@ -1269,7 +1269,7 @@ a:focus-visible {
   min-height: 132px;
 }
 .kpi-tile .kpi-label {
-  font-size: 10px;
+  font-size: 15px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1285,7 +1285,7 @@ a:focus-visible {
 }
 .kpi-tile .kpi-delta {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 16px;
   font-weight: 600;
 }
 .kpi-tile .kpi-delta.pos {
@@ -1319,7 +1319,7 @@ a:focus-visible {
   gap: 6px;
   padding: 3px 10px;
   border-radius: 4px;
-  font-size: 11px;
+  font-size: 16px;
   font-weight: 600;
   letter-spacing: 0.02em;
   white-space: nowrap;
@@ -1327,7 +1327,7 @@ a:focus-visible {
 }
 .status-pill.dense {
   padding: 2px 8px;
-  font-size: 10px;
+  font-size: 15px;
 }
 .status-pill .seed {
   width: 6px;
@@ -1379,7 +1379,7 @@ a:focus-visible {
   color: var(--t-2);
   border-radius: 8px;
   padding: 6px 10px;
-  font-size: 12px;
+  font-size: 18px;
   font-weight: 500;
   white-space: nowrap;
   transition:
@@ -1402,7 +1402,7 @@ a:focus-visible {
   border: 1px solid var(--line);
   border-radius: 6px;
   padding: 4px 8px;
-  font-size: 12px;
+  font-size: 18px;
   color: var(--t-2);
   white-space: nowrap;
 }
@@ -1445,7 +1445,7 @@ a:focus-visible {
 button.filter-pill {
   cursor: pointer;
   font: inherit;
-  font-size: 12px;
+  font-size: 18px;
 }
 button.filter-pill[aria-expanded="true"] {
   border-color: var(--accent-line);
@@ -1480,7 +1480,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   border: 0;
   color: var(--t-1);
   padding: 6px 8px;
-  font-size: 12px;
+  font-size: 18px;
   border-radius: 5px;
   cursor: pointer;
   text-transform: capitalize;
@@ -1513,7 +1513,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   gap: 6px;
 }
 .explore-filter-group-label {
-  font-size: 11px;
+  font-size: 16px;
   font-weight: 600;
   letter-spacing: 0.05em;
   color: var(--t-3);
@@ -1530,7 +1530,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   background: transparent;
   border: 0;
   color: var(--accent);
-  font-size: 12px;
+  font-size: 18px;
   font-weight: 500;
   padding: 4px 8px;
   cursor: pointer;
@@ -1549,7 +1549,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   border: 1px dashed var(--line-strong);
   border-radius: 6px;
   padding: 4px 8px;
-  font-size: 12px;
+  font-size: 18px;
   color: var(--t-3);
   font-weight: 500;
 }
@@ -1559,7 +1559,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
 }
 .filter-row-tail {
   margin-left: auto;
-  font-size: 12px;
+  font-size: 18px;
   color: var(--t-3);
 }
 .filter-row-tail strong {
@@ -1602,7 +1602,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   display: grid;
   grid-template-columns: 64px minmax(0, 2fr) 76px 76px 76px 76px 80px 148px 110px 110px;
   padding: 10px 16px;
-  font-size: 10px;
+  font-size: 15px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1662,7 +1662,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   border-radius: 6px;
   background: var(--bg-1);
   color: var(--t-1);
-  font-size: 12px;
+  font-size: 18px;
   font-weight: 500;
   letter-spacing: -0.005em;
   white-space: nowrap;
@@ -1685,7 +1685,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   border-color: var(--accent-hover);
 }
 .row-action-arrow {
-  font-size: 11px;
+  font-size: 16px;
   line-height: 1;
 }
 /* Push the sparkline cell's contents right so the line doesn't kiss the
@@ -1723,7 +1723,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   display: block;
 }
 .creative-row .headline {
-  font-size: 13px;
+  font-size: 19px;
   font-weight: 500;
   color: var(--t-1);
   overflow: hidden;
@@ -1731,7 +1731,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   white-space: nowrap;
 }
 .creative-row .meta {
-  font-size: 11px;
+  font-size: 16px;
   color: var(--t-3);
   margin-top: 2px;
   overflow: hidden;
@@ -1741,7 +1741,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
 .creative-row .num-cell {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  font-size: 12px;
+  font-size: 18px;
   text-align: right;
 }
 .creative-row .health-cell {
@@ -1819,7 +1819,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   gap: 4px;
 }
 .perf-grid .cell .label {
-  font-size: 10px;
+  font-size: 15px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--t-3);
@@ -1846,20 +1846,20 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   border: 1px solid var(--line);
   border-radius: 6px;
   padding: 6px 10px;
-  font-size: 11px;
+  font-size: 16px;
 }
 .meta-pill .k {
   color: var(--t-3);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  font-size: 10px;
+  font-size: 15px;
   font-weight: 600;
 }
 .meta-pill .v {
   color: var(--t-1);
   font-weight: 500;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 16px;
   text-align: right;
 }
 
@@ -1881,7 +1881,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   color: var(--accent);
   padding: 2px 6px;
   border-radius: 4px;
-  font-size: 10px;
+  font-size: 15px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1894,7 +1894,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   border: 1px solid rgba(23, 124, 99, 0.2);
   padding: 2px 8px;
   border-radius: 4px;
-  font-size: 11px;
+  font-size: 16px;
   font-weight: 600;
   font-family: var(--font-mono);
 }
@@ -1904,7 +1904,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   border: 1px solid rgba(181, 71, 92, 0.2);
   padding: 2px 8px;
   border-radius: 4px;
-  font-size: 11px;
+  font-size: 16px;
   font-weight: 600;
   font-family: var(--font-mono);
 }
@@ -1914,7 +1914,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   border: 1px solid var(--accent-line);
   padding: 2px 8px;
   border-radius: 4px;
-  font-size: 11px;
+  font-size: 16px;
   font-weight: 600;
   font-family: var(--font-mono);
 }
@@ -1958,7 +1958,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   letter-spacing: -0.01em;
 }
 .pattern-card .prevalence {
-  font-size: 10px;
+  font-size: 15px;
   color: var(--t-3);
   background: var(--bg-3);
   padding: 2px 7px;
@@ -1967,13 +1967,13 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   width: max-content;
 }
 .pattern-card .trait {
-  font-size: 13px;
+  font-size: 19px;
   font-weight: 600;
   margin-top: 4px;
   color: var(--t-1);
 }
 .pattern-card .what {
-  font-size: 12px;
+  font-size: 18px;
   color: var(--t-3);
   line-height: 1.4;
 }
@@ -2004,7 +2004,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
 }
 [data-card="saturation"] [data-pill] {
   display: inline-block;
-  font-size: 11px;
+  font-size: 16px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -2014,7 +2014,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   border-radius: 4px;
 }
 [data-card="saturation"] header small {
-  font-size: 12px;
+  font-size: 18px;
   color: var(--t-3);
 }
 [data-card="saturation"] dl {
@@ -2030,7 +2030,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   gap: 8px;
 }
 [data-card="saturation"] dt {
-  font-size: 10px;
+  font-size: 15px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--t-3);
@@ -2039,11 +2039,11 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
 [data-card="saturation"] dd {
   margin: 0;
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 19px;
   font-weight: 600;
 }
 [data-card="saturation"] footer {
-  font-size: 12px;
+  font-size: 18px;
   color: var(--t-2);
   line-height: 1.45;
 }
@@ -2057,7 +2057,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   border: 1px dashed var(--line-strong);
   border-radius: 999px;
   padding: 2px 10px;
-  font-size: 10px;
+  font-size: 15px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -2090,7 +2090,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   line-height: 1;
 }
 .health-ring .val .l {
-  font-size: 11px;
+  font-size: 16px;
   font-weight: 500;
   color: var(--t-3);
   margin-top: 3px;
@@ -2145,7 +2145,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   background: transparent;
   border: 0;
   color: var(--accent);
-  font-size: 12px;
+  font-size: 18px;
   font-weight: 500;
   padding: 0;
   cursor: pointer;
@@ -2159,7 +2159,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
 .health-panel-toggle-icon {
   display: inline-block;
   transition: transform var(--t-fast) var(--ease-out);
-  font-size: 11px;
+  font-size: 16px;
 }
 .health-panel-toggle[aria-expanded="true"] .health-panel-toggle-icon {
   transform: rotate(180deg);
@@ -2205,7 +2205,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
 }
 .apply-bar-error {
   color: var(--status-cut);
-  font-size: 12px;
+  font-size: 18px;
   width: 100%;
   margin-top: 6px;
 }
@@ -2243,7 +2243,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   color: var(--t-1);
   border-radius: 8px;
   padding: 8px 14px;
-  font-size: 13px;
+  font-size: 19px;
   font-weight: 500;
   cursor: pointer;
   transition: background var(--t-fast) var(--ease-out);
@@ -2301,7 +2301,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
 }
 .health-panel-row-name {
   font-weight: 600;
-  font-size: 13px;
+  font-size: 19px;
   color: var(--t-1);
 }
 .health-panel-tone-dot {
@@ -2343,7 +2343,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
 }
 .health-math-text {
   margin: 0;
-  font-size: 13px;
+  font-size: 19px;
   line-height: 19px;
   color: var(--t-2);
 }
@@ -2364,7 +2364,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
 }
 .health-math-block code {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 18px;
   line-height: 18px;
   color: var(--t-1);
   white-space: pre;
@@ -2375,7 +2375,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  font-size: 12px;
+  font-size: 18px;
 }
 .health-math-label {
   color: var(--t-3);
@@ -2391,7 +2391,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   border-radius: 8px;
   padding: 8px 12px;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 18px;
   color: var(--t-1);
 }
 .health-math-contribution code {
@@ -2407,7 +2407,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
 }
 .health-panel-narrative {
   margin: 0;
-  font-size: 13px;
+  font-size: 19px;
   line-height: 19px;
   color: var(--t-1);
 }
@@ -2447,7 +2447,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   gap: 6px;
   padding: 3px 10px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 16px;
   font-weight: 500;
   letter-spacing: 0.01em;
   border: 1px solid transparent;
@@ -2482,7 +2482,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
 }
 .health-narrative {
   margin: 0;
-  font-size: 13px;
+  font-size: 19px;
   line-height: 18px;
   color: var(--t-1);
 }
@@ -2491,7 +2491,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   background: transparent;
   border: 0;
   color: var(--accent);
-  font-size: 12px;
+  font-size: 18px;
   font-weight: 500;
   padding: 0;
   cursor: pointer;
@@ -2508,7 +2508,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  font-size: 12px;
+  font-size: 18px;
   line-height: 18px;
   color: var(--t-2);
 }
@@ -2542,7 +2542,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   background: transparent;
   border: 0;
   color: var(--t-3);
-  font-size: 13px;
+  font-size: 19px;
   cursor: pointer;
   padding: 4px 6px;
   border-radius: 4px;
@@ -2582,7 +2582,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   background-size: 200% 100%;
   border: 1px solid var(--accent-line);
   color: var(--t-1);
-  font-size: 13px;
+  font-size: 19px;
   animation: generating-shimmer 2.4s linear infinite;
 }
 .generating-banner .generating-sub {
@@ -2667,7 +2667,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   border: 0;
   color: var(--t-1);
   padding: 8px 10px;
-  font-size: 13px;
+  font-size: 19px;
   border-radius: 6px;
   cursor: pointer;
   transition: background var(--t-fast) var(--ease-out);
@@ -2691,7 +2691,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   border: 1px solid var(--line);
   border-radius: 6px;
   padding: 6px 8px;
-  font-size: 12px;
+  font-size: 18px;
   color: var(--t-1);
   font-family: inherit;
 }
@@ -2705,7 +2705,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   color: #fff;
   padding: 10px 16px;
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 19px;
   box-shadow: var(--shadow-pop);
   z-index: 200;
   animation: fadeUp 200ms var(--ease-out) both;
@@ -2718,7 +2718,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   gap: 8px;
   padding: 8px 14px;
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 19px;
   font-weight: 600;
   border: 1px solid var(--line);
   background: var(--bg-1);
@@ -2738,7 +2738,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
 }
 .btn.dense {
   padding: 5px 10px;
-  font-size: 12px;
+  font-size: 18px;
 }
 
 
@@ -2782,12 +2782,12 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-size: 11px;
+  font-size: 16px;
   font-weight: 700;
 }
 .phone-header-sub {
   margin: 4px 0 8px;
-  font-size: 12px;
+  font-size: 18px;
   color: rgba(255, 255, 255, 0.55);
 }
 .phone-tabs {
@@ -2802,7 +2802,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   flex: 0 0 auto;
   padding: 6px 12px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 18px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.7);
   background: rgba(255, 255, 255, 0.06);
@@ -2891,7 +2891,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
 }
 .phone-meta {
   margin: 0;
-  font-size: 13px;
+  font-size: 19px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.78);
 }
@@ -2912,7 +2912,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   gap: 2px;
 }
 .phone-stat-label {
-  font-size: 10px;
+  font-size: 15px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -2934,7 +2934,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   gap: 6px;
 }
 .phone-trend-label {
-  font-size: 11px;
+  font-size: 16px;
   color: rgba(255, 255, 255, 0.6);
 }
 .phone-card .health-ring .val .n {
@@ -2982,7 +2982,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
 .qr-landing-card p {
   margin: 0;
   color: rgba(255, 255, 255, 0.65);
-  font-size: 13px;
+  font-size: 19px;
   line-height: 1.5;
 }
 .qr-landing-card .qr-frame {
@@ -2992,7 +2992,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
 }
 .qr-landing-card .qr-url {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 16px;
   color: rgba(255, 255, 255, 0.55);
   word-break: break-all;
 }
@@ -3015,7 +3015,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   color: #fff;
   border: 1px solid var(--accent);
   box-shadow: var(--shadow-1);
-  font-size: 13px;
+  font-size: 19px;
   font-weight: 600;
   letter-spacing: -0.005em;
   z-index: 80;
@@ -3043,7 +3043,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   line-height: 1;
 }
 .chat-launcher-glyph.small {
-  font-size: 13px;
+  font-size: 19px;
 }
 
 .chat-panel {
@@ -3124,7 +3124,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: 19px;
   font-weight: 600;
   color: var(--t-1);
 }
@@ -3132,7 +3132,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   color: var(--accent);
 }
 .chat-panel-sub {
-  font-size: 10px;
+  font-size: 15px;
   font-weight: 500;
   color: var(--t-3);
   letter-spacing: 0.02em;
@@ -3175,7 +3175,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  font-size: 13px;
+  font-size: 19px;
   line-height: 1.45;
   background: var(--bg-2);
 }
@@ -3196,7 +3196,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   color: var(--t-1);
   border-radius: 999px;
   padding: 5px 12px;
-  font-size: 12px;
+  font-size: 18px;
   font-weight: 500;
 }
 .chat-suggestion:hover {
@@ -3239,7 +3239,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   border: 1px solid var(--line);
   border-radius: 4px;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 16px;
   color: var(--t-2);
   max-width: 100%;
 }
@@ -3281,7 +3281,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   border-top: 1px solid var(--line-soft);
   background: var(--bg-2);
   color: var(--t-2);
-  font-size: 11px;
+  font-size: 16px;
   line-height: 1.45;
   max-height: 220px;
   overflow: auto;
@@ -3334,7 +3334,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
 
 .chat-error {
   color: var(--status-cut);
-  font-size: 12px;
+  font-size: 18px;
 }
 
 .chat-panel-input {
@@ -3397,7 +3397,7 @@ button.filter-pill[aria-expanded="true"] .filter-pill-val {
   border-radius: 8px;
   padding: 0 16px;
   font-weight: 600;
-  font-size: 13px;
+  font-size: 19px;
 }
 .chat-send:hover {
   background: var(--accent-hover);

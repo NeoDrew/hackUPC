@@ -221,6 +221,13 @@ _POLISH_PROMPT = (
 
 
 def _api_key() -> str | None:
+    """Pull a key from the rotating pool (round-robin, 429-aware).
+    Falls back to the legacy single-key env vars when the pool is empty."""
+    from ..agents._key_pool import get_pool
+
+    k = get_pool().next_key()
+    if k:
+        return k
     return os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
 
 
@@ -229,7 +236,7 @@ def is_configured() -> bool:
 
 
 async def _polish_one(
-    client: httpx.AsyncClient, headline: str, rationale: str, model: str, key: str
+    client: httpx.AsyncClient, headline: str, rationale: str, model: str
 ) -> tuple[str, str] | None:
     """Single Gemma call. Returns ``None`` on any failure so caller falls
     back to the deterministic copy."""
@@ -245,9 +252,14 @@ async def _polish_one(
             "maxOutputTokens": 200,
         },
     }
-    url = f"{GENAI_BASE}/{model}:generateContent?key={key}"
+
+    def _url_factory() -> str:
+        return f"{GENAI_BASE}/{model}:generateContent?key={_api_key()}"
+
     try:
-        resp = await post_with_retry(client, url, json=body, label="gemma-polish")
+        resp = await post_with_retry(
+            client, _url_factory, json=body, label="gemma-polish"
+        )
         resp.raise_for_status()
         data = resp.json()
         candidates = data.get("candidates", [])
@@ -284,8 +296,7 @@ async def polish_batch(
     (every rec keeps its deterministic template). Wall-clock capped at
     POLISH_BATCH_TIMEOUT_S — better to ship some polished + some raw than
     block startup."""
-    key = _api_key()
-    if not key:
+    if not is_configured():
         log.info("Gemma polish skipped: no API key configured")
         return
     model = os.environ.get("RECOMMENDATION_POLISH_MODEL", DEFAULT_MODEL)
@@ -297,7 +308,7 @@ async def polish_batch(
             async def one(rec: SliceRecommendation) -> None:
                 async with sem:
                     out = await _polish_one(
-                        client, rec.headline, rec.rationale, model, key
+                        client, rec.headline, rec.rationale, model
                     )
                     if out is not None:
                         rec.headline, rec.rationale = out
