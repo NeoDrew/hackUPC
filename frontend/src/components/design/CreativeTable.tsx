@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import type { CreativeRow as CreativeRowT } from "@/lib/api";
 import type { TabKey } from "@/lib/status";
+import { Acronym } from "./Acronym";
 import { CreativeRow } from "./CreativeRow";
 import { FilterRow } from "./FilterRow";
 
@@ -100,7 +101,11 @@ function SortableHeader({
 }) {
   const key = SORT_LABEL_TO_KEY[label];
   if (!sortState || !key) {
-    return <span className="num-cell">{label}</span>;
+    return (
+      <span className="num-cell">
+        <Acronym>{label}</Acronym>
+      </span>
+    );
   }
   const active = sortState.sort === key;
   const arrow = active ? (sortState.desc ? "▼" : "▲") : "";
@@ -110,7 +115,7 @@ function SortableHeader({
       className={`num-cell sortable-th${active ? " active" : ""}`}
       prefetch={false}
     >
-      {label}
+      <Acronym>{label}</Acronym>
       {arrow ? <span className="sort-arrow">{arrow}</span> : null}
     </Link>
   );

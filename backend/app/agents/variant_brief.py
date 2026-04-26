@@ -67,6 +67,13 @@ def is_configured() -> bool:
 
 
 def _api_key() -> str | None:
+    """Pull a key from the rotating pool (round-robin, 429-aware).
+    Falls back to the legacy single-key env vars when the pool is empty."""
+    from ._key_pool import get_pool
+
+    k = get_pool().next_key()
+    if k:
+        return k
     return os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
 
 
@@ -113,11 +120,15 @@ async def generate_brief(
         },
     }
     model = os.environ.get("VARIANT_BRIEF_MODEL", DEFAULT_MODEL)
-    url = f"{GENAI_BASE}/{model}:generateContent?key={api_key}"
+
+    def _url_factory() -> str:
+        return f"{GENAI_BASE}/{model}:generateContent?key={_api_key()}"
 
     try:
         async with httpx.AsyncClient(timeout=20.0) as client:
-            resp = await post_with_retry(client, url, json=body, label="gemma-variant")
+            resp = await post_with_retry(
+                client, _url_factory, json=body, label="gemma-variant"
+            )
             resp.raise_for_status()
             data = resp.json()
     except httpx.HTTPError as e:

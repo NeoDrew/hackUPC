@@ -17,6 +17,7 @@ import {
   severityLabel,
   severityToTone,
 } from "@/lib/status";
+import { AcronymText } from "./Acronym";
 
 /**
  * Industry-canonical recommendation card. Anatomy mirrors AppLovin MAX /
@@ -141,9 +142,11 @@ export function RecommendationCard({
         </div>
 
         <Link href={detailHref} prefetch={false} className="rec-card-headline">
-          {rec.headline}
+          <AcronymText text={rec.headline} />
         </Link>
-        <p className="rec-card-rationale">{rec.rationale}</p>
+        <p className="rec-card-rationale">
+          <AcronymText text={rec.rationale} />
+        </p>
 
         <div className="rec-card-impact">
           <span className="rec-card-impact-num">est. {impactText}/day</span>

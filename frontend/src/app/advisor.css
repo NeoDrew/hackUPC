@@ -30,7 +30,7 @@
   color: var(--t-1);
 }
 .advisor-banner-meta {
-  font-size: 13px;
+  font-size: 19px;
   color: var(--t-2);
 }
 .advisor-banner-pips {
@@ -42,7 +42,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 11px;
+  font-size: 16px;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -65,7 +65,7 @@
   flex-direction: column;
   gap: 1px;
   min-width: 0;
-  font-size: 11px;
+  font-size: 16px;
   color: var(--t-3);
   line-height: 1.35;
   overflow: hidden;
@@ -85,7 +85,7 @@
   border-radius: 6px;
   background: var(--accent);
   color: #fff;
-  font-size: 13px;
+  font-size: 19px;
   font-weight: 500;
   white-space: nowrap;
 }
@@ -114,7 +114,7 @@
 }
 .advisor-queue-head .t-body {
   margin: 0;
-  font-size: 12px;
+  font-size: 18px;
 }
 .advisor-queue-list {
   margin: 0;
@@ -172,7 +172,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 10px;
+  font-size: 15px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -192,23 +192,23 @@
 .rec-card-pill.tone-stable { color: var(--t-2); }
 
 .rec-card-verb {
-  font-size: 11px;
+  font-size: 16px;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--t-2);
 }
 .rec-card-slice {
-  font-size: 11px;
+  font-size: 16px;
   color: var(--t-3);
 }
 .rec-card-cid {
-  font-size: 11px;
+  font-size: 16px;
   color: var(--t-3);
   font-feature-settings: "tnum";
 }
 .rec-card-polished {
-  font-size: 11px;
+  font-size: 16px;
   color: var(--accent);
   margin-left: auto;
 }
@@ -225,7 +225,7 @@
 
 .rec-card-rationale {
   margin: 0;
-  font-size: 12px;
+  font-size: 18px;
   color: var(--t-2);
   line-height: 1.4;
 }
@@ -238,7 +238,7 @@
   position: relative;
 }
 .rec-card-impact-num {
-  font-size: 12px;
+  font-size: 18px;
   font-weight: 600;
   color: var(--t-1);
   font-feature-settings: "tnum";
@@ -269,7 +269,7 @@
   border-radius: 6px;
   background: var(--bg-1);
   color: var(--t-1);
-  font-size: 13px;
+  font-size: 19px;
   font-weight: 500;
   white-space: nowrap;
   cursor: pointer;
@@ -295,7 +295,7 @@
   border-radius: 6px;
   background: var(--bg-1);
   color: var(--t-2);
-  font-size: 13px;
+  font-size: 19px;
   cursor: pointer;
 }
 .rec-card-secondary:hover {
@@ -323,7 +323,7 @@
 }
 .rec-card-snooze-menu button {
   padding: 8px 12px;
-  font-size: 13px;
+  font-size: 19px;
   text-align: left;
   background: transparent;
   border: none;
@@ -389,7 +389,7 @@
   gap: 8px;
   flex-wrap: wrap;
   padding: 0 24px 12px;
-  font-size: 12px;
+  font-size: 18px;
 }
 .actions-page-filter {
   padding: 6px 12px;
@@ -398,7 +398,7 @@
   background: var(--bg-1);
   color: var(--t-2);
   text-decoration: none;
-  font-size: 12px;
+  font-size: 18px;
 }
 .actions-page-filter[aria-current="page"] {
   background: var(--accent);
@@ -415,7 +415,7 @@
   background: var(--accent);
   color: #fff;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 18px;
   font-weight: 500;
   margin-left: 8px;
 }
@@ -430,7 +430,7 @@
   border-radius: 999px;
   background: var(--bg-2);
   color: var(--status-fatigued);
-  font-size: 10px;
+  font-size: 15px;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -440,4 +440,17 @@
   height: 5px;
   border-radius: 999px;
   background: currentColor;
+}
+
+/* Hover-help underline for acronyms (CTR, CVR, ROAS, …). Native
+   <abbr title=""> gets the tooltip; CSS adds discoverable underline. */
+.acronym-hint {
+  text-decoration: underline dotted var(--t-3);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  cursor: help;
+}
+.acronym-hint:hover {
+  color: var(--accent);
+  text-decoration-color: var(--accent);
 }
