@@ -103,11 +103,15 @@ Verify before going on:
 
 **SAY (intro · 3s):** *"Three things we learned building this."*
 
-**SAY (one · 11s):** *"**Slices beat totals.** A portfolio-average ROAS hides everything that matters. The same creative can be a five-x winner in the US and a zero-point-four-x dud in Brazil at the same time. So every action runs at the slice — creative by country by OS."*
+**SAY (one · 9s):** *"**Slices beat totals.** A portfolio-average ROAS hides everything. The same creative can be a five-x winner in one country and a dud in another at the same time. So every action runs at the slice — creative by country by OS."*
 
-**SAY (two · 11s):** *"**Tools beat guessing.** When we let the LLM read numbers off a prompt, it hallucinated. When we forced it through typed Python tools, every digit was right. **We didn't make the model smarter — we stopped asking it to memorise things it had no business knowing.**"*
+**SAY (two · 14s):** *"**Tools beat guessing.** When we let the LLM read numbers off a prompt, it hallucinated. When we forced it through typed Python tools, every digit was right."*
 
-**SAY (three · 10s):** *"**Compute the numbers, let the AI pick the words.** Python decides the recommendation and the dollar impact. Gemma writes the rationale. **Numbers stay exact. Copy stays warm. Nothing the marketer reads is something a language model decided was true.**"*
+**DO:** gesture to the bottom-right assistant launcher (visible on screen since Aditya's section).
+
+**SAY (continued):** *"**That's the Smadex assistant — on every page. Maya can ask 'why is creative five-hundred-three-seventy-six losing?' and Gemini calls the exact same tools we just walked through. Real numbers. Real recommendations.** We didn't make the model smarter — we stopped asking it to memorise things it had no business knowing."*
+
+**SAY (three · 9s):** *"**Compute the numbers, let the AI pick the words.** Python decides the recommendation and the dollar impact. Gemma writes the rationale. **Nothing the marketer reads is hallucinated.**"*
 
 > **2:35 – 2:50 · The bridge**
 
@@ -196,6 +200,10 @@ If a judge asks any of these in Q&A, here's the speaker and the line.
 
 **Q: How does the chat assistant avoid hallucinating numbers?**
 > *"Typed tool calls. Every metric the LLM cites goes through a Python function that hits the datastore. The model can't decide a number sounds plausible — it has to call a tool and get the real value. We added a key-rotation pool with exponential-backoff retry so free-tier 429s don't crash the demo."*
+
+**Q: Can you show me the assistant?**
+> Drew opens it (bottom-right launcher), clicks a contextual suggestion (`Why is this creative losing?`), points at the tool-call chips that appear in the response (e.g. `get_creative_diagnosis`, `get_twin`), reads the grounded answer aloud.
+> *"Same data, same tools as the cockpit. The chips you see are real Python function calls — not generated text. It can diagnose, recommend, confirm, and apply, all end-to-end. Diagnose-recommend-confirm-apply turns work without ever leaving the conversation."*
 
 ## Similarity questions → Drew / Krish
 
