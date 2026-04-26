@@ -23,24 +23,24 @@
   <rect width="1600" height="1000" fill="#ffffff"/>
 
   <!-- Header -->
-  <text x="80" y="60" class="h1">Smadex Creative Twin Copilot</text>
+  <text x="80" y="60" class="h1">Smadex Cooking</text>
   <text x="80" y="86" class="h2">System architecture · smadex.cooking</text>
   <line x1="80" y1="105" x2="1520" y2="105" stroke="#e7e5ec" stroke-width="1"/>
 
   <!-- ============================================== -->
-  <!-- LAYER 1 — User -->
+  <!-- LAYER 1 · User -->
   <!-- ============================================== -->
   <text x="80" y="148" class="layer">User</text>
   <g>
     <rect x="80" y="160" width="1080" height="64" rx="8" fill="#fbfbfd" stroke="#e7e5ec"/>
     <circle cx="124" cy="192" r="18" fill="#7e2c8c"/>
     <text x="124" y="197" font-size="14" font-weight="600" fill="#ffffff" text-anchor="middle">M</text>
-    <text x="158" y="188" class="box-title">Maya — creative-strategy lead</text>
-    <text x="158" y="208" class="box-sub">CraveLoop · ~30 live ads · $800k weekly spend</text>
+    <text x="158" y="188" class="box-title">Maya, creative-strategy lead</text>
+    <text x="158" y="208" class="box-sub">CraveLoop · 30 live ads · ~$80k weekly spend</text>
   </g>
 
   <!-- ============================================== -->
-  <!-- LAYER 2 — Frontend (Next.js / Vercel) -->
+  <!-- LAYER 2 · Frontend (Next.js / Vercel) -->
   <!-- ============================================== -->
   <text x="80" y="266" class="layer">Frontend · Next.js · Vercel</text>
 
@@ -68,20 +68,20 @@
     <text x="526" y="348" class="box-mono">TODAY · IF UNCHANGED</text>
   </g>
 
-  <!-- Twin -->
+  <!-- Explore (slice browser) -->
   <g>
     <rect x="725" y="280" width="200" height="84" rx="8" fill="#ffffff" stroke="#e7e5ec"/>
-    <text x="741" y="306" class="box-title">/twin</text>
-    <text x="741" y="328" class="box-sub">Diff · Vision Insight</text>
-    <text x="741" y="348" class="box-mono">winner vs your ad</text>
+    <text x="741" y="306" class="box-title">/explore</text>
+    <text x="741" y="328" class="box-sub">Slice browser · filters</text>
+    <text x="741" y="348" class="box-mono">creative table · cohort</text>
   </g>
 
-  <!-- Variant -->
+  <!-- Twin / Variant tabs nested under /creatives/{id} -->
   <g>
     <rect x="940" y="280" width="200" height="84" rx="8" fill="#ffffff" stroke="#e7e5ec"/>
-    <text x="956" y="306" class="box-title">/variant</text>
-    <text x="956" y="328" class="box-sub">Generated · Apply</text>
-    <text x="956" y="348" class="box-mono">+18% predicted ROAS</text>
+    <text x="956" y="306" class="box-title">Twin · Variant tabs</text>
+    <text x="956" y="328" class="box-sub">nested under detail</text>
+    <text x="956" y="348" class="box-mono">diff · brief · apply</text>
   </g>
 
   <!-- Assistant -->
@@ -93,13 +93,13 @@
   </g>
 
   <!-- ============================================== -->
-  <!-- LAYER 3 — API (FastAPI / Render) -->
+  <!-- LAYER 3 · API (FastAPI / Render) -->
   <!-- ============================================== -->
   <text x="80" y="412" class="layer">API · FastAPI · Render</text>
   <g>
     <rect x="80" y="424" width="1300" height="80" rx="8" fill="#fbfbfd" stroke="#e7e5ec"/>
     <text x="100" y="448" class="box-title">REST endpoints</text>
-    <text x="100" y="476" class="box-mono">/portfolio · /creatives · /advertisers · /campaigns · /agent/chat · /actions/recommendations · /creatives/{id}/twin · /creatives/{id}/variant-brief · /creatives/{id}/apply-variant</text>
+    <text x="100" y="476" class="box-mono">/portfolio/{kpis,tab-counts,dataset-bounds} · /creatives · /advertisers · /campaigns · /recommendations · /agent/chat · /creatives/{id}/{twin,variant-brief,apply-variant}</text>
   </g>
 
   <!-- Connecting lines: UI → API -->
@@ -111,7 +111,7 @@
   <line x1="1280" y1="364" x2="1280" y2="424" stroke="#b4afbf" stroke-width="1" marker-end="url(#arrow)"/>
 
   <!-- ============================================== -->
-  <!-- LAYER 4 — Services / ML -->
+  <!-- LAYER 4 · Services / ML -->
   <!-- ============================================== -->
   <text x="80" y="546" class="layer">Services · ML / Analytics</text>
 
@@ -153,14 +153,14 @@
     <text x="861" y="608" class="box-sub">8 deterministic rules</text>
     <text x="861" y="628" class="box-mono">creative × country × OS</text>
     <text x="861" y="648" class="box-mono">$ per recommendation</text>
-    <text x="861" y="668" class="box-mono accent">Pause · Rotate · Scale · Shift · Refresh</text>
+    <text x="861" y="668" class="box-mono accent">Pause · Scale · Shift · Rotate · Refresh · Archive</text>
   </g>
 
   <!-- Vision Insight -->
   <g>
     <rect x="1100" y="560" width="280" height="120" rx="8" fill="#ffffff" stroke="#e7e5ec"/>
     <text x="1116" y="588" class="box-title">Vision Insight</text>
-    <text x="1116" y="608" class="box-sub">Gemma 4 + post-processing</text>
+    <text x="1116" y="608" class="box-sub">Gemma 3 27B + post-processing</text>
     <text x="1116" y="628" class="box-mono">stripped DB columns</text>
     <text x="1116" y="648" class="box-mono">no fabricated numbers</text>
     <text x="1116" y="668" class="box-mono">grounded in diff</text>
@@ -174,7 +174,7 @@
   <line x1="1240" y1="504" x2="1240" y2="560" stroke="#b4afbf" stroke-width="1" marker-end="url(#arrow)"/>
 
   <!-- ============================================== -->
-  <!-- LAYER 5 — Data -->
+  <!-- LAYER 5 · Data -->
   <!-- ============================================== -->
   <text x="80" y="722" class="layer">Data</text>
 
@@ -210,7 +210,7 @@
   <line x1="1180" y1="680" x2="1180" y2="736" stroke="#b4afbf" stroke-width="1" marker-end="url(#arrow)"/>
 
   <!-- ============================================== -->
-  <!-- External (right column) — LLM providers -->
+  <!-- External (right column) · LLM providers -->
   <!-- ============================================== -->
   <text x="1430" y="266" class="layer">External LLMs</text>
 
@@ -225,9 +225,9 @@
   <!-- Gemma for vision insight -->
   <g>
     <rect x="1410" y="600" width="170" height="84" rx="8" fill="#fbfbfd" stroke="#e7e5ec"/>
-    <text x="1426" y="626" class="box-title">Gemma 4</text>
-    <text x="1426" y="648" class="box-sub">Vision Insight</text>
-    <text x="1426" y="668" class="box-mono">explanations</text>
+    <text x="1426" y="626" class="box-title">Gemma 3 27B</text>
+    <text x="1426" y="648" class="box-sub">copy polish · briefs</text>
+    <text x="1426" y="668" class="box-mono">recommendation rewrites</text>
   </g>
 
   <!-- External arrows -->
@@ -242,17 +242,17 @@
   <text x="80" y="912" class="layer">Capability mapping (brief)</text>
   <g font-size="12" fill="#5f5a69">
     <text x="80" y="940">
-      <tspan font-weight="600" fill="#15131a">Q1 Bayesian ranking</tspan>  → Health metric
+      <tspan font-weight="600" fill="#15131a">Q1 Composite ranking</tspan>  → Health metric (cohort-relative, 6 components)
       <tspan dx="20" font-weight="600" fill="#15131a">Q2a Fatigue</tspan>  → Fatigue classifier
-      <tspan dx="20" font-weight="600" fill="#15131a">Q2b Similarity</tspan>  → Twin matching
+      <tspan dx="20" font-weight="600" fill="#15131a">Q2b Similarity</tspan>  → Twin matching (metadata cosine)
     </text>
     <text x="80" y="960">
-      <tspan font-weight="600" fill="#15131a">Q3a Explainability</tspan>  → Vision Insight
-      <tspan dx="20" font-weight="600" fill="#15131a">Q3b Recommendation</tspan>  → Slice Advisor
+      <tspan font-weight="600" fill="#15131a">Q3a Explainability</tspan>  → Rule reasons + winning patterns + Vision Insight
+      <tspan dx="20" font-weight="600" fill="#15131a">Q3b Recommendation</tspan>  → Slice Advisor (8 deterministic rules)
     </text>
   </g>
 
   <!-- Deploy footer -->
-  <text x="1520" y="940" class="footer" text-anchor="end">Deploy: Vercel (frontend) · Render (backend) · GoDaddy domain</text>
+  <text x="1520" y="940" class="footer" text-anchor="end">Deploy: Vercel (frontend) · Render (backend) · Porkbun domain (smadex.cooking)</text>
   <text x="1520" y="960" class="footer" text-anchor="end">Generated 2026-04-26</text>
 </svg>
